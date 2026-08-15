@@ -1,0 +1,8 @@
+node_modules/
+.env
+.pixellab-openapi.json
+.inspect*.mjs
+_reference/
+app/node_modules/
+keeper/node_modules/
+contracts/target/
