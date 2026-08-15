@@ -1,21 +1,21 @@
 /**
  * Hackathon Orchestrator
  *
- * Transforma o pi em um orquestrador multi-papel para um workflow non-stop:
+ * Turns pi into a multi-role orchestrator for a non-stop workflow:
  *
- *   Supervisor  -> GPT-5.6 Sol            (agente principal)
- *   Worker      -> DeepSeek V4 Pro        (implementação)
+ *   Supervisor  -> GPT-5.6 Sol            (main agent)
+ *   Worker      -> DeepSeek V4 Pro        (implementation)
  *   Reviewer    -> Gemini 3.7 Flash       (code review, via openrouter)
- *   Merger      -> DeepSeek V4 Pro        (merge/resolução de conflitos)
- *   Architect   -> Grok 4.5 (via xai)     (revisão de arquitetura)
+ *   Merger      -> DeepSeek V4 Pro        (merge/conflict resolution)
+ *   Architect   -> Grok 4.5 (via xai)     (architecture review)
  *
- * Cada subagente roda em um processo `pi` separado (contexto isolado),
- * com modelo, thinking level e conjunto de ferramentas próprios.
+ * Each subagent runs in a separate `pi` process (isolated context), with its
+ * own model, thinking level, and tool set.
  *
- * Uso:
- *   /role <papel>      troca o modelo do agente principal para o papel
- *   /kickoff <objetivo>  inicia o loop non-stop (Supervisor assume o controle)
- *   run_agent (tool)   usada pelo Supervisor para despachar subagentes
+ * Usage:
+ *   /role <role>        switch the main agent to a role
+ *   /kickoff <goal>     start the non-stop loop (Supervisor takes over)
+ *   run_agent (tool)    used by the Supervisor to dispatch subagents
  */
 
 import { spawn } from "node:child_process";
@@ -31,8 +31,8 @@ type SubRole = "worker" | "reviewer" | "merger" | "architect";
 interface RoleSpec {
   model: string; // provider/id
   thinking: string;
-  tools: string[]; // ferramentas do subagente
-  systemPrompt: string; // instruções de papel (appended ao system prompt)
+  tools: string[]; // subagent tools
+  systemPrompt: string; // role instructions (appended to the system prompt)
   label: string;
 }
 
@@ -41,7 +41,7 @@ const ROLES: Record<Role, RoleSpec> = {
     model: "openrouter/openai/gpt-5.6-sol",
     thinking: "high",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
-    systemPrompt: "Você é o Supervisor. Planeje, despache workers, revise, faça merge e valide até atingir a Definition of Done.",
+    systemPrompt: "You are the Supervisor. Plan, dispatch workers, review, merge, and validate until the Definition of Done is met.",
     label: "Supervisor (GPT-5.6 Sol · high)",
   },
   worker: {
@@ -49,13 +49,13 @@ const ROLES: Record<Role, RoleSpec> = {
     thinking: "high",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
     systemPrompt: [
-      "Você é um worker (DeepSeek V4 Pro). Implemente a tarefa recebida de ponta a ponta, de forma autônoma.",
-      "Use read/edit/write/bash conforme necessário. Ao terminar, rode o build e os testes relevantes.",
-      "Saída final:",
-      "## Completed - o que foi feito",
-      "## Files Changed - lista de arquivos alterados",
-      "## Notes - informações para o reviewer (arquivos-chave, decisões)",
-      "Não pare até concluir a tarefa.",
+      "You are a worker (DeepSeek V4 Pro). Implement the assigned task end-to-end, autonomously.",
+      "Use read/edit/write/bash as needed. Run the build and relevant tests when done.",
+      "Final output:",
+      "## Completed - what was done",
+      "## Files Changed - list of changed files",
+      "## Notes - info for the reviewer (key files, decisions)",
+      "Do not stop until the task is complete.",
     ].join("\n"),
     label: "Worker (DeepSeek V4 Pro · high)",
   },
@@ -64,14 +64,14 @@ const ROLES: Record<Role, RoleSpec> = {
     thinking: "high",
     tools: ["read", "grep", "find", "ls", "bash"],
     systemPrompt: [
-      "Você é um code reviewer sênior (Gemini 3.7 Flash). Revise as mudanças recentes.",
-      "Bash somente leitura: git diff, git log, git show. NÃO modifique arquivos nem rode builds.",
-      "Saída final:",
-      "## Critical (must fix) - com arquivo:linha",
+      "You are a senior code reviewer (Gemini 3.7 Flash). Review the recent changes.",
+      "Bash is read-only: git diff, git log, git show. Do NOT modify files or run builds.",
+      "Final output:",
+      "## Critical (must fix) - with file:line",
       "## Warnings (should fix)",
       "## Suggestions (consider)",
-      "## Verdict - APPROVE ou REQUEST CHANGES",
-      "Seja específico com caminhos e números de linha.",
+      "## Verdict - APPROVE or REQUEST CHANGES",
+      "Be specific with paths and line numbers.",
     ].join("\n"),
     label: "Reviewer (Gemini 3.7 Flash · high)",
   },
@@ -80,13 +80,13 @@ const ROLES: Record<Role, RoleSpec> = {
     thinking: "high",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
     systemPrompt: [
-      "Você é um merger (DeepSeek V4 Pro). Resolva conflitos e integre as mudanças.",
-      "Use git status/git diff para entender o estado, edite conflitos e rode build/testes ao final.",
-      "Saída final:",
-      "## Merged - o que foi integrado/resolvido",
-      "## Conflicts Resolved - conflitos tratados",
-      "## Verification - build/testes executados e resultado",
-      "## Files Changed - arquivos alterados",
+      "You are a merger (DeepSeek V4 Pro). Resolve conflicts and integrate the changes.",
+      "Use git status/git diff to understand the state, edit conflicts, and run build/tests at the end.",
+      "Final output:",
+      "## Merged - what was integrated/resolved",
+      "## Conflicts Resolved - conflicts handled",
+      "## Verification - build/tests run and their result",
+      "## Files Changed - changed files",
     ].join("\n"),
     label: "Merger (DeepSeek V4 Pro · high)",
   },
@@ -95,13 +95,13 @@ const ROLES: Record<Role, RoleSpec> = {
     thinking: "high",
     tools: ["read", "grep", "find", "ls"],
     systemPrompt: [
-      "Você é um arquiteto de software (Grok 4.5). Revise a arquitetura da solução, sem editar nada.",
-      "Analise módulos, contratos/interfaces, acoplamento, segurança e escalabilidade.",
-      "Saída final:",
+      "You are a software architect (Grok 4.5). Review the solution architecture without editing anything.",
+      "Analyze modules, contracts/interfaces, coupling, security, and scalability.",
+      "Final output:",
       "## Architecture Assessment",
       "## Risks",
       "## Recommendations",
-      "## Verdict - APPROVE ou REQUEST CHANGES",
+      "## Verdict - APPROVE or REQUEST CHANGES",
     ].join("\n"),
     label: "Architect (Grok 4.5 · high)",
   },
@@ -110,7 +110,7 @@ const ROLES: Record<Role, RoleSpec> = {
 const SUBAGENT_ROLES: SubRole[] = ["worker", "reviewer", "merger", "architect"];
 
 const MAX_CONCURRENCY = 4;
-const OUTPUT_CAP = 50 * 1024; // 50 KB visíveis para o modelo por tarefa
+const OUTPUT_CAP = 50 * 1024; // 50 KB visible to the model per task
 
 interface Usage {
   input: number;
@@ -170,7 +170,7 @@ function truncate(output: string): string {
   if (byteLength <= OUTPUT_CAP) return output;
   let truncated = output.slice(0, OUTPUT_CAP);
   while (Buffer.byteLength(truncated, "utf8") > OUTPUT_CAP) truncated = truncated.slice(0, -1);
-  return `${truncated}\n\n[truncado: ${byteLength - Buffer.byteLength(truncated, "utf8")} bytes omitidos]`;
+  return `${truncated}\n\n[truncated: ${byteLength - Buffer.byteLength(truncated, "utf8")} bytes omitted]`;
 }
 
 async function runSubagent(
@@ -239,7 +239,7 @@ async function runSubagent(
         if (msg.stopReason) result.stopReason = msg.stopReason;
         if (msg.errorMessage) result.errorMessage = msg.errorMessage;
         if (msg.model) result.model = msg.model;
-        onProgress?.(finalText(messages) || "(trabalhando...)");
+        onProgress?.(finalText(messages) || "(working...)");
       }
     };
 
@@ -295,29 +295,29 @@ async function mapConcurrent<T>(items: T[], fn: (item: T, index: number) => Prom
 }
 
 const RoleEnum = StringEnum(SUBAGENT_ROLES, {
-  description: "Papel do subagente: worker (implementa), reviewer (revisa), merger (integra/merge), architect (revisa arquitetura)",
+  description: "Subagent role: worker (implements), reviewer (reviews), merger (integrates/merges), architect (reviews architecture)",
 });
 
 const RunAgentParams = Type.Object({
   role: Type.Optional(RoleEnum),
-  task: Type.Optional(Type.String({ description: "Tarefa a delegar (modo single)" })),
+  task: Type.Optional(Type.String({ description: "Task to delegate (single mode)" })),
   tasks: Type.Optional(
     Type.Array(
       Type.Object({
         role: RoleEnum,
-        task: Type.String({ description: "Tarefa a delegar" }),
+        task: Type.String({ description: "Task to delegate" }),
       }),
-      { description: "Array de {role, task} para execução paralela (workers independentes)" },
+      { description: "Array of {role, task} for parallel execution (independent workers)" },
     ),
   ),
-  cwd: Type.Optional(Type.String({ description: "Diretório de trabalho do subagente (default: cwd atual)" })),
+  cwd: Type.Optional(Type.String({ description: "Working directory for the subagent (default: current cwd)" })),
 });
 
 export default function (pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     if (ctx.hasUI) {
       ctx.ui.notify(
-        `Orquestrador: /kickoff <objetivo> · /role supervisor|worker|reviewer|merger|architect`,
+        `Orchestrator: /kickoff <goal> · /role supervisor|worker|reviewer|merger|architect`,
         "info",
       );
     }
@@ -327,14 +327,14 @@ export default function (pi: ExtensionAPI) {
     name: "run_agent",
     label: "Run Agent",
     description: [
-      "Despacha uma tarefa para um subagente com modelo/thinking/tools próprios e contexto isolado.",
-      "Papéis: worker (implementa), reviewer (revisa), merger (integra/merge), architect (revisa arquitetura).",
-      "Use tasks[] para rodar workers em paralelo quando as tarefas forem independentes e não tocarem os mesmos arquivos.",
-      "Retorna o texto final do subagente (e estatísticas de uso).",
+      "Dispatch a task to a subagent with its own model/thinking/tools and isolated context.",
+      "Roles: worker (implements), reviewer (reviews), merger (integrates/merges), architect (reviews architecture).",
+      "Use tasks[] to run workers in parallel when tasks are independent and do not touch the same files.",
+      "Returns the subagent's final text (and usage stats).",
     ].join(" "),
     promptGuidelines: [
-      "Use run_agent (role=worker) para implementar; role=reviewer para revisar; role=merger para integrar; role=architect para revisar arquitetura.",
-      "Rode workers em paralelo (tasks[]) quando as tarefas forem independentes; nunca paralelize tarefas que editam os mesmos arquivos.",
+      "Use run_agent (role=worker) to implement; role=reviewer to review; role=merger to integrate; role=architect to review architecture.",
+      "Run workers in parallel (tasks[]) when tasks are independent; never parallelize tasks that edit the same files.",
     ],
     parameters: RunAgentParams,
 
@@ -345,7 +345,7 @@ export default function (pi: ExtensionAPI) {
 
       if (hasSingle === hasTasks) {
         return {
-          content: [{ type: "text", text: "Forneça exatamente um modo: {role + task} OU {tasks: [...]}." }],
+          content: [{ type: "text", text: "Provide exactly one mode: {role + task} OR {tasks: [...]}." }],
           details: {},
           isError: true,
         };
@@ -363,13 +363,13 @@ export default function (pi: ExtensionAPI) {
         const summaries = results
           .map((r) => {
             const failed = r.exitCode !== 0 || r.stopReason === "error" || r.stopReason === "aborted";
-            const status = failed ? `falhou${r.stopReason ? ` (${r.stopReason})` : ""}` : "ok";
+            const status = failed ? `failed${r.stopReason ? ` (${r.stopReason})` : ""}` : "ok";
             return `### ${r.role} [${status}]\n${failed ? (r.errorMessage || r.stderr || r.output) : truncate(r.output)}`;
           })
           .join("\n\n---\n\n");
 
         return {
-          content: [{ type: "text", text: `Paralelo: ${ok}/${results.length} concluídos.\n\n${summaries}` }],
+          content: [{ type: "text", text: `Parallel: ${ok}/${results.length} completed.\n\n${summaries}` }],
           details: { results },
           isError: ok === 0,
         };
@@ -386,7 +386,7 @@ export default function (pi: ExtensionAPI) {
           {
             type: "text",
             text: failed
-              ? `[${result.role}] falhou${result.stopReason ? ` (${result.stopReason})` : ""}: ${result.errorMessage || result.stderr || result.output}\n\n${usage}`
+              ? `[${result.role}] failed${result.stopReason ? ` (${result.stopReason})` : ""}: ${result.errorMessage || result.stderr || result.output}\n\n${usage}`
               : `${truncate(result.output)}\n\n${usage}`,
           },
         ],
@@ -404,27 +404,27 @@ export default function (pi: ExtensionAPI) {
 
     const model = ctx.modelRegistry?.find(provider, id);
     if (!model) {
-      ctx.ui.notify(`Modelo não encontrado: ${spec.model}`, "error");
+      ctx.ui.notify(`Model not found: ${spec.model}`, "error");
       return false;
     }
     const ok = await pi.setModel(model);
     if (!ok) {
-      ctx.ui.notify(`Sem credencial para ${spec.model}`, "error");
+      ctx.ui.notify(`No credential for ${spec.model}`, "error");
       return false;
     }
     pi.setThinkingLevel(spec.thinking as any);
-    ctx.ui.notify(`Papel: ${spec.label}`, "info");
+    ctx.ui.notify(`Role: ${spec.label}`, "info");
     return true;
   }
 
   pi.registerCommand("role", {
-    description: "Troca o agente principal para um papel (supervisor|worker|reviewer|merger|architect)",
+    description: "Switch the main agent to a role (supervisor|worker|reviewer|merger|architect)",
     getArgumentCompletions: () =>
       (Object.keys(ROLES) as Role[]).map((r) => ({ value: r, label: ROLES[r].label })),
     handler: async (args, ctx) => {
       const role = (args || "").trim().toLowerCase() as Role;
       if (!ROLES[role]) {
-        ctx.ui.notify("Uso: /role supervisor|worker|reviewer|merger|architect", "error");
+        ctx.ui.notify("Usage: /role supervisor|worker|reviewer|merger|architect", "error");
         return;
       }
       await applyRole(ctx, role);
@@ -432,11 +432,11 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.registerCommand("kickoff", {
-    description: "Inicia o workflow non-stop (Supervisor assume o controle)",
+    description: "Start the non-stop workflow (Supervisor takes over)",
     handler: async (args, ctx) => {
       const goal = (args || "").trim();
       if (!goal) {
-        ctx.ui.notify("Uso: /kickoff <objetivo>", "error");
+        ctx.ui.notify("Usage: /kickoff <goal>", "error");
         return;
       }
 
@@ -444,21 +444,21 @@ export default function (pi: ExtensionAPI) {
       if (!ok) return;
 
       const prompt = [
-        `KICKOFF — objetivo: ${goal}`,
+        `KICKOFF — goal: ${goal}`,
         "",
-        "Siga o protocolo de orquestração non-stop do AGENTS.md. A partir de agora você é o Supervisor.",
+        "Follow the non-stop orchestration protocol in AGENTS.md. From now on you are the Supervisor.",
         "",
-        "1. Planeje: leia o repositório, entenda o objetivo e divida em tarefas pequenas e verificáveis.",
-        "2. Despache workers: use a ferramenta run_agent (role=worker). Use tasks[] para rodar em paralelo quando as tarefas forem independentes e não editarem os mesmos arquivos.",
-        "3. Revise: use run_agent (role=reviewer) sobre o que foi implementado.",
-        "4. Corrija/integre: use run_agent (role=merger) para resolver conflitos e aplicar correções.",
-        "5. Valide arquitetura: use run_agent (role=architect) quando houver mudanças estruturais.",
-        "6. Verifique: rode build/testes com bash. Faça commit a cada iteração estável.",
+        "1. Plan: read the repository, understand the goal, and break it into small, verifiable tasks.",
+        "2. Dispatch workers: use the run_agent tool (role=worker). Use tasks[] to run in parallel when tasks are independent and do not edit the same files.",
+        "3. Review: use run_agent (role=reviewer) on what was implemented.",
+        "4. Fix/integrate: use run_agent (role=merger) to resolve conflicts and apply fixes.",
+        "5. Validate architecture: use run_agent (role=architect) when there are structural changes.",
+        "6. Verify: run build/tests with bash. Commit at every stable iteration.",
         "",
-        "NÃO pare entre etapas. Continue o loop até a Definition of Done ser atingida.",
-        "Se algo falhar, diagnostique, corrija e continue. Só pare se estiver genuinamente bloqueado (ex.: falta informação que apenas o usuário pode fornecer) — nesse caso reporte exatamente o que precisa.",
+        "Do NOT stop between steps. Keep looping until the Definition of Done is met.",
+        "If something fails, diagnose, fix, and continue. Only stop if genuinely blocked (e.g. missing information only the user can provide) — in that case report exactly what is needed.",
         "",
-        "Definition of Done: código implementado, build/testes passando, revisado e commitado.",
+        "Definition of Done: code implemented, build/tests passing, reviewed, and committed.",
       ].join("\n");
 
       pi.sendUserMessage(prompt);

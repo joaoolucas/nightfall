@@ -1,65 +1,66 @@
-# Protocolo de Orquestração Non-Stop (Hackathon)
+# Non-Stop Orchestration Protocol (Hackathon)
 
-## Projeto: Nightfall
+## Project: Nightfall
 
-**O que construímos** (norte = `docs/SPEC.md`): plataforma de jogos sociais
-provably-fair com privacidade STRK20. Título âncora: **Nightfall: One Night**
+**What we build** (north star = `docs/SPEC.md`): a platform for provably-fair
+social games with STRK20 privacy. Anchor title: **Nightfall: One Night**
 (One Night Werewolf).
 
-**Componentes**:
-- `contracts/` — Cairo: Fair Game Engine (anonymizer `privacy_invoke`)
-- `app/` — Next.js (starter kit STRK20)
-- `keeper/` — agentes de IA jogadores (viewing key por assento, LLM decide ação/voto)
+**Components**:
+
+- `contracts/` — Cairo: Fair Game Engine (`privacy_invoke` anonymizer)
+- `app/` — Next.js (STRK20 starter kit)
+- `keeper/` — AI player agents (per-seat viewing key, LLM decides action/vote)
 - `docs/` — SPEC + README + docs
 
-**Decisões de produto travadas**: staked + free mode · turn-based (não real-time) ·
-agentes de IA (não bots) · monetização via rake on-chain · v0 = wedge arquitetado
-como plataforma reutilizável.
+**Locked product decisions**: staked + free mode · turn-based (not real-time) ·
+AI agents (not bots) · monetization via on-chain rake · v0 = wedge architected as
+a reusable platform.
 
-Este repositório usa o pi como orquestrador multi-papel. O **agente principal** é o
-Supervisor e despacha **subagentes** (processos `pi` isolados) com modelos
-especializados.
+This repo uses pi as a multi-role orchestrator. The **main agent** is the
+Supervisor and dispatches **subagents** (isolated `pi` processes) with
+specialized models.
 
-## Papéis
+## Roles
 
-| Papel | Modelo | Thinking | Ferramentas |
-|-------|--------|----------|-------------|
+| Role | Model | Thinking | Tools |
+|------|-------|----------|-------|
 | Supervisor | `openrouter/openai/gpt-5.6-sol` | high | read, bash, edit, write, grep, find, ls, run_agent |
 | Worker | `openrouter/deepseek/deepseek-v4-pro-0813` | high | read, bash, edit, write, grep, find, ls |
-| Reviewer | `openrouter/google/gemini-3.7-flash` | high | read, grep, find, ls, bash (só leitura) |
+| Reviewer | `openrouter/google/gemini-3.7-flash` | high | read, grep, find, ls, bash (read-only) |
 | Merger | `openrouter/deepseek/deepseek-v4-pro-0813` | high | read, bash, edit, write, grep, find, ls |
 | Architect | `xai/grok-4.5` | high | read, grep, find, ls |
 
-Comandos: `/role <papel>` troca o modelo do agente principal; `/kickoff <objetivo>`
-inicia o loop non-stop.
+Commands: `/role <role>` switches the main agent's model; `/kickoff <goal>`
+starts the non-stop loop.
 
-## Loop non-stop
+## Non-stop loop
 
-Repita até a Definition of Done (v0, em `docs/SPEC.md`) ser atingida:
+Repeat until the Definition of Done (v0, in `docs/SPEC.md`) is met:
 
-1. **Planejar** — leia `docs/SPEC.md`, entenda o objetivo e divida em tarefas pequenas.
-2. **Implementar** — despache `run_agent` com `role=worker`. Use `tasks[]` (paralelo)
-   somente para tarefas independentes que **não** editam os mesmos arquivos
-   (ex.: `contracts/` e `app/` e `keeper/` podem avançar em paralelo).
-3. **Revisar** — despache `run_agent` com `role=reviewer` sobre o diff (`git diff`).
-4. **Integrar** — despache `run_agent` com `role=merger` para resolver conflitos e
-   aplicar correções do review.
-5. **Validar arquitetura** — despache `run_agent` com `role=architect` quando houver
-   mudanças estruturais (novos módulos, contratos, esquemas, protocolo).
-6. **Verificar** — rode build e testes com `bash`. Faça commit a cada iteração estável.
+1. **Plan** — read `docs/SPEC.md`, understand the goal, and break it into small tasks.
+2. **Implement** — dispatch `run_agent` with `role=worker`. Use `tasks[]` (parallel)
+   only for independent tasks that **do not** edit the same files
+   (e.g. `contracts/`, `app/`, and `keeper/` can advance in parallel).
+3. **Review** — dispatch `run_agent` with `role=reviewer` over the diff (`git diff`).
+4. **Integrate** — dispatch `run_agent` with `role=merger` to resolve conflicts and
+   apply review fixes.
+5. **Validate architecture** — dispatch `run_agent` with `role=architect` for
+   structural changes (new modules, contracts, schemas, protocol).
+6. **Verify** — run build and tests with `bash`. Commit at every stable iteration.
 
-## Regras
+## Rules
 
-- **Não pare entre etapas.** Só pare se estiver genuinamente bloqueado; nesse caso
-  reporte exatamente o que falta e o que já foi feito.
-- **Commits frequentes** — commit em cada iteração estável, com mensagem clara.
-- **Workers em paralelo** — só quando disjuntos em arquivos; caso contrário, sequencial.
-- **Nunca deixe a árvore quebrada** — se um merge quebrar o build, corrija antes de seguir.
-- **Nunca commit secrets** — `.env`, `.env.local` e chaves ficam fora do git (`.gitignore`).
-- **Definition of Done (v0)** — ver `docs/SPEC.md` §9.
+- **Do not stop between steps.** Only stop if genuinely blocked; in that case
+  report exactly what is missing and what was already done.
+- **Frequent commits** — commit at every stable iteration, with a clear message.
+- **Parallel workers** — only when file-disjoint; otherwise sequential.
+- **Never leave the tree broken** — if a merge breaks the build, fix it before continuing.
+- **Never commit secrets** — `.env`, `.env.local`, and keys stay out of git (`.gitignore`).
+- **Definition of Done (v0)** — see `docs/SPEC.md` §9.
 
-## Comandos de orquestração
+## Orchestration commands
 
-- `/kickoff <objetivo>` — inicia o loop non-stop.
-- `/role worker|reviewer|merger|architect|supervisor` — assume manualmente um papel no agente principal.
-- `run_agent` (ferramenta do modelo) — despacha subagente: `{role, task}` ou `{tasks: [{role, task}, ...]}`.
+- `/kickoff <goal>` — start the non-stop loop.
+- `/role worker|reviewer|merger|architect|supervisor` — manually take a role in the main agent.
+- `run_agent` (model tool) — dispatch a subagent: `{role, task}` or `{tasks: [{role, task}, ...]}`.
