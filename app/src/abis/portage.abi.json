@@ -1,0 +1,403 @@
+[
+  {
+    "type": "impl",
+    "name": "PortageImpl",
+    "interface_name": "strk20_invoke_helper::portage::IPortage"
+  },
+  {
+    "type": "struct",
+    "name": "core::integer::u256",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "strk20_invoke_helper::portage::Species",
+    "variants": [
+      {
+        "name": "Ember",
+        "type": "()"
+      },
+      {
+        "name": "Creek",
+        "type": "()"
+      },
+      {
+        "name": "Grove",
+        "type": "()"
+      },
+      {
+        "name": "Stone",
+        "type": "()"
+      },
+      {
+        "name": "Mist",
+        "type": "()"
+      },
+      {
+        "name": "Sky",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "strk20_invoke_helper::portage::Rarity",
+    "variants": [
+      {
+        "name": "Common",
+        "type": "()"
+      },
+      {
+        "name": "Uncommon",
+        "type": "()"
+      },
+      {
+        "name": "Rare",
+        "type": "()"
+      },
+      {
+        "name": "Epic",
+        "type": "()"
+      },
+      {
+        "name": "Legendary",
+        "type": "()"
+      },
+      {
+        "name": "Mythic",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "enum",
+    "name": "strk20_invoke_helper::portage::Stage",
+    "variants": [
+      {
+        "name": "Hatchling",
+        "type": "()"
+      },
+      {
+        "name": "Adult",
+        "type": "()"
+      },
+      {
+        "name": "Legend",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "type": "struct",
+    "name": "core::array::Span::<core::integer::u16>",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<core::integer::u16>"
+      }
+    ]
+  },
+  {
+    "type": "interface",
+    "name": "strk20_invoke_helper::portage::IPortage",
+    "items": [
+      {
+        "type": "function",
+        "name": "hatch",
+        "inputs": [
+          {
+            "name": "seed",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "owner_of",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "transfer_from",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_creature",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, strk20_invoke_helper::portage::Species, strk20_invoke_helper::portage::Rarity, strk20_invoke_helper::portage::Stage)"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "list",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "price",
+            "type": "core::integer::u128"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "buy",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "cancel",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_listing",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u128)"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_hatch_count",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u64"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_rarity_weights",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::array::Span::<core::integer::u16>"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_total_supply",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "strk20_invoke_helper::portage::Portage::Hatched",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "token_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      },
+      {
+        "name": "species",
+        "type": "strk20_invoke_helper::portage::Species",
+        "kind": "data"
+      },
+      {
+        "name": "rarity",
+        "type": "strk20_invoke_helper::portage::Rarity",
+        "kind": "data"
+      },
+      {
+        "name": "seed",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "strk20_invoke_helper::portage::Portage::Listed",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "token_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      },
+      {
+        "name": "seller",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "price",
+        "type": "core::integer::u128",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "strk20_invoke_helper::portage::Portage::Sold",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "token_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      },
+      {
+        "name": "seller",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "buyer",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      },
+      {
+        "name": "price",
+        "type": "core::integer::u128",
+        "kind": "data"
+      },
+      {
+        "name": "rake",
+        "type": "core::integer::u128",
+        "kind": "data"
+      },
+      {
+        "name": "proceeds",
+        "type": "core::integer::u128",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "strk20_invoke_helper::portage::Portage::Cancelled",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "token_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      },
+      {
+        "name": "seller",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "strk20_invoke_helper::portage::Portage::Event",
+    "kind": "enum",
+    "variants": [
+      {
+        "name": "Hatched",
+        "type": "strk20_invoke_helper::portage::Portage::Hatched",
+        "kind": "nested"
+      },
+      {
+        "name": "Listed",
+        "type": "strk20_invoke_helper::portage::Portage::Listed",
+        "kind": "nested"
+      },
+      {
+        "name": "Sold",
+        "type": "strk20_invoke_helper::portage::Portage::Sold",
+        "kind": "nested"
+      },
+      {
+        "name": "Cancelled",
+        "type": "strk20_invoke_helper::portage::Portage::Cancelled",
+        "kind": "nested"
+      }
+    ]
+  }
+]

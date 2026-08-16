@@ -102,11 +102,14 @@ const CREATURES = [
   { id: "aurora", biome: "Sky", desc: `feathered kite creature, iridescent aurora wings, ${STYLE}` },
 ];
 
-// Evolution stages (Ember biome — Cinderling only, for v0)
+// Evolution stages (2 biomes for v0: Ember + Creek)
 const EVOLUTIONS = [
   { id: "cinderling-hatchling", desc: `tiny round baby smoldering lizard creature, glowing ember scales, cute, ${STYLE}` },
   { id: "cinderling-adult", desc: `small smoldering lizard creature, glowing ember scales, tiny flames on its back, ${STYLE}` },
   { id: "cinderling-legend", desc: `large majestic smoldering lizard creature, glowing ember scales, flames on its back, glowing crown and radiant aura, ${STYLE}` },
+  { id: "ripple-hatchling", desc: `tiny round baby droplet frog creature, translucent blue, cute bubble, ${STYLE}` },
+  { id: "ripple-adult", desc: `round droplet frog creature, translucent blue, rippling water swirl, ${STYLE}` },
+  { id: "ripple-legend", desc: `large majestic droplet frog creature, translucent blue, crashing wave aura, glowing crown, ${STYLE}` },
 ];
 
 const ASSETS = [
