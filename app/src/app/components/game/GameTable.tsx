@@ -3,7 +3,6 @@
 import { useState } from "react";
 import styles from "./nightfall.module.css";
 import {
-  GamePhase,
   MVP_ROLES,
   PHASES,
   PHASE_LABELS,
@@ -13,6 +12,7 @@ import {
   Team,
   roleCardImage,
 } from "@/utils/game";
+import { useNightfallState } from "./useNightfallState";
 
 type RoleCardProps = {
   role: Role;
@@ -61,8 +61,9 @@ function RoleCard({ role, revealed, onToggle }: RoleCardProps) {
 // the 6 MVP role cards. All state is local/static for now — it will be driven by
 // the Fair Game Engine once the contract + keeper land.
 export default function GameTable() {
-  // v0 defaults to Lobby; later waves advance this from on-chain state.
-  const currentPhase = GamePhase.Lobby;
+  // Phase comes from the chain when a contract is configured; otherwise the
+  // hook returns the static demo state (Lobby).
+  const { phase: currentPhase, onChain, loading, error } = useNightfallState();
   // Which role cards are face-up. Defaults to all hidden (nothing dealt yet).
   const [revealed, setRevealed] = useState<Set<Role>>(new Set());
 
@@ -121,6 +122,21 @@ export default function GameTable() {
       <p className={styles.roleHint}>
         Tap a card to peek — roles are dealt as encrypted notes once the game starts.
       </p>
+
+      <div className={styles.chainStatus}>
+        {loading ? (
+          <span className={styles.chainLoading}>Syncing on-chain state…</span>
+        ) : (
+          <span
+            className={`${styles.chainBadge} ${
+              onChain ? styles.chainBadgeOn : styles.chainBadgeOff
+            }`}
+          >
+            {onChain ? "on-chain" : "demo (no contract)"}
+          </span>
+        )}
+        {error && <span className={styles.chainError}>{error}</span>}
+      </div>
     </section>
   );
 }
