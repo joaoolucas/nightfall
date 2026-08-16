@@ -27,7 +27,7 @@ specialized models.
 |------|-------|----------|-------|
 | Supervisor | `openai-codex/gpt-5.6-sol` | high | read, bash, edit, write, grep, find, ls, run_agent |
 | Worker | `orcarouter/deepseek/deepseek-v4-pro-0813` | high | read, bash, edit, write, grep, find, ls |
-| Reviewer | `orcarouter/kimi/kimi-k3` | high | read, grep, find, ls, bash (read-only) |
+| Reviewer | `claude-bridge/claude-opus-5` | high | read, grep, find, ls, bash (read-only) |
 | Merger | `orcarouter/deepseek/deepseek-v4-pro-0813` | high | read, bash, edit, write, grep, find, ls |
 | Architect | `orcarouter/grok/grok-4.6` | high | read, grep, find, ls |
 
