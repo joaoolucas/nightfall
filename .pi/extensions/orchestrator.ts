@@ -3,14 +3,16 @@
  *
  * Turns pi into a multi-role orchestrator for a non-stop workflow:
  *
- *   Supervisor  -> GPT-5.6 Sol            (main agent)
- *   Worker      -> DeepSeek V4 Pro        (implementation)
- *   Reviewer    -> Gemini 3.7 Flash       (code review, via openrouter)
- *   Merger      -> DeepSeek V4 Pro        (merge/conflict resolution)
- *   Architect   -> Grok 4.5 (via xai)     (architecture review)
+ *   Supervisor  -> GPT-5.6 Sol            (planning & coordination)
+ *   Worker      -> hcnsec/DeepSeek-V4-Pro (implementation)
+ *   Reviewer    -> hcnsec/Kimi-K2.6       (code review + vision)
+ *   Merger      -> hcnsec/DeepSeek-V4-Pro (merge/conflict resolution)
+ *   Architect   -> hcnsec/glm-5.2         (architecture review)
  *
  * Each subagent runs in a separate `pi` process (isolated context), with its
  * own model, thinking level, and tool set.
+ *
+ * Fallback chain (if primary fails): openai-codex → orcarouter → hcnsec/auto
  *
  * Usage:
  *   /role <role>        switch the main agent to a role
@@ -42,10 +44,10 @@ const ROLES: Record<Role, RoleSpec> = {
     thinking: "high",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
     systemPrompt: "You are the Supervisor. Plan, dispatch workers, review, merge, and validate until the Definition of Done is met.",
-    label: "Supervisor (GPT-5.6 Sol · high · vision)",
+    label: "Supervisor (GPT-5.6 Sol · high · planning)",
   },
   worker: {
-    model: "orcarouter/deepseek/deepseek-v4-pro-0813",
+    model: "hcnsec/DeepSeek-V4-Pro",
     thinking: "high",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
     systemPrompt: [
@@ -58,13 +60,14 @@ const ROLES: Record<Role, RoleSpec> = {
       "Do not stop until the task is complete.",
     ].join("\n"),
     label: "Worker (DeepSeek V4 Pro · high)",
+    fallback: "hcnsec/auto",
   },
   reviewer: {
-    model: "orcarouter/kimi/kimi-k3",
+    model: "hcnsec/Kimi-K2.6",
     thinking: "high",
     tools: ["read", "grep", "find", "ls", "bash"],
     systemPrompt: [
-      "You are a senior code reviewer (Kimi K3). Review the recent changes.",
+      "You are a senior code reviewer. Review the recent changes.",
       "Bash is read-only: git diff, git log, git show. Do NOT modify files or run builds.",
       "Final output:",
       "## Critical (must fix) - with file:line",
@@ -73,14 +76,15 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Verdict - APPROVE or REQUEST CHANGES",
       "Be specific with paths and line numbers.",
     ].join("\n"),
-    label: "Reviewer (Kimi K3 · high · vision)",
+    label: "Reviewer (Kimi K2.6 · high · vision)",
+    fallback: "hcnsec/auto",
   },
   merger: {
-    model: "orcarouter/deepseek/deepseek-v4-pro-0813",
+    model: "hcnsec/DeepSeek-V4-Pro",
     thinking: "high",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
     systemPrompt: [
-      "You are a merger (DeepSeek V4 Pro). Resolve conflicts and integrate the changes.",
+      "You are a merger. Resolve conflicts and integrate the changes.",
       "Use git status/git diff to understand the state, edit conflicts, and run build/tests at the end.",
       "Final output:",
       "## Merged - what was integrated/resolved",
@@ -89,13 +93,14 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Files Changed - changed files",
     ].join("\n"),
     label: "Merger (DeepSeek V4 Pro · high)",
+    fallback: "hcnsec/auto",
   },
   architect: {
-    model: "orcarouter/grok/grok-4.6",
+    model: "hcnsec/glm-5.2",
     thinking: "high",
     tools: ["read", "grep", "find", "ls"],
     systemPrompt: [
-      "You are a software architect (Grok 4.5). Review the solution architecture without editing anything.",
+      "You are a software architect. Review the solution architecture without editing anything.",
       "Analyze modules, contracts/interfaces, coupling, security, and scalability.",
       "Final output:",
       "## Architecture Assessment",
@@ -103,7 +108,8 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Recommendations",
       "## Verdict - APPROVE or REQUEST CHANGES",
     ].join("\n"),
-    label: "Architect (Grok 4.6 · high)",
+    label: "Architect (GLM 5.2 · high)",
+    fallback: "hcnsec/auto",
   },
 };
 
