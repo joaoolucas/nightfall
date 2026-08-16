@@ -42,12 +42,12 @@ distinct element and silhouette language.
 
 | Biome | Element | Theme | Example creature |
 |---|---|---|---|
-| Ember | Fire | embers, cinders | **Brazalho** — a smoldering lizard |
-| Creek | Water | rain, current | **Gotilho** — a droplet frog |
-| Grove | Nature | leaves, roots | **Folharo** — a leafy fox |
-| Stone | Earth | rock, crystal | **Cristalino** — a geode bear |
-| Mist | Shadow | fog, whisper | **Nebulino** — a wisp moth |
-| Sky | Light | aurora, wind | **Aurino** — a feathered kite |
+| Ember | Fire | embers, cinders | **Cinderling** — a smoldering lizard |
+| Creek | Water | rain, current | **Ripple** — a droplet frog |
+| Grove | Nature | leaves, roots | **Bramble** — a leafy fox |
+| Stone | Earth | rock, crystal | **Shard** — a geode bear |
+| Mist | Shadow | fog, whisper | **Wisp** — a mist moth |
+| Sky | Light | aurora, wind | **Aurora** — a feathered kite |
 
 **Rarities:** Common · Uncommon · Rare · Epic · Legendary · Mythic.
 
