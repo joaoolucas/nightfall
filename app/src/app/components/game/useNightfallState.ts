@@ -6,6 +6,9 @@ import { hasNightfallContract } from "@/utils/nightfall";
 import { getNightfallClient } from "@/utils/nightfall-client";
 import { useFrontendProvider } from "@/app/components/client/provider/providerContext";
 
+/** How often to re-read on-chain state (ms) while a contract is configured. */
+const REFRESH_MS = 10_000;
+
 /** Snapshot of the Nightfall table, either from the chain or the static demo. */
 export interface NightfallState {
   phase: GamePhase;
@@ -60,7 +63,7 @@ export function useNightfallState(): NightfallState {
 
     let cancelled = false;
 
-    (async () => {
+    const load = async () => {
       try {
         const client = getNightfallClient(providerIndex);
 
@@ -87,10 +90,16 @@ export function useNightfallState(): NightfallState {
           error: err instanceof Error ? err.message : String(err),
         }));
       }
-    })();
+    };
+
+    // Initial read, then poll so the phase banner advances as the game
+    // moves Lobby -> Deal -> Night -> ... -> Settle (turn-based).
+    void load();
+    const interval = setInterval(() => void load(), REFRESH_MS);
 
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [onChain, providerIndex]);
 
