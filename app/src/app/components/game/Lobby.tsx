@@ -8,6 +8,12 @@ import {
   SEAT_COUNT,
 } from "@/utils/game";
 import { useNightfallState } from "./useNightfallState";
+import { useStoreWallet } from "@/app/components/Wallet/walletContext";
+import { joinGame, startGame } from "@/utils/nightfall-write";
+
+// The Cairo contract allows up to MAX_PLAYERS (12) joined seats; v0 renders a
+// 6-seat MVP table but the lobby still lets extra seats join on chain.
+const MAX_PLAYERS = 12;
 
 // A lobby seat. Seats are assigned sequentially on chain, so the first
 // `occupiedCount` seats show as joined; demo mode leaves every seat open.
@@ -25,17 +31,69 @@ function Seat({ index, occupied }: { index: number; occupied: boolean }) {
   );
 }
 
-// The lobby: seat list, free vs staked mode toggle, and a (deliberately
-// disabled) Start Game button to be wired to the contract in a later wave.
+// A random felt252 seed for start_game. Roles are dealt deterministically from
+// this seed (trusted-dealer path), so we draw fresh entropy per start.
+function randomFeltSeed(): bigint {
+  const words = new Uint32Array(4);
+  globalThis.crypto.getRandomValues(words);
+  let seed = 0n;
+  for (const word of words) seed = (seed << 32n) | BigInt(word);
+  // Keep within the felt252 field (2^251 - 1).
+  return seed & ((1n << 251n) - 1n);
+}
+
+// The lobby: seat list, free vs staked mode toggle, and the on-chain write
+// actions (join / start) wired to the Fair Game Engine through the wallet.
 export default function Lobby() {
   const [mode, setMode] = useState<GameMode>("free");
   const { seatCount: onChainSeats, onChain, loading, error } = useNightfallState();
+  const account = useStoreWallet((state) => state.account);
+  const isConnected = useStoreWallet((state) => state.isConnected);
+
+  // Which tx is in flight (only one at a time) + inline error/hash for the last attempt.
+  const [pending, setPending] = useState<"join" | "start" | null>(null);
+  const [txError, setTxError] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
+
   // On chain the first `onChainSeats` seats are occupied (join_game assigns
   // seats 0..n-1 sequentially); in demo mode every seat is an open placeholder.
   const occupiedCount = onChain ? onChainSeats : 0;
   // Render at least SEAT_COUNT rows; the contract allows up to MAX_PLAYERS (12),
   // so when more seats are joined on chain, render enough rows for them too.
   const displayedSeats = Math.max(SEAT_COUNT, onChainSeats);
+
+  const canJoin = onChain && isConnected && onChainSeats < MAX_PLAYERS;
+  const canStart = onChain && isConnected && onChainSeats >= 3;
+
+  const handleJoin = async () => {
+    if (!account) return;
+    setPending("join");
+    setTxError(null);
+    setTxHash(null);
+    try {
+      const hash = await joinGame(account);
+      setTxHash(hash);
+    } catch (err) {
+      setTxError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const handleStart = async () => {
+    if (!account) return;
+    setPending("start");
+    setTxError(null);
+    setTxHash(null);
+    try {
+      const hash = await startGame(account, randomFeltSeed());
+      setTxHash(hash);
+    } catch (err) {
+      setTxError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPending(null);
+    }
+  };
 
   return (
     <section className={styles.section} aria-label="Lobby">
@@ -69,13 +127,54 @@ export default function Lobby() {
           ))}
         </div>
 
-        <button type="button" className={styles.startBtn} disabled>
-          Start Game
-        </button>
+        <div className={styles.actionRow}>
+          <button
+            type="button"
+            className={styles.joinBtn}
+            disabled={!canJoin || pending !== null}
+            onClick={handleJoin}
+          >
+            {pending === "join" ? "Joining…" : "Join Game"}
+          </button>
+          <button
+            type="button"
+            className={styles.startBtn}
+            disabled={!canStart || pending !== null}
+            onClick={handleStart}
+          >
+            {pending === "start" ? "Starting…" : "Start Game"}
+          </button>
+        </div>
+
+        {txError && (
+          <p className={styles.txError} role="alert">
+            Transaction failed: {txError}
+          </p>
+        )}
+        {txHash && (
+          <p className={styles.txHash}>
+            Submitted{" "}
+            <a
+              className={styles.txHashLink}
+              href={`https://voyager.online/tx/${txHash}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {txHash.slice(0, 10)}…{txHash.slice(-6)} ↗
+            </a>
+          </p>
+        )}
+
         <p className={styles.startHint}>
-          {onChain
-            ? `Nightfall contract configured · starting in ${GAME_MODE_LABELS[mode]} mode (wired later).`
-            : "Start Game is disabled until players join and the Nightfall contract is deployed."}
+          {!onChain
+            ? "Join / Start are disabled until the Nightfall contract is deployed."
+            : !isConnected
+            ? "Connect a wallet to join the table and start the game."
+            : onChainSeats < 3
+            ? `${onChainSeats}/${MAX_PLAYERS} joined — need at least 3 players to start.`
+            : onChainSeats < MAX_PLAYERS
+            ? `${onChainSeats}/${MAX_PLAYERS} joined — ready to start in ${GAME_MODE_LABELS[mode]} mode.`
+            : `Table full (${MAX_PLAYERS} players) — start the game in ${GAME_MODE_LABELS[mode]} mode.`}
         </p>
         <p className={styles.modeNote}>
           {mode === "free"

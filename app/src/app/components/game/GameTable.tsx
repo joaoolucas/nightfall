@@ -3,6 +3,7 @@
 import { useState } from "react";
 import styles from "./nightfall.module.css";
 import {
+  GamePhase,
   MVP_ROLES,
   PHASES,
   PHASE_LABELS,
@@ -13,6 +14,8 @@ import {
   roleCardImage,
 } from "@/utils/game";
 import { useNightfallState } from "./useNightfallState";
+import { useStoreWallet } from "@/app/components/Wallet/walletContext";
+import { castVote } from "@/utils/nightfall-write";
 
 type RoleCardProps = {
   role: Role;
@@ -58,14 +61,26 @@ function RoleCard({ role, revealed, onToggle }: RoleCardProps) {
 }
 
 // The game table: a phase banner (Lobby→Deal→Night→Day→Vote→Reveal→Settle) and
-// the 6 MVP role cards. All state is local/static for now — it will be driven by
-// the Fair Game Engine once the contract + keeper land.
+// the 6 MVP role cards. Phase/seat state is read from the Fair Game Engine when
+// a contract is configured; a minimal vote row scaffolds the on-chain write path.
 export default function GameTable() {
   // Phase comes from the chain when a contract is configured; otherwise the
   // hook returns the static demo state (Lobby).
   const { phase: currentPhase, onChain, loading, error } = useNightfallState();
+  const account = useStoreWallet((state) => state.account);
+  const isConnected = useStoreWallet((state) => state.isConnected);
   // Which role cards are face-up. Defaults to all hidden (nothing dealt yet).
   const [revealed, setRevealed] = useState<Set<Role>>(new Set());
+
+  // Vote-row scaffold (v0 write path). The voter's seat is a local input for now:
+  // deriving it from the connected address needs a seat_of getter (later wave).
+  const [voterSeat, setVoterSeat] = useState<string>("");
+  const [targetSeat, setTargetSeat] = useState<string>("");
+  const [pendingVote, setPendingVote] = useState<boolean>(false);
+  const [voteError, setVoteError] = useState<string | null>(null);
+  const [voteTxHash, setVoteTxHash] = useState<string | null>(null);
+
+  const canVote = onChain && isConnected && currentPhase === GamePhase.Vote;
 
   const toggleRole = (role: Role) => {
     setRevealed((prev) => {
@@ -74,6 +89,31 @@ export default function GameTable() {
       else next.add(role);
       return next;
     });
+  };
+
+  const handleCastVote = async () => {
+    if (!account) return;
+    const seat = Number(voterSeat);
+    const target = Number(targetSeat);
+    if (!Number.isInteger(seat) || seat < 0) {
+      setVoteError("Your seat must be a non-negative integer (0..11).");
+      return;
+    }
+    if (!Number.isInteger(target) || target < 0) {
+      setVoteError("Target seat must be a non-negative integer (0..11).");
+      return;
+    }
+    setPendingVote(true);
+    setVoteError(null);
+    setVoteTxHash(null);
+    try {
+      const hash = await castVote(account, seat, target);
+      setVoteTxHash(hash);
+    } catch (err) {
+      setVoteError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPendingVote(false);
+    }
   };
 
   return (
@@ -122,6 +162,76 @@ export default function GameTable() {
       <p className={styles.roleHint}>
         Tap a card to peek — roles are dealt as encrypted notes once the game starts.
       </p>
+
+      {/* Vote row — minimal on-chain write scaffold for the Vote phase. */}
+      <div className={styles.votePanel}>
+        <div className={styles.voteHead}>
+          <span className={styles.voteTitle}>Cast vote</span>
+          <span className={styles.voteBadge}>
+            {currentPhase === GamePhase.Vote ? "Voting open" : "Voting closed"}
+          </span>
+        </div>
+        <div className={styles.voteFields}>
+          <label className={styles.voteField}>
+            <span className={styles.voteLabel}>Your seat #</span>
+            <input
+              className={styles.voteInput}
+              type="number"
+              min={0}
+              max={11}
+              inputMode="numeric"
+              placeholder="0"
+              value={voterSeat}
+              onChange={(e) => setVoterSeat(e.target.value)}
+              aria-label="Your seat number"
+            />
+          </label>
+          <label className={styles.voteField}>
+            <span className={styles.voteLabel}>Target seat #</span>
+            <input
+              className={styles.voteInput}
+              type="number"
+              min={0}
+              max={11}
+              inputMode="numeric"
+              placeholder="0"
+              value={targetSeat}
+              onChange={(e) => setTargetSeat(e.target.value)}
+              aria-label="Target seat number"
+            />
+          </label>
+          <button
+            type="button"
+            className={styles.voteBtn}
+            disabled={!canVote || pendingVote}
+            onClick={handleCastVote}
+          >
+            {pendingVote ? "Voting…" : "Cast Vote"}
+          </button>
+        </div>
+        <p className={styles.voteHint}>
+          Your seat is a manual input for now — a seat_of getter will derive it from
+          your connected address in a later wave.
+        </p>
+        {voteError && (
+          <p className={styles.txError} role="alert">
+            Vote failed: {voteError}
+          </p>
+        )}
+        {voteTxHash && (
+          <p className={styles.txHash}>
+            Submitted{" "}
+            <a
+              className={styles.txHashLink}
+              href={`https://voyager.online/tx/${voteTxHash}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {voteTxHash.slice(0, 10)}…{voteTxHash.slice(-6)} ↗
+            </a>
+          </p>
+        )}
+      </div>
 
       <div className={styles.chainStatus}>
         {loading ? (
