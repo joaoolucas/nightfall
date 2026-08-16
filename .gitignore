@@ -6,3 +6,9 @@ _reference/
 app/node_modules/
 keeper/node_modules/
 contracts/target/
+
+# Local agent integrations and fetched reference context
+.agents/
+.claude/
+.pi/skills/
+.pi/strk20-llms-full.txt

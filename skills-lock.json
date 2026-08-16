@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "strk20-privacy-integration": {
+      "source": "starkience/strk20-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/strk20-privacy-integration/SKILL.md",
+      "computedHash": "a1dc4868312946480954506fde8023f8105974233ccba70df92baf37f73c00b8"
+    }
+  }
+}

@@ -87,16 +87,19 @@ monster model (`health`, `attack`, `defense`, `speed`, `exp`) and its exp curve.
 
 ## 6. Provably-fair RNG (the on-chain core)
 
-- A **hatch** commits a seed, then reveals a creature deterministically
-  (Fisher–Yates over the species pool, Poseidon-hashed from the seed + hatch count).
-- The roll, rarity table, and result are all on-chain — a player (or anyone) can
-  recompute and verify the hatch was fair.
-- **Privacy (STRK20):** ownership and trades move through shielded transfers;
-  *what* you hatch can stay private until you choose to reveal it.
+- Target design: a **hatch** commits before entropy is known, then reveals a creature
+  deterministically with replay/front-running protection and timeout/refund behavior.
+- The roll, fixed rarity table and revealed result remain on-chain so anyone can recompute them.
+- **Current security gate:** the prototype accepts a caller-provided seed and is grindable;
+  it must not be called manipulation-resistant or deployed to Mainnet before commit/reveal or VRF.
+- **Privacy (STRK20):** shielded STRK can make the payment leg private. Revealed creature
+  metadata and NFT `owner_of` remain public; STRK20 does not hide NFT ownership.
 
 ## 7. Marketplace + economy
 
-- Creatures are NFTs; trades settle on-chain with a small **rake** to the protocol.
+- Creatures are NFTs; the target settlement transfers STRK on-chain with a small **rake**.
+  The current prototype records marketplace accounting without moving STRK, so buying stays
+  disabled until real settlement and the reviewed Portage anonymizer are deployed.
 - **Portal energy** and **evolution mats** are earned idle, bought, or won in raids.
 - Rare creatures are genuinely scarce: the rarity table is fixed on-chain, so
   neither the team nor anyone else can print legendaries.

@@ -2,6 +2,10 @@
 
 North star: `docs/SPEC.md` §9–10. Non-stop loop plan.
 
+Sprint-specific privacy, submission, Mainnet evidence, security and demo tasks:
+**[`docs/SPRINT_TASKS.md`](SPRINT_TASKS.md)**. Approved integration work must
+follow **[`STRK20_INTEGRATION_PLAN.md`](../STRK20_INTEGRATION_PLAN.md)**.
+
 ## Locked decisions
 
 - All content in **English**.
@@ -50,10 +54,17 @@ North star: `docs/SPEC.md` §9–10. Non-stop loop plan.
 ## Wave 3 — STRK20 + demo
 
 - [x] Registry updated to Portage.fun (hub PR #70, applied).
-- [x] Deploy script points at Portage (scripts/deploy.mjs).
-- [ ] Deploy to Sepolia/Mainnet (`DEPLOYER_ADDRESS=… DEPLOYER_PRIVATE_KEY=… node --env-file=.env scripts/deploy.mjs`).
-- [ ] 3+ mainnet txs in `strk20.json`.
-- [ ] Demo URL + 3-min video.
+- [x] Game-native STRK20 Phase 1 implemented headlessly (Ready manual verification pending).
+- [x] Guarded Sepolia/Mainnet deploy script + chain checks + deployment evidence output.
+- [x] Strict `strk20.json` readiness/final/online validator.
+- [x] Honest privacy/fairness/settlement copy + deploy runbook + <=3-min demo script.
+- [ ] Verify shield/private-send/unshield manually with Ready on testnet.
+- [ ] Replace caller-seeded hatch with manipulation-resistant commit/reveal or VRF.
+- [ ] Implement/review real STRK marketplace settlement and Portage anonymizer.
+- [ ] Deploy to Sepolia with a funded deployer and run smoke tests.
+- [ ] Deploy reviewed contracts to Mainnet after explicit execution-time approval.
+- [ ] Add 3+ verified Mainnet pool transactions to `strk20.json`.
+- [ ] Publish demo URL + <=3-min video and pass final online validation.
 
 ## Definition of Done (v0)
 
