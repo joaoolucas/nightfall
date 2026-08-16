@@ -9,6 +9,16 @@
 export const NIGHTFALL_ADDRESS: string =
   process.env.NEXT_PUBLIC_NIGHTFALL_ADDRESS ?? "0x0";
 
+/**
+ * Declared class hash of the Nightfall Fair Game Engine (no constructor args).
+ * Compute/refresh with: `node scripts/export-abi.mjs` + `hash.computeContractClassHash`,
+ * or read `contracts/deployed.json` after a deploy. Used to deploy a fresh
+ * instance from the UI (UDC deploy) once the class is declared.
+ */
+export const NIGHTFALL_CLASS_HASH =
+  process.env.NEXT_PUBLIC_NIGHTFALL_CLASS_HASH ??
+  "0x3d4bb5af694af26f3a17040e14042a2b2956416ebdfd16743b6a1be3e2643bd";
+
 /** True once a real Nightfall contract address is configured. */
 export function hasNightfallContract(): boolean {
   try {

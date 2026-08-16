@@ -22,8 +22,24 @@ cd contracts && scarb build
 ## 2. Deploy the Nightfall contract (Sepolia first)
 
 The `Nightfall` contract has **no constructor args** — storage starts default.
-Deploy via a standard UDC declare+deploy. A script will do this; until it's
-committed, the steps are:
+Deploy via a standard UDC declare+deploy. `scripts/deploy.mjs` does this for you:
+
+```bash
+# mainnet (Alchemy) — put the RPC URL in .env first (see below)
+node --env-file=.env scripts/deploy.mjs
+```
+
+`DEPLOYER_ADDRESS` / `DEPLOYER_PRIVATE_KEY` must be set in the environment
+(never committed). The script reads `NIGHTFALL_RPC_URL` (Alchemy mainnet by
+default) and writes `contracts/deployed.json`.
+
+Declared class hash (computed from the built sierra):
+
+```
+0x3d4bb5af694af26f3a17040e14042a2b2956416ebdfd16743b6a1be3e2643bd
+```
+
+Manual steps (if not using the script):
 
 1. Declare the sierra class → get the class hash.
 2. Deploy an instance via the universal deployer (UDC) with calldata
