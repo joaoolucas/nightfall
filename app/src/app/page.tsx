@@ -4,6 +4,10 @@ import type { CSSProperties } from 'react';
 import styles from './uni.module.css';
 import SelectWallet from './components/client/WalletHandle/SelectWallet';
 import WalletAccountV6Tag from './components/client/WalletHandle/WalletAccountV6Tag';
+import Caravan from './components/portage/Caravan';
+import Portal from './components/portage/Portal';
+import Marketplace from './components/portage/Marketplace';
+import portage from './components/portage/portage.module.css';
 import { StrkCoin, BtcCoin, EthCoin, UsdcCoin, ZecCoin } from './components/TokenIcons';
 
 // Scattered, blurred token coins on the sides of the page (background ambience).
@@ -65,6 +69,11 @@ export default function Page() {
 
       <main>
         <WalletAccountV6Tag />
+        <div className={portage.shell}>
+          <Caravan />
+          <Portal />
+          <Marketplace />
+        </div>
       </main>
 
       <footer className={styles.footer}>
