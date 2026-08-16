@@ -33,6 +33,9 @@ export default function Lobby() {
   // On chain the first `onChainSeats` seats are occupied (join_game assigns
   // seats 0..n-1 sequentially); in demo mode every seat is an open placeholder.
   const occupiedCount = onChain ? onChainSeats : 0;
+  // Render at least SEAT_COUNT rows; the contract allows up to MAX_PLAYERS (12),
+  // so when more seats are joined on chain, render enough rows for them too.
+  const displayedSeats = Math.max(SEAT_COUNT, onChainSeats);
 
   return (
     <section className={styles.section} aria-label="Lobby">
@@ -41,7 +44,7 @@ export default function Lobby() {
       <div className={styles.lobby}>
         <div className={styles.lobbyHead}>
           <span className={styles.lobbyTitle}>
-            One Night · {onChain ? `${onChainSeats}/${SEAT_COUNT}` : `${SEAT_COUNT}`} players
+            One Night · {onChain ? `${onChainSeats}/${displayedSeats}` : `${displayedSeats}`} players
           </span>
           <div className={styles.modeToggle} role="group" aria-label="Game mode">
             {(Object.keys(GAME_MODE_LABELS) as GameMode[]).map((m) => (
@@ -61,7 +64,7 @@ export default function Lobby() {
         </div>
 
         <div className={styles.seatList}>
-          {Array.from({ length: SEAT_COUNT }, (_, i) => (
+          {Array.from({ length: displayedSeats }, (_, i) => (
             <Seat key={i} index={i} occupied={i < occupiedCount} />
           ))}
         </div>

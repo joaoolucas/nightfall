@@ -92,6 +92,10 @@ export async function driveSeat(
     const receipt = await mock.submitDecision(seat, decision, state.gameId);
     console.log('\nMock chain receipt:');
     console.log(JSON.stringify(receipt, null, 2));
+  } else {
+    console.log(
+      '\n[keeper] submission skipped: privacy_invoke path not wired yet (needs signer + per-seat viewing key).',
+    );
   }
 }
 
@@ -99,6 +103,8 @@ function toNonNegativeInt(
   value: string | undefined,
   fallback: number,
 ): number {
+  // Empty/whitespace env (e.g. `KEEPER_SEAT=`) falls back; `Number('')` would be 0.
+  if (value == null || value.trim() === '') return fallback;
   const n = Number(value);
   return Number.isInteger(n) && n >= 0 ? n : fallback;
 }

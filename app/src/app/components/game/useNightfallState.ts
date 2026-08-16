@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GamePhase, Role } from "@/utils/game";
+import { GamePhase } from "@/utils/game";
 import { hasNightfallContract } from "@/utils/nightfall";
 import { getNightfallClient } from "@/utils/nightfall-client";
 import { useFrontendProvider } from "@/app/components/client/provider/providerContext";
@@ -10,7 +10,6 @@ import { useFrontendProvider } from "@/app/components/client/provider/providerCo
 export interface NightfallState {
   phase: GamePhase;
   seatCount: number;
-  roles: (Role | null)[];
   winner: number | null;
   loading: boolean;
   error: string | null;
@@ -22,7 +21,6 @@ function demoState(): NightfallState {
   return {
     phase: GamePhase.Lobby,
     seatCount: 0,
-    roles: [],
     winner: null,
     loading: false,
     error: null,
@@ -35,8 +33,12 @@ function demoState(): NightfallState {
  *
  * - No contract configured (`hasNightfallContract()` === false) → returns the
  *   static demo state immediately (`onChain: false`, never touches the RPC).
- * - Contract configured → reads phase / seat count / roles / winner from chain,
- *   sets `onChain: true`, and surfaces any RPC error in `error` without crashing.
+ * - Contract configured → reads phase / seat count / winner from chain, sets
+ *   `onChain: true`, and surfaces any RPC error in `error` without crashing.
+ *
+ * Deliberately does NOT read per-seat roles: that would be an omniscient view
+ * (no-peek invariant, SPEC §6). Roles are revealed per seat via viewing keys
+ * in a later wave.
  */
 export function useNightfallState(): NightfallState {
   const providerIndex = useFrontendProvider(
@@ -68,16 +70,10 @@ export function useNightfallState(): NightfallState {
           client.getWinner(),
         ]);
 
-        const roles: (Role | null)[] = [];
-        for (let seat = 0; seat < seatCount; seat++) {
-          roles.push(await client.getRole(seat));
-        }
-
         if (cancelled) return;
         setState({
           phase,
           seatCount,
-          roles,
           winner,
           loading: false,
           error: null,
