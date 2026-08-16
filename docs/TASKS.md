@@ -52,16 +52,19 @@ for one overnight loop. Checkboxes are updated as work lands.
 ## Wave 2 — Core loop (after Wave 1 builds)
 
 - [x] Export Nightfall ABI for app/keeper (`app/src/abis/nightfall.abi.json`).
-- [ ] App talks to deployed/local contract (read game state).
-- [ ] Night action + vote submission path (even if mocked STRK20 calldata).
-- [ ] Keeper joins a lobby seat and emits a decision.
-- [ ] Unit tests for settle / winner determination.
+- [x] App talks to deployed/local contract (read game state).
+- [x] Night action + vote submission path (write client join/start/vote).
+- [x] Keeper joins a lobby seat and emits a decision (drive-seat + Starknet adapter).
+- [x] Unit tests for settle / winner determination (9 Cairo tests).
 
 ## Wave 3 — STRK20 + demo readiness
 
-- [ ] Day 0: at least document how to shield + first mainnet tx.
+- [ ] Day 0: at least document how to shield + first mainnet tx (docs/DEPLOY.md done).
+- [ ] Deploy Nightfall to Sepolia (scripts/deploy.mjs done — needs DEPLOYER_* env).
 - [ ] Fill `strk20.json` as txs land (do not invent hashes).
 - [ ] Session-key / paymaster notes (implement if time).
+- [ ] Poll interval in useNightfallState (refresh phase as it advances).
+- [ ] GameEngine trait extraction (architect rec #3 — reusable engine).
 
 ## Review / architecture (done)
 
