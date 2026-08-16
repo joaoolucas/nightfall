@@ -22,8 +22,8 @@ not begin until that plan is approved.
 - [ ] Validate every submitted hash on Voyager and confirm `SN_MAIN`.
 - [ ] Add all deployed Portage/helper/anonymizer contract addresses.
 - [ ] Add a public 3-minute demo video URL.
-- [ ] Set the GitHub repository Website to the production demo URL so the hub
-  discovers it automatically; use `demo_url` only if discovery fails.
+- [ ] Set the GitHub repository Website to the production demo URL (GitHub CLI unavailable);
+  verified fallback `demo_url` is present in `strk20.json`.
 - [x] Validate `strk20.json` as strict JSON after every update (`npm run validate:submission`).
 
 ## P0 — Skill and official context
@@ -114,8 +114,8 @@ not begin until that plan is approved.
 - [ ] Deploy reviewed Portage + anonymizer contracts to Mainnet.
 - [ ] Run three low-value pool actions with a funded account after explicit approval.
 - [ ] Immediately write hashes/addresses to `strk20.json` and push.
-- [ ] Deploy app to Vercel and verify GitHub deployment status is successful.
-- [ ] Verify the sprint hub refresh sees transactions/contracts/demo.
+- [x] Deploy app to Vercel and verify the public production URL returns the Wave 3 UI.
+- [ ] Verify the GitHub Website/deployment status and sprint hub refresh see all evidence.
 
 ## P1 — Three-minute demo script
 

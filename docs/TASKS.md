@@ -58,13 +58,15 @@ follow **[`STRK20_INTEGRATION_PLAN.md`](../STRK20_INTEGRATION_PLAN.md)**.
 - [x] Guarded Sepolia/Mainnet deploy script + chain checks + deployment evidence output.
 - [x] Strict `strk20.json` readiness/final/online validator.
 - [x] Honest privacy/fairness/settlement copy + deploy runbook + <=3-min demo script.
+- [x] Production app deployed and verified at `https://portage-topaz.vercel.app`.
 - [ ] Verify shield/private-send/unshield manually with Ready on testnet.
 - [ ] Replace caller-seeded hatch with manipulation-resistant commit/reveal or VRF.
 - [ ] Implement/review real STRK marketplace settlement and Portage anonymizer.
 - [ ] Deploy to Sepolia with a funded deployer and run smoke tests.
 - [ ] Deploy reviewed contracts to Mainnet after explicit execution-time approval.
 - [ ] Add 3+ verified Mainnet pool transactions to `strk20.json`.
-- [ ] Publish demo URL + <=3-min video and pass final online validation.
+- [x] Add the verified production demo URL to `strk20.json`.
+- [ ] Record/publish the <=3-min video and pass final online validation.
 
 ## Definition of Done (v0)
 

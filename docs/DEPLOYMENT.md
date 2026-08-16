@@ -54,6 +54,10 @@ vercel                         # preview
 vercel --prod                  # only after preview smoke test
 ```
 
+Verified public production app: `https://portage-topaz.vercel.app` (HTTP 200, Wave 3 UI).
+`portage.fun` and `www.portage.fun` point at the deployment but currently redirect anonymous
+visitors to Vercel login; remove custom-domain deployment protection before using them as the demo URL.
+
 ## 4. Mainnet gate
 
 Required before deployment:
