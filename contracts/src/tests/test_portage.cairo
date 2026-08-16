@@ -6,10 +6,11 @@
 //! `starknet::testing::set_caller_address`.
 
 use crate::portage::Portage::PortageImpl;
-use crate::portage::Portage::{roll_rarity, roll_species};
+use crate::portage::Portage::{roll_rarity, roll_species, base_stats, creature_stats};
 use crate::portage::{
-    Portage, Rarity, Species, Stage, WEIGHT_COMMON, WEIGHT_UNCOMMON, WEIGHT_RARE, WEIGHT_EPIC,
-    WEIGHT_LEGENDARY, WEIGHT_MYTHIC, TOTAL_WEIGHT, RAKE_BPS, BPS_DENOMINATOR, SPECIES_COUNT,
+    Portage, Rarity, Species, Stage, WEIGHT_COMMON, WEIGHT_UNCOMMON, WEIGHT_RARE,
+    WEIGHT_EPIC, WEIGHT_LEGENDARY, WEIGHT_MYTHIC, TOTAL_WEIGHT, RAKE_BPS, BPS_DENOMINATOR,
+    SPECIES_COUNT, EXP_TO_ADULT, EXP_TO_LEGEND,
 };
 use starknet::ContractAddress;
 use starknet::testing::{set_caller_address, set_contract_address};
@@ -145,11 +146,12 @@ fn test_hatch_mints_to_caller_and_increments() {
     assert_eq!(PortageImpl::get_total_supply(@state), 1);
     assert_eq!(PortageImpl::owner_of(@state, token_id), alice);
 
-    let (owner, species, rarity, stage) = PortageImpl::get_creature(@state, token_id);
+    let (owner, species, rarity, stage, exp) = PortageImpl::get_creature(@state, token_id);
     assert_eq!(owner, alice);
     assert_eq!(species, roll_species(seed, 0));
     assert_eq!(rarity, roll_rarity(seed, 0));
     assert_eq!(stage, Stage::Hatchling);
+    assert_eq!(exp, 0);
 }
 
 #[test]
@@ -167,8 +169,8 @@ fn test_hatch_uses_hatch_count_in_rng() {
     assert_eq!(PortageImpl::get_hatch_count(@state), 2);
     assert_eq!(PortageImpl::get_total_supply(@state), 2);
 
-    let (_, s0, r0, _) = PortageImpl::get_creature(@state, 0);
-    let (_, s1, r1, _) = PortageImpl::get_creature(@state, 1);
+    let (_, s0, r0, _, _) = PortageImpl::get_creature(@state, 0);
+    let (_, s1, r1, _, _) = PortageImpl::get_creature(@state, 1);
     assert_eq!(r0, roll_rarity(seed, 0));
     assert_eq!(s0, roll_species(seed, 0));
     assert_eq!(r1, roll_rarity(seed, 1));
@@ -221,7 +223,7 @@ fn test_transfer_to_new_owner() {
     PortageImpl::transfer_from(ref state, bob, token_id);
     assert_eq!(PortageImpl::owner_of(@state, token_id), bob);
 
-    let (owner, _, _, _) = PortageImpl::get_creature(@state, token_id);
+    let (owner, _, _, _, _) = PortageImpl::get_creature(@state, token_id);
     assert_eq!(owner, bob);
 }
 
@@ -343,4 +345,235 @@ fn test_buy_non_listed_reverts() {
     // Never listed -> buy must revert.
     set_caller_address(bob);
     PortageImpl::buy(ref state, token_id);
+}
+
+// ---------------------------------------------------------------------------
+// Stats & evolution
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_base_stats_table() {
+    let ember = base_stats(Species::Ember);
+    assert_eq!(ember.health, 60);
+    assert_eq!(ember.attack, 90);
+    assert_eq!(ember.defense, 50);
+    assert_eq!(ember.speed, 70);
+
+    let creek = base_stats(Species::Creek);
+    assert_eq!(creek.health, 90);
+    assert_eq!(creek.attack, 60);
+    assert_eq!(creek.defense, 60);
+    assert_eq!(creek.speed, 60);
+
+    let grove = base_stats(Species::Grove);
+    assert_eq!(grove.health, 100);
+    assert_eq!(grove.attack, 50);
+    assert_eq!(grove.defense, 80);
+    assert_eq!(grove.speed, 50);
+
+    let stone = base_stats(Species::Stone);
+    assert_eq!(stone.health, 80);
+    assert_eq!(stone.attack, 60);
+    assert_eq!(stone.defense, 100);
+    assert_eq!(stone.speed, 40);
+
+    let mist = base_stats(Species::Mist);
+    assert_eq!(mist.health, 50);
+    assert_eq!(mist.attack, 80);
+    assert_eq!(mist.defense, 40);
+    assert_eq!(mist.speed, 100);
+
+    let sky = base_stats(Species::Sky);
+    assert_eq!(sky.health, 60);
+    assert_eq!(sky.attack, 70);
+    assert_eq!(sky.defense, 50);
+    assert_eq!(sky.speed, 90);
+}
+
+#[test]
+fn test_creature_stats_multipliers() {
+    // Ember (90 attack) Epic (x2.0) Adult (x1.0) -> attack = 90 * 200 / 100 = 180.
+    let ember_epic = creature_stats(Species::Ember, Rarity::Epic, Stage::Adult);
+    assert_eq!(ember_epic.health, 60 * 200 / 100 * 100 / 100);
+    assert_eq!(ember_epic.attack, 180);
+    assert_eq!(ember_epic.defense, 50 * 200 / 100 * 100 / 100);
+    assert_eq!(ember_epic.speed, 70 * 200 / 100 * 100 / 100);
+
+    // Stone (100 defense) Mythic (x3.5) Legend (x2.0) -> defense = 700.
+    let stone_mythic = creature_stats(Species::Stone, Rarity::Mythic, Stage::Legend);
+    assert_eq!(stone_mythic.health, 80 * 350 / 100 * 200 / 100);
+    assert_eq!(stone_mythic.attack, 60 * 350 / 100 * 200 / 100);
+    assert_eq!(stone_mythic.defense, 700);
+    assert_eq!(stone_mythic.speed, 40 * 350 / 100 * 200 / 100);
+
+    // Creek (60 attack) Common (x1.0) Hatchling (x0.5) -> attack = 30.
+    let creek_hatchling = creature_stats(Species::Creek, Rarity::Common, Stage::Hatchling);
+    assert_eq!(creek_hatchling.health, 90 * 100 / 100 * 50 / 100);
+    assert_eq!(creek_hatchling.attack, 30);
+    assert_eq!(creek_hatchling.defense, 60 * 100 / 100 * 50 / 100);
+    assert_eq!(creek_hatchling.speed, 60 * 100 / 100 * 50 / 100);
+
+    // Mist (100 speed) Legendary (x2.5) Adult (x1.0) -> speed = 250.
+    let mist_legendary = creature_stats(Species::Mist, Rarity::Legendary, Stage::Adult);
+    assert_eq!(mist_legendary.speed, 250);
+}
+
+#[test]
+fn test_get_creature_stats_view() {
+    let alice = addr('ALICE');
+    let mut state = Portage::contract_state_for_testing();
+    set_caller_address(alice);
+
+    let seed: felt252 = 0x123;
+    let token_id = PortageImpl::hatch(ref state, seed);
+
+    let species = roll_species(seed, 0);
+    let rarity = roll_rarity(seed, 0);
+    let stats = PortageImpl::get_creature_stats(@state, token_id);
+    assert_eq!(stats, creature_stats(species, rarity, Stage::Hatchling));
+}
+
+#[test]
+fn test_gain_exp_accumulates_and_emits_event() {
+    let alice = addr('ALICE');
+    let portage = addr('PORTAGE');
+    let mut state = Portage::contract_state_for_testing();
+    set_contract_address(portage);
+    set_caller_address(alice);
+
+    let token_id = PortageImpl::hatch(ref state, 0x1);
+
+    // Drain the Hatched event.
+    let _: Option<Portage::Event> = starknet::testing::pop_log(portage);
+
+    PortageImpl::gain_exp(ref state, token_id, 40);
+    PortageImpl::gain_exp(ref state, token_id, 60);
+
+    let (_, _, _, _, exp) = PortageImpl::get_creature(@state, token_id);
+    assert_eq!(exp, 100);
+
+    let first: Option<Portage::Event> = starknet::testing::pop_log(portage);
+    assert_eq!(
+        first,
+        Option::Some(
+            Portage::Event::ExpGained(Portage::ExpGained { token_id, amount: 40, new_total: 40 }),
+        ),
+    );
+    let second: Option<Portage::Event> = starknet::testing::pop_log(portage);
+    assert_eq!(
+        second,
+        Option::Some(
+            Portage::Event::ExpGained(Portage::ExpGained { token_id, amount: 60, new_total: 100 }),
+        ),
+    );
+}
+
+#[test]
+#[should_panic]
+fn test_gain_exp_reverts_for_non_owner() {
+    let alice = addr('ALICE');
+    let bob = addr('BOB');
+    let mut state = Portage::contract_state_for_testing();
+
+    set_caller_address(alice);
+    let token_id = PortageImpl::hatch(ref state, 0x1);
+
+    // Bob is not the owner -> must revert.
+    set_caller_address(bob);
+    PortageImpl::gain_exp(ref state, token_id, 10);
+}
+
+#[test]
+fn test_evolve_hatchling_to_adult_at_100() {
+    let alice = addr('ALICE');
+    let portage = addr('PORTAGE');
+    let mut state = Portage::contract_state_for_testing();
+    set_contract_address(portage);
+    set_caller_address(alice);
+
+    let token_id = PortageImpl::hatch(ref state, 0x1);
+    PortageImpl::gain_exp(ref state, token_id, EXP_TO_ADULT);
+    PortageImpl::evolve(ref state, token_id);
+
+    let (_, _, _, stage, exp) = PortageImpl::get_creature(@state, token_id);
+    assert_eq!(stage, Stage::Adult);
+    assert_eq!(exp, EXP_TO_ADULT);
+
+    // Events, in emission order: Hatched, ExpGained, Evolved.
+    let _: Option<Portage::Event> = starknet::testing::pop_log(portage);
+    let _: Option<Portage::Event> = starknet::testing::pop_log(portage);
+    let evolved: Option<Portage::Event> = starknet::testing::pop_log(portage);
+    assert_eq!(
+        evolved,
+        Option::Some(
+            Portage::Event::Evolved(
+                Portage::Evolved {
+                    token_id,
+                    from_stage: Stage::Hatchling,
+                    to_stage: Stage::Adult,
+                },
+            ),
+        ),
+    );
+}
+
+#[test]
+#[should_panic]
+fn test_evolve_reverts_below_threshold() {
+    let alice = addr('ALICE');
+    let mut state = Portage::contract_state_for_testing();
+
+    set_caller_address(alice);
+    let token_id = PortageImpl::hatch(ref state, 0x1);
+
+    PortageImpl::gain_exp(ref state, token_id, EXP_TO_ADULT - 1);
+    PortageImpl::evolve(ref state, token_id);
+}
+
+#[test]
+fn test_evolve_adult_to_legend_at_500() {
+    let alice = addr('ALICE');
+    let mut state = Portage::contract_state_for_testing();
+
+    set_caller_address(alice);
+    let token_id = PortageImpl::hatch(ref state, 0x1);
+
+    PortageImpl::gain_exp(ref state, token_id, EXP_TO_LEGEND);
+    PortageImpl::evolve(ref state, token_id); // Hatchling -> Adult
+    PortageImpl::evolve(ref state, token_id); // Adult -> Legend
+
+    let (_, _, _, stage, exp) = PortageImpl::get_creature(@state, token_id);
+    assert_eq!(stage, Stage::Legend);
+    assert_eq!(exp, EXP_TO_LEGEND);
+}
+
+#[test]
+#[should_panic]
+fn test_evolve_reverts_at_legend() {
+    let alice = addr('ALICE');
+    let mut state = Portage::contract_state_for_testing();
+
+    set_caller_address(alice);
+    let token_id = PortageImpl::hatch(ref state, 0x1);
+
+    PortageImpl::gain_exp(ref state, token_id, EXP_TO_LEGEND);
+    PortageImpl::evolve(ref state, token_id); // Hatchling -> Adult
+    PortageImpl::evolve(ref state, token_id); // Adult -> Legend
+    PortageImpl::evolve(ref state, token_id); // Legend -> revert
+}
+
+#[test]
+#[should_panic]
+fn test_evolve_reverts_for_non_owner() {
+    let alice = addr('ALICE');
+    let bob = addr('BOB');
+    let mut state = Portage::contract_state_for_testing();
+
+    set_caller_address(alice);
+    let token_id = PortageImpl::hatch(ref state, 0x1);
+    PortageImpl::gain_exp(ref state, token_id, EXP_TO_ADULT);
+
+    // Bob is not the owner -> must revert.
+    set_caller_address(bob);
+    PortageImpl::evolve(ref state, token_id);
 }

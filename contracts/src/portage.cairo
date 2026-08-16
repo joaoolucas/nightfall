@@ -74,6 +74,10 @@ pub const TOTAL_WEIGHT: u16 = 100;
 pub const RAKE_BPS: u128 = 250;
 pub const BPS_DENOMINATOR: u128 = 10000;
 
+/// Exp thresholds driving evolution (Hatchling -> Adult -> Legend).
+pub const EXP_TO_ADULT: u128 = 100;
+pub const EXP_TO_LEGEND: u128 = 500;
+
 // ---------------------------------------------------------------------------
 // Hatch RNG
 // ---------------------------------------------------------------------------
@@ -92,6 +96,16 @@ pub struct Creature {
     pub species: Species,
     pub rarity: Rarity,
     pub stage: Stage,
+    pub exp: u128,
+}
+
+/// Derived stats for a creature: base species stats scaled by rarity and stage.
+#[derive(Copy, Drop, Serde, PartialEq, Debug)]
+pub struct Stats {
+    pub health: u128,
+    pub attack: u128,
+    pub defense: u128,
+    pub speed: u128,
 }
 
 /// A marketplace listing. `price == 0` means "not listed" (sentinel).
@@ -110,7 +124,12 @@ pub trait IPortage<TState> {
     fn hatch(ref self: TState, seed: felt252) -> u256;
     fn owner_of(self: @TState, token_id: u256) -> ContractAddress;
     fn transfer_from(ref self: TState, to: ContractAddress, token_id: u256);
-    fn get_creature(self: @TState, token_id: u256) -> (ContractAddress, Species, Rarity, Stage);
+    fn get_creature(
+        self: @TState, token_id: u256,
+    ) -> (ContractAddress, Species, Rarity, Stage, u128);
+    fn get_creature_stats(self: @TState, token_id: u256) -> Stats;
+    fn gain_exp(ref self: TState, token_id: u256, amount: u128);
+    fn evolve(ref self: TState, token_id: u256);
     fn list(ref self: TState, token_id: u256, price: u128);
     fn buy(ref self: TState, token_id: u256);
     fn cancel(ref self: TState, token_id: u256);
@@ -133,9 +152,9 @@ pub mod Portage {
     use starknet::{ContractAddress, get_caller_address};
     use core::poseidon::poseidon_hash_span;
     use super::{
-        Creature, Listing, Rarity, Species, Stage, IPortage, WEIGHT_COMMON, WEIGHT_UNCOMMON,
-        WEIGHT_RARE, WEIGHT_EPIC, WEIGHT_LEGENDARY, WEIGHT_MYTHIC, TOTAL_WEIGHT, RAKE_BPS,
-        BPS_DENOMINATOR, SPECIES_COUNT,
+        Creature, Listing, Rarity, Species, Stage, Stats, IPortage, WEIGHT_COMMON,
+        WEIGHT_UNCOMMON, WEIGHT_RARE, WEIGHT_EPIC, WEIGHT_LEGENDARY, WEIGHT_MYTHIC, TOTAL_WEIGHT,
+        RAKE_BPS, BPS_DENOMINATOR, SPECIES_COUNT, EXP_TO_ADULT, EXP_TO_LEGEND,
     };
 
     mod errors {
@@ -144,6 +163,7 @@ pub mod Portage {
         pub const ALREADY_LISTED: felt252 = 'ALREADY_LISTED';
         pub const INVALID_PRICE: felt252 = 'INVALID_PRICE';
         pub const NOT_FOUND: felt252 = 'NOT_FOUND';
+        pub const NOT_READY: felt252 = 'NOT_READY';
     }
 
     #[storage]
@@ -161,6 +181,8 @@ pub mod Portage {
         Listed: Listed,
         Sold: Sold,
         Cancelled: Cancelled,
+        ExpGained: ExpGained,
+        Evolved: Evolved,
     }
 
     #[derive(Copy, Drop, PartialEq, Debug, starknet::Event)]
@@ -197,6 +219,22 @@ pub mod Portage {
         #[key]
         pub token_id: u256,
         pub seller: ContractAddress,
+    }
+
+    #[derive(Copy, Drop, PartialEq, Debug, starknet::Event)]
+    pub struct ExpGained {
+        #[key]
+        pub token_id: u256,
+        pub amount: u128,
+        pub new_total: u128,
+    }
+
+    #[derive(Copy, Drop, PartialEq, Debug, starknet::Event)]
+    pub struct Evolved {
+        #[key]
+        pub token_id: u256,
+        pub from_stage: Stage,
+        pub to_stage: Stage,
     }
 
     // -----------------------------------------------------------------------
@@ -250,6 +288,56 @@ pub mod Portage {
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Stats & evolution helpers (pure, public for tests & off-chain clients).
+    // -----------------------------------------------------------------------
+
+    /// Base (unscaled) stats for each species.
+    pub fn base_stats(species: Species) -> Stats {
+        match species {
+            Species::Ember => Stats { health: 60, attack: 90, defense: 50, speed: 70 },
+            Species::Creek => Stats { health: 90, attack: 60, defense: 60, speed: 60 },
+            Species::Grove => Stats { health: 100, attack: 50, defense: 80, speed: 50 },
+            Species::Stone => Stats { health: 80, attack: 60, defense: 100, speed: 40 },
+            Species::Mist => Stats { health: 50, attack: 80, defense: 40, speed: 100 },
+            Species::Sky => Stats { health: 60, attack: 70, defense: 50, speed: 90 },
+        }
+    }
+
+    /// Rarity multiplier numerator (basis points): 100 = x1.0 ... 350 = x3.5.
+    fn rarity_mult_numer(rarity: Rarity) -> u128 {
+        match rarity {
+            Rarity::Common => 100,
+            Rarity::Uncommon => 130,
+            Rarity::Rare => 160,
+            Rarity::Epic => 200,
+            Rarity::Legendary => 250,
+            Rarity::Mythic => 350,
+        }
+    }
+
+    /// Stage multiplier numerator (basis points): 50 = x0.5 ... 200 = x2.0.
+    fn stage_mult_numer(stage: Stage) -> u128 {
+        match stage {
+            Stage::Hatchling => 50,
+            Stage::Adult => 100,
+            Stage::Legend => 200,
+        }
+    }
+
+    /// Final stats = base * rarity_mult / 100 * stage_mult / 100 (integer math).
+    pub fn creature_stats(species: Species, rarity: Rarity, stage: Stage) -> Stats {
+        let base = base_stats(species);
+        let r = rarity_mult_numer(rarity);
+        let s = stage_mult_numer(stage);
+        Stats {
+            health: base.health * r / 100 * s / 100,
+            attack: base.attack * r / 100 * s / 100,
+            defense: base.defense * r / 100 * s / 100,
+            speed: base.speed * r / 100 * s / 100,
+        }
+    }
+
     #[abi(embed_v0)]
     pub impl PortageImpl of IPortage<ContractState> {
         fn hatch(ref self: ContractState, seed: felt252) -> u256 {
@@ -259,7 +347,7 @@ pub mod Portage {
             let owner = get_caller_address();
             let token_id: u256 = count.into();
 
-            let creature = Creature { owner, species, rarity, stage: Stage::Hatchling };
+            let creature = Creature { owner, species, rarity, stage: Stage::Hatchling, exp: 0 };
             self.creatures.write(token_id, creature);
             self.hatch_count.write(count + 1);
             self.total_supply.write(self.total_supply.read() + 1);
@@ -282,9 +370,42 @@ pub mod Portage {
 
         fn get_creature(
             self: @ContractState, token_id: u256,
-        ) -> (ContractAddress, Species, Rarity, Stage) {
+        ) -> (ContractAddress, Species, Rarity, Stage, u128) {
             let c = self.creatures.read(token_id);
-            (c.owner, c.species, c.rarity, c.stage)
+            (c.owner, c.species, c.rarity, c.stage, c.exp)
+        }
+
+        fn get_creature_stats(self: @ContractState, token_id: u256) -> Stats {
+            let c = self.creatures.read(token_id);
+            creature_stats(c.species, c.rarity, c.stage)
+        }
+
+        fn gain_exp(ref self: ContractState, token_id: u256, amount: u128) {
+            let caller = get_caller_address();
+            let mut creature = self.creatures.read(token_id);
+            assert(creature.owner == caller, errors::NOT_OWNER);
+            creature.exp += amount;
+            self.creatures.write(token_id, creature);
+            self.emit(ExpGained { token_id, amount, new_total: creature.exp });
+        }
+
+        fn evolve(ref self: ContractState, token_id: u256) {
+            let caller = get_caller_address();
+            let mut creature = self.creatures.read(token_id);
+            assert(creature.owner == caller, errors::NOT_OWNER);
+
+            let from_stage = creature.stage;
+            if from_stage == Stage::Hatchling {
+                assert(creature.exp >= EXP_TO_ADULT, errors::NOT_READY);
+                creature.stage = Stage::Adult;
+            } else if from_stage == Stage::Adult {
+                assert(creature.exp >= EXP_TO_LEGEND, errors::NOT_READY);
+                creature.stage = Stage::Legend;
+            } else {
+                assert(false, errors::NOT_READY);
+            }
+            self.creatures.write(token_id, creature);
+            self.emit(Evolved { token_id, from_stage, to_stage: creature.stage });
         }
 
         fn list(ref self: ContractState, token_id: u256, price: u128) {
