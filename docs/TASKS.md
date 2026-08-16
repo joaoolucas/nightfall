@@ -59,12 +59,15 @@ for one overnight loop. Checkboxes are updated as work lands.
 
 ## Wave 3 — STRK20 + demo readiness
 
-- [ ] Day 0: at least document how to shield + first mainnet tx (docs/DEPLOY.md done).
-- [ ] Deploy Nightfall to Sepolia (scripts/deploy.mjs done — needs DEPLOYER_* env).
+- [x] Day 0: at least document how to shield + first mainnet tx (docs/DEPLOY.md done).
+- [x] Deploy script (scripts/deploy.mjs) + Alchemy mainnet RPC configured in .env.
+- [x] Nightfall class hash computed + exposed in app (nightfall.ts).
+- [ ] Deploy Nightfall to Sepolia/Mainnet (run `node --env-file=.env scripts/deploy.mjs` with DEPLOYER_* env).
 - [ ] Fill `strk20.json` as txs land (do not invent hashes).
 - [ ] Session-key / paymaster notes (implement if time).
-- [ ] Poll interval in useNightfallState (refresh phase as it advances).
-- [ ] GameEngine trait extraction (architect rec #3 — reusable engine).
+- [x] Poll interval in useNightfallState (refresh phase as it advances).
+- [x] GameEngine trait extraction (architect rec #3 — engine.cairo, reusable surface).
+- [x] Registered on the hackathon hub (registry.json via PR #64, applied as 8f14503).
 
 ## Review / architecture (done)
 
