@@ -1,15 +1,14 @@
 /**
- * Deploy the Nightfall Fair Game Engine contract.
+ * Deploy the Portage.fun core contract.
  *
  * Usage:
  *   cd contracts && scarb build
  *   DEPLOYER_ADDRESS=0x... DEPLOYER_PRIVATE_KEY=0x... \
- *     [NIGHTFALL_RPC_URL=https://...] node scripts/deploy.mjs
+ *     [PORTAGE_RPC_URL=https://...] node scripts/deploy.mjs
  *
- * The Nightfall contract has no constructor args, so this is a single
+ * The Portage contract has no constructor args, so this is a single
  * declare + UDC deploy. Prints the class hash and contract address; you then
- * paste the address into app/.env.local (NEXT_PUBLIC_NIGHTFALL_ADDRESS) and
- * keeper/.env (NIGHTFALL_CONTRACT_ADDRESS).
+ * paste the address into app/.env.local (NEXT_PUBLIC_PORTAGE_ADDRESS).
  *
  * Never commit the private key — read it from the environment only.
  */
@@ -22,7 +21,7 @@ import { Account, RpcProvider } from 'starknet';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const rpcUrl =
-  process.env.NIGHTFALL_RPC_URL?.trim() ||
+  process.env.PORTAGE_RPC_URL?.trim() ||
   'https://starknet-sepolia.public.blastapi.io/rpc/v0_7';
 const address = process.env.DEPLOYER_ADDRESS?.trim();
 const privateKey = process.env.DEPLOYER_PRIVATE_KEY?.trim();
@@ -39,14 +38,14 @@ const sierraPath = join(
   'contracts',
   'target',
   'dev',
-  'strk20_invoke_helper_Nightfall.contract_class.json',
+  'strk20_invoke_helper_Portage.contract_class.json',
 );
 const casmPath = join(
   root,
   'contracts',
   'target',
   'dev',
-  'strk20_invoke_helper_Nightfall.compiled_contract_class.json',
+  'strk20_invoke_helper_Portage.compiled_contract_class.json',
 );
 
 const sierra = JSON.parse(readFileSync(sierraPath, 'utf8'));
@@ -57,7 +56,7 @@ const account = new Account(provider, address, privateKey);
 
 console.log(`RPC      : ${rpcUrl}`);
 console.log(`Deployer : ${address}`);
-console.log('Declaring + deploying Nightfall (no constructor args)…');
+console.log('Declaring + deploying Portage (no constructor args)…');
 
 const { declare, deploy } = await account.declareAndDeploy({
   contract: sierra,
@@ -72,7 +71,7 @@ console.log(`deploy tx       : ${deploy.transaction_hash}`);
 
 const output = {
   network: rpcUrl.includes('mainnet') ? 'mainnet' : 'sepolia',
-  contract: 'Nightfall',
+  contract: 'Portage',
   class_hash: declare.class_hash,
   address: deploy.contract_address,
   declare_tx: declare.transaction_hash,

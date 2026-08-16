@@ -1,14 +1,13 @@
 /**
- * Export the Nightfall contract ABI to the two consumers (app + keeper) from
- * the single source of truth: the compiled Scarb artifact.
+ * Export the Portage contract ABI to the app consumer from the single source
+ * of truth: the compiled Scarb artifact.
  *
  * Usage:
  *   cd contracts && scarb build
  *   node scripts/export-abi.mjs
  *
- * Reads `contracts/target/dev/strk20_invoke_helper_Nightfall.contract_class.json`
- * and writes `app/src/abis/nightfall.abi.json` and
- * `keeper/src/abis/nightfall.abi.json` so they can never drift from the contract.
+ * Reads `contracts/target/dev/strk20_invoke_helper_Portage.contract_class.json`
+ * and writes `app/src/abis/portage.abi.json` so it can never drift from the contract.
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -22,13 +21,10 @@ const artifact = join(
   'contracts',
   'target',
   'dev',
-  'strk20_invoke_helper_Nightfall.contract_class.json',
+  'strk20_invoke_helper_Portage.contract_class.json',
 );
 
-const outputs = [
-  join(root, 'app', 'src', 'abis', 'nightfall.abi.json'),
-  join(root, 'keeper', 'src', 'abis', 'nightfall.abi.json'),
-];
+const outputs = [join(root, 'app', 'src', 'abis', 'portage.abi.json')];
 
 const cc = JSON.parse(readFileSync(artifact, 'utf8'));
 const abi = cc.abi;
