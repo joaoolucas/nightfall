@@ -1,7 +1,7 @@
-// PixelLab asset generator for the One Night Werewolf (STRK20) game.
+// PixelLab asset generator for Portage.fun creatures (STRK20).
 // Usage: node --env-file=.env scripts/gen-assets.mjs [name...]
 //   - no args: generates the full manifest
-//   - name(s): generates only matching assets (e.g. `werewolf`, `background`)
+//   - name(s): generates only matching assets (e.g. `cinderling`, `background`)
 import fs from "node:fs";
 import path from "node:path";
 
@@ -91,30 +91,43 @@ async function pixfluxBackground({ description, size = [320, 180] }) {
 
 // ---- manifest ----
 
-const STYLE = "pixel art, 16-bit dark fantasy village theme, flat colors, bold clean silhouette, centered composition, crisp pixels, game asset, no text, no letters";
+const STYLE = "pixel art, 16-bit cozy creature, flat colors, bold clean silhouette, centered composition, crisp pixels, game asset, no text, no letters, soft rounded shapes, cute";
 
-const ROLE_CARDS = [
-  { id: "werewolf", label: "werewolf", desc: `menacing werewolf face with glowing eyes, ${STYLE}` },
-  { id: "seer", label: "seer", desc: `mystic seer with a crystal ball and hooded cloak, ${STYLE}` },
-  { id: "villager", label: "villager", desc: `simple peasant villager portrait, ${STYLE}` },
-  { id: "robber", label: "robber", desc: `sneaky thief with a loot sack and mask, ${STYLE}` },
-  { id: "troublemaker", label: "troublemaker", desc: `mischievous prankster with a sly grin, ${STYLE}` },
-  { id: "minion", label: "minion", desc: `loyal sinister henchman in dark leather, ${STYLE}` },
+const CREATURES = [
+  { id: "cinderling", biome: "Ember", desc: `small smoldering lizard creature, glowing ember scales, tiny flames on its back, ${STYLE}` },
+  { id: "ripple", biome: "Creek", desc: `round droplet frog creature, translucent blue, rippling water swirl, ${STYLE}` },
+  { id: "bramble", biome: "Grove", desc: `leafy fox creature, fur made of green leaves, curling vine tail, ${STYLE}` },
+  { id: "shard", biome: "Stone", desc: `geode bear creature, rocky body with glowing crystal shards, ${STYLE}` },
+  { id: "wisp", biome: "Mist", desc: `wispy moth creature, smoky purple body, glowing eyes, ${STYLE}` },
+  { id: "aurora", biome: "Sky", desc: `feathered kite creature, iridescent aurora wings, ${STYLE}` },
+];
+
+// Evolution stages (Ember biome — Cinderling only, for v0)
+const EVOLUTIONS = [
+  { id: "cinderling-hatchling", desc: `tiny round baby smoldering lizard creature, glowing ember scales, cute, ${STYLE}` },
+  { id: "cinderling-adult", desc: `small smoldering lizard creature, glowing ember scales, tiny flames on its back, ${STYLE}` },
+  { id: "cinderling-legend", desc: `large majestic smoldering lizard creature, glowing ember scales, flames on its back, glowing crown and radiant aura, ${STYLE}` },
 ];
 
 const ASSETS = [
-  ...ROLE_CARDS.map((c) => ({
+  ...CREATURES.map((c) => ({
     id: c.id,
     kind: "pixen",
-    out: path.join(OUT_DIR, "cards", `${c.id}.png`),
+    out: path.join(OUT_DIR, "creatures", `${c.id}.png`),
+    params: { description: c.desc, size: [128, 128], noBackground: true },
+  })),
+  ...EVOLUTIONS.map((c) => ({
+    id: c.id,
+    kind: "pixen",
+    out: path.join(OUT_DIR, "creatures", `${c.id}.png`),
     params: { description: c.desc, size: [128, 128], noBackground: true },
   })),
   {
     id: "background",
     kind: "pixflux",
-    out: path.join(OUT_DIR, "backgrounds", "village-night.png"),
+    out: path.join(OUT_DIR, "backgrounds", "portal-meadow.png"),
     params: {
-      description: "pixel art village at night under a full moon, werewolf silhouette on a hill, dark purple and blue palette, atmospheric, 16-bit game background",
+      description: "pixel art cozy portal in a glowing meadow, swirling violet portal ring, fireflies, 16-bit game background",
       size: [320, 180],
     },
   },
