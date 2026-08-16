@@ -4,6 +4,18 @@
 //! `docs/SPEC.md` §5. Roles are dealt deterministically from a committed seed
 //! (trusted dealer for v0); the STRK20 privacy pool / anonymizer wiring
 //! (`privacy_invoke`) lands in a later wave.
+//!
+//! ## v0 privacy caveat (do NOT ship as-is)
+//!
+//! `get_role`, `get_seed`, and `get_vote_tally` are PUBLIC views and the deal is
+//! deterministic from a public seed, so any observer can recompute every seat's
+//! role. This is an intentional trusted-dealer placeholder for the demo. The
+//! STRK20 migration (SPEC §4) replaces this with:
+//!   - Deal   → role cards as `CreateEncNote` encrypted notes + viewing keys
+//!   - Night  → `privacy_invoke_with_computation` for hidden targets
+//!   - Vote   → `privacy_invoke` for anonymous votes
+//!   - Reveal → viewing-key-gated role reveal
+//! Until then, treat all on-chain state as public.
 
 use core::hash::HashStateTrait;
 use core::poseidon::PoseidonTrait;
@@ -359,6 +371,8 @@ pub mod Nightfall {
         }
 
         fn end_night(ref self: ContractState) {
+            // v0: anyone may advance phases (no timers). Wave 2 adds block-time
+            // windows and/or a caller gate before relying on this for real stakes.
             self.transition(Phase::Night, Phase::Day);
         }
 
@@ -430,10 +444,14 @@ pub mod Nightfall {
         }
 
         fn get_role(self: @ContractState, seat: u32) -> Role {
+            // v0: PUBLIC role lookup — placeholder until STRK20 encrypted notes
+            // gate role knowledge behind per-seat viewing keys (SPEC §4).
             self.roles.read(seat)
         }
 
         fn get_vote_tally(self: @ContractState, seat: u32) -> u32 {
+            // v0: PUBLIC tally — the anonymous-vote migration (SPEC §4) keeps
+            // only the final tally public, not per-seat targets.
             self.vote_tally.read(seat)
         }
 
