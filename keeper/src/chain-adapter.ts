@@ -34,7 +34,11 @@ export interface ChainAdapter {
   readonly kind: AdapterKind;
 
   /**
-   * Read the public game state plus the keeper seat's own role.
+   * Read the public game state (phase, seats, action history).
+   *
+   * The keeper seat's own role is NOT part of this interface: the real adapter
+   * must derive it separately from a per-seat viewing key (out-of-band), since
+   * `GameState` deliberately carries only public information (no-peeking).
    *
    * For the Starknet adapter the contract is a singleton, so `gameId` is only
    * used to label the returned state (the default is the contract address).

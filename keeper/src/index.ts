@@ -19,7 +19,7 @@ async function main(): Promise<void> {
   const chain = new MockChain();
 
   // Example game: 6 seats, night phase.
-  const game = chain.createGame({
+  chain.createGame({
     gameId: 'example-game-1',
     seats: 6,
     phase: 'night' satisfies Phase,
@@ -31,12 +31,16 @@ async function main(): Promise<void> {
   const personaId = 'deceptive' as const;
   const role: Role = 'werewolf';
 
+  // Read via the adapter (deep clone) so `decide`/`submit` cannot mutate the
+  // adapter's internal state.
+  const state = await chain.readGameState('example-game-1');
+
   console.log('Nightfall Keeper — example decision');
   console.log(`  model : ${resolveModel('default', config).id}`);
   console.log(
     `  apiKey: ${hasApiKey(config) ? 'present' : 'missing (deterministic mock mode)'}`,
   );
-  console.log(`  game  : ${game.gameId} (phase=${game.phase}, seats=${game.seats.length})`);
+  console.log(`  game  : ${state.gameId} (phase=${state.phase}, seats=${state.seats.length})`);
   console.log(
     `  seat  : ${seat} | persona=${getPersona(personaId).name} | role=${role}`,
   );
@@ -45,14 +49,14 @@ async function main(): Promise<void> {
     seat,
     persona: personaId,
     role,
-    state: game,
+    state,
     config,
   });
 
   console.log('\nDecision:');
   console.log(JSON.stringify(decision, null, 2));
 
-  const receipt = await chain.submitDecision(seat, decision, game.gameId);
+  const receipt = await chain.submitDecision(seat, decision, state.gameId);
   console.log('\nMock chain receipt:');
   console.log(JSON.stringify(receipt, null, 2));
 }

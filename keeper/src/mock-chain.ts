@@ -58,12 +58,8 @@ export class MockChain implements ChainAdapter {
   async readGameState(gameId: string): Promise<GameState> {
     const game = this.games.get(gameId);
     if (!game) throw new Error(`Unknown game '${gameId}'`);
-    // Return a deep copy so callers cannot mutate the adapter's internal state.
-    return {
-      ...game,
-      seats: game.seats.map((s) => ({ ...s })),
-      actionHistory: [...game.actionHistory],
-    };
+    // Return a deep clone so callers cannot mutate the adapter's internal state.
+    return structuredClone(game);
   }
 
   /**
