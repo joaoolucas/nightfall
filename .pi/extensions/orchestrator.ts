@@ -47,11 +47,11 @@ const ROLES: Record<Role, RoleSpec> = {
     label: "Supervisor (GPT-5.6 Sol · high · planning)",
   },
   worker: {
-    model: "hcnsec/DeepSeek-V4-Pro",
+    model: "hcnsec/DeepSeek-V4-Flash",
     thinking: "high",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
     systemPrompt: [
-      "You are a worker (DeepSeek V4 Pro). Implement the assigned task end-to-end, autonomously.",
+      "You are a worker (DeepSeek V4 Flash). Implement the assigned task end-to-end, autonomously.",
       "Use read/edit/write/bash as needed. Run the build and relevant tests when done.",
       "Final output:",
       "## Completed - what was done",
@@ -59,7 +59,7 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Notes - info for the reviewer (key files, decisions)",
       "Do not stop until the task is complete.",
     ].join("\n"),
-    label: "Worker (DeepSeek V4 Pro · high)",
+    label: "Worker (DeepSeek V4 Flash · high)",
     fallback: "hcnsec/auto",
   },
   reviewer: {
