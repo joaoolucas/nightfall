@@ -1,21 +1,17 @@
 # Non-Stop Orchestration Protocol (Hackathon)
 
-## Project: Nightfall
+## Project: Portage.fun
 
-**What we build** (north star = `docs/SPEC.md`): a platform for provably-fair
-social games with STRK20 privacy. Anchor title: **Nightfall: One Night**
-(One Night Werewolf).
+**What we build** (north star = `docs/SPEC.md`): an idle creature-collecting
+game on Starknet with provably-fair on-chain hatches, ownable creatures, and a
+player-driven marketplace, using STRK20 privacy.
 
 **Components**:
 
-- `contracts/` — Cairo: Fair Game Engine (`privacy_invoke` anonymizer)
+- `contracts/` — Cairo: hatch RNG, creatures (NFT), marketplace, energy
 - `app/` — Next.js (STRK20 starter kit)
-- `keeper/` — AI player agents (per-seat viewing key, LLM decides action/vote)
+- `scripts/` — art pipeline + deploy
 - `docs/` — SPEC + README + docs
-
-**Locked product decisions**: staked + free mode · turn-based (not real-time) ·
-AI agents (not bots) · monetization via on-chain rake · v0 = wedge architected as
-a reusable platform.
 
 This repo uses pi as a multi-role orchestrator. The **main agent** is the
 Supervisor and dispatches **subagents** (isolated `pi` processes) with
@@ -40,8 +36,7 @@ Repeat until the Definition of Done (v0, in `docs/SPEC.md`) is met:
 
 1. **Plan** — read `docs/SPEC.md`, understand the goal, and break it into small tasks.
 2. **Implement** — dispatch `run_agent` with `role=worker`. Use `tasks[]` (parallel)
-   only for independent tasks that **do not** edit the same files
-   (e.g. `contracts/`, `app/`, and `keeper/` can advance in parallel).
+   only for independent tasks that **do not** edit the same files.
 3. **Review** — dispatch `run_agent` with `role=reviewer` over the diff (`git diff`).
 4. **Integrate** — dispatch `run_agent` with `role=merger` to resolve conflicts and
    apply review fixes.
@@ -57,7 +52,7 @@ Repeat until the Definition of Done (v0, in `docs/SPEC.md`) is met:
 - **Parallel workers** — only when file-disjoint; otherwise sequential.
 - **Never leave the tree broken** — if a merge breaks the build, fix it before continuing.
 - **Never commit secrets** — `.env`, `.env.local`, and keys stay out of git (`.gitignore`).
-- **Definition of Done (v0)** — see `docs/SPEC.md` §9.
+- **Definition of Done (v0)** — see `docs/SPEC.md` §10.
 
 ## Orchestration commands
 
