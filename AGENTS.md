@@ -25,7 +25,7 @@ specialized models.
 | Worker | `hcnsec/DeepSeek-V4-Flash` | off (provider-managed) | read, bash, edit, write, grep, find, ls |
 | Reviewer | `hcnsec/Kimi-K2.6` | off (provider-managed) | read, grep, find, ls, bash (read-only) |
 | Merger | `hcnsec/DeepSeek-V4-Pro` | off (provider-managed) | read, bash, edit, write, grep, find, ls |
-| Architect | `hcnsec/glm-5.2` | off (provider-managed) | read, grep, find, ls |
+| Architect / final gate | `claude-bridge/claude-opus-5` | high | read, grep, find, ls, bash (read-only) |
 
 Commands: `/role <role>` switches the main agent's model; `/kickoff <goal>`
 starts the non-stop loop.
@@ -40,8 +40,9 @@ Repeat until the Definition of Done (v0, in `docs/SPEC.md`) is met:
 3. **Review** — dispatch `run_agent` with `role=reviewer` over the diff (`git diff`).
 4. **Integrate** — dispatch `run_agent` with `role=merger` to resolve conflicts and
    apply review fixes.
-5. **Validate architecture** — dispatch `run_agent` with `role=architect` for
-   structural changes (new modules, contracts, schemas, protocol).
+5. **Final architecture gate** — dispatch `run_agent` with `role=architect`
+   (Claude Opus 5) after integration and before final verification, especially for
+   structural changes, game-state/economy changes, contracts, schemas, or protocol.
 6. **Verify** — run build and tests with `bash`. Commit at every stable iteration.
 
 ## Rules

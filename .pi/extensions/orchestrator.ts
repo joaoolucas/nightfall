@@ -7,7 +7,7 @@
  *   Worker      -> hcnsec/DeepSeek-V4-Flash (fast implementation)
  *   Reviewer    -> hcnsec/Kimi-K2.6       (code review + vision)
  *   Merger      -> hcnsec/DeepSeek-V4-Pro (merge/conflict resolution)
- *   Architect   -> hcnsec/glm-5.2         (architecture review)
+ *   Architect   -> claude-bridge/claude-opus-5 (final architecture gate)
  *
  * Each subagent runs in a separate `pi` process (isolated context), with its
  * own model, thinking level, and tool set.
@@ -91,19 +91,22 @@ const ROLES: Record<Role, RoleSpec> = {
     label: "Merger (DeepSeek V4 Pro)",
   },
   architect: {
-    model: "hcnsec/glm-5.2",
-    thinking: "off",
-    tools: ["read", "grep", "find", "ls"],
+    model: "claude-bridge/claude-opus-5",
+    thinking: "high",
+    tools: ["read", "grep", "find", "ls", "bash"],
     systemPrompt: [
-      "You are a software architect. Review the solution architecture without editing anything.",
-      "Analyze modules, contracts/interfaces, coupling, security, and scalability.",
+      "You are the final architecture and quality gate (Claude Opus 5). Review without editing anything.",
+      "Bash is read-only: use git diff, git log, and tests only when needed. Do not modify files.",
+      "Analyze module boundaries, state machines, persistence/migrations, game economy and balance, accessibility, security, performance, and scalability.",
+      "Distinguish release blockers from follow-up improvements and cite file:line for every finding.",
       "Final output:",
       "## Architecture Assessment",
-      "## Risks",
+      "## Release Blockers",
+      "## Risks and Balance Findings",
       "## Recommendations",
       "## Verdict - APPROVE or REQUEST CHANGES",
     ].join("\n"),
-    label: "Architect (GLM 5.2)",
+    label: "Architect (Claude Opus 5 · high · final gate)",
   },
 };
 
