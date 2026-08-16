@@ -6,6 +6,22 @@
     "openai-codex/gpt-5.6-sol:high",
     "orcarouter/kimi/kimi-k3:high",
     "orcarouter/deepseek/deepseek-v4-pro-0813:high",
-    "orcarouter/grok/grok-4.6:high"
+    "orcarouter/grok/grok-4.6:high",
+    "hcnsec/auto",
+    "hcnsec/DeepSeek-V4-Flash",
+    "hcnsec/DeepSeek-V4-Pro",
+    "hcnsec/glm-5.2",
+    "hcnsec/kat-coder-pro-v2.5",
+    "hcnsec/Kimi-K2.6",
+    "hcnsec/MiniMax-M3",
+    "hcnsec/Qwen3.6-27B",
+    "hcnsec/Qwen3.8-27B",
+    "hcnsec/sensenova-6.7-flash-lite",
+    "hcnsec/sensenova-u1-fast",
+    "hcnsec/step-3.5-flash",
+    "hcnsec/step-3.5-flash-2603",
+    "hcnsec/step-3.7-flash",
+    "hcnsec/step-explore",
+    "hcnsec/step-router-v1"
   ]
 }
