@@ -26,6 +26,7 @@ export default function Portal() {
   const [revealed, setRevealed] = useState<Creature | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
+  const [hatching, setHatching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function openPortal() {
@@ -40,6 +41,7 @@ export default function Portal() {
         return;
       }
       setOpening(true);
+      setHatching(true);
       setTxHash(null);
       try {
         const client = new PortageClient(wallet);
@@ -49,18 +51,22 @@ export default function Portal() {
         setError(err instanceof Error ? err.message : String(err));
       } finally {
         setOpening(false);
+        setHatching(false);
       }
       return;
     }
 
-    // Mock reveal beat: a short "portal opening", then a random creature drops.
+    // Mock reveal beat: a 1.2s "portal opening" (swirling ring + pulsing glow),
+    // then a random creature drops with a scale-in reveal.
     setOpening(true);
+    setHatching(true);
     setRevealed(null);
     window.setTimeout(() => {
       const pick = MOCK_CREATURES[Math.floor(Math.random() * MOCK_CREATURES.length)];
       setRevealed(pick);
       setOpening(false);
-    }, 900);
+      setHatching(false);
+    }, 1200);
   }
 
   // Show the revealed creature's biome behind the portal, or the neutral
@@ -102,9 +108,12 @@ export default function Portal() {
           </p>
         )}
 
-        {opening ? (
+        {hatching ? (
           <div className={styles.revealPlaceholder}>
-            <span className={styles.revealPulse} aria-hidden />
+            <span className={styles.portalRingWrap} aria-hidden>
+              <span className={styles.portalRing} />
+              <span className={styles.revealPulse} />
+            </span>
             <p>A tear in the dark is widening…</p>
           </div>
         ) : txHash ? (
@@ -117,7 +126,7 @@ export default function Portal() {
           </div>
         ) : revealed ? (
           <div className={styles.reveal}>
-            <CreatureCard creature={revealed} />
+            <CreatureCard creature={revealed} className={styles.revealCard} />
             <span className={styles.proofBadge}>
               <span className={styles.proofDot} aria-hidden />
               Demo reveal — no chain

@@ -21,6 +21,7 @@ export default function Caravan() {
 
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [sparkle, setSparkle] = useState<string | null>(null);
 
   const count = onChain ? totalSupply : creatures.length;
 
@@ -56,6 +57,14 @@ export default function Caravan() {
         }
       }
       refresh();
+      // Evolution sparkle: briefly burst the card that just evolved.
+      if (action === "evolve") {
+        const key = `${creature.tokenId}`;
+        setSparkle(key);
+        window.setTimeout(() => {
+          setSparkle((current) => (current === key ? null : current));
+        }, 1000);
+      }
     } catch (err) {
       setNotice(err instanceof Error ? err.message : String(err));
     } finally {
@@ -94,6 +103,7 @@ export default function Caravan() {
               <CreatureCard
                 key={creature.tokenId}
                 creature={creature}
+                className={sparkle === key ? styles.sparkleBurst : undefined}
                 footer={
                   ownerOnChain && next !== null ? (
                     <div className={styles.evolveRow}>

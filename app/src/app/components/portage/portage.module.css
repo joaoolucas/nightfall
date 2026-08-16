@@ -63,6 +63,7 @@
   gap: 18px;
 }
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -71,10 +72,14 @@
   border: 2px solid var(--violet-bright);
   background: linear-gradient(180deg, var(--night-2), var(--night-3));
   color: var(--text);
-  transition: transform 140ms ease;
+  transition: transform 140ms ease, filter 140ms ease;
 }
 .card:hover {
   transform: translateY(-3px);
+  filter: brightness(1.06) drop-shadow(0 10px 22px var(--rarity-color, rgba(109, 79, 194, 0.55)));
+}
+.card:active {
+  transform: scale(0.985);
 }
 .cardTop {
   display: flex;
@@ -193,6 +198,84 @@
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid rgba(169, 158, 201, 0.16);
+}
+
+/* --- Hatch reveal + evolution sparkle animations ------------------------- */
+/* Revealed card: scale 0.6 → 1.05 → 1 with a slight rotate, plus a full-card
+   glow pulse in the creature's rarity color (--rarity-color, set inline). */
+.revealCard {
+  animation:
+    cardReveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+    rarityFlash 0.9s ease-out 0.15s;
+}
+@keyframes cardReveal {
+  0% {
+    transform: scale(0.6) rotate(-6deg);
+    opacity: 0.4;
+  }
+  70% {
+    transform: scale(1.05) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+@keyframes rarityFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+  35% {
+    box-shadow: 0 0 0 5px var(--rarity-color), 0 0 48px 10px var(--rarity-color);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
+/* Evolution sparkle: a pseudo-element burst of dots scaling out + a brief
+   brightness pulse on the card. */
+.sparkleBurst {
+  animation: sparklePulse 0.9s ease-out;
+}
+.sparkleBurst::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow:
+    -46px -24px 0 0 var(--amber),
+    42px -30px 0 0 var(--violet-bright),
+    -36px 30px 0 0 #ffffff,
+    50px 24px 0 0 var(--violet-bright),
+    4px -44px 0 0 #ffffff,
+    -12px 44px 0 0 var(--amber);
+  animation: sparkleDots 0.9s ease-out forwards;
+  pointer-events: none;
+  opacity: 0;
+}
+@keyframes sparklePulse {
+  0% {
+    filter: brightness(1.5);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+@keyframes sparkleDots {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
 }
 
 /* --- Creature stats, exp & evolve (SPEC §5) ------------------------------ */
@@ -340,6 +423,43 @@
   font-size: 14px;
   padding: 28px;
 }
+/* Swirling ring (spins) nested in a wrap that idly floats up/down. */
+.portalRingWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  animation: portalFloat 3s ease-in-out infinite;
+}
+.portalRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--violet-bright);
+  border-right-color: var(--amber);
+  box-shadow: 0 0 28px -6px var(--violet-bright);
+  animation: portalSpin 1.2s linear infinite;
+}
+@keyframes portalSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes portalFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
 .revealPulse {
   width: 72px;
   height: 72px;
@@ -486,10 +606,21 @@
   .listBtn,
   .buyBtn,
   .cancelBtn,
-  .evolveBtn {
+  .evolveBtn,
+  .expeditionBtn {
     transition: none;
   }
-  .revealPulse {
+  .card:hover,
+  .card:active {
+    transform: none;
+    filter: none;
+  }
+  .revealPulse,
+  .portalRingWrap,
+  .portalRing,
+  .revealCard,
+  .sparkleBurst,
+  .sparkleBurst::before {
     animation: none;
   }
   .card[data-rarity="epic"] .cardName,

@@ -22,9 +22,12 @@ import {
 export default function CreatureCard({
   creature,
   footer,
+  className,
 }: {
   creature: Creature;
   footer?: ReactNode;
+  /** Extra animation classes (e.g. hatch reveal, evolution sparkle). */
+  className?: string;
 }) {
   const species = SPECIES[creature.species];
   const rarity = RARITY[creature.rarity];
@@ -41,7 +44,11 @@ export default function CreatureCard({
   } as CSSProperties;
 
   return (
-    <article className={styles.card} data-rarity={creature.rarity} style={cardStyle}>
+    <article
+      className={[styles.card, className].filter(Boolean).join(" ")}
+      data-rarity={creature.rarity}
+      style={cardStyle}
+    >
       <div className={styles.cardTop}>
         <span className={styles.cardId}>#{creature.tokenId}</span>
         <span className={styles.stagePill}>{stage.label}</span>
