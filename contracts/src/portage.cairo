@@ -78,6 +78,9 @@ pub const BPS_DENOMINATOR: u128 = 10000;
 pub const EXP_TO_ADULT: u128 = 100;
 pub const EXP_TO_LEGEND: u128 = 500;
 
+/// Cooldown between expeditions, in seconds (demo-friendly; tune for prod).
+pub const EXPEDITION_COOLDOWN: u64 = 60;
+
 // ---------------------------------------------------------------------------
 // Hatch RNG
 // ---------------------------------------------------------------------------
@@ -128,7 +131,7 @@ pub trait IPortage<TState> {
         self: @TState, token_id: u256,
     ) -> (ContractAddress, Species, Rarity, Stage, u128);
     fn get_creature_stats(self: @TState, token_id: u256) -> Stats;
-    fn gain_exp(ref self: TState, token_id: u256, amount: u128);
+    fn expedition(ref self: TState, token_id: u256);
     fn evolve(ref self: TState, token_id: u256);
     fn list(ref self: TState, token_id: u256, price: u128);
     fn buy(ref self: TState, token_id: u256);
@@ -149,12 +152,12 @@ pub mod Portage {
         Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
         StoragePointerWriteAccess,
     };
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use core::poseidon::poseidon_hash_span;
     use super::{
         Creature, Listing, Rarity, Species, Stage, Stats, IPortage, WEIGHT_COMMON,
         WEIGHT_UNCOMMON, WEIGHT_RARE, WEIGHT_EPIC, WEIGHT_LEGENDARY, WEIGHT_MYTHIC, TOTAL_WEIGHT,
-        RAKE_BPS, BPS_DENOMINATOR, SPECIES_COUNT, EXP_TO_ADULT, EXP_TO_LEGEND,
+        RAKE_BPS, BPS_DENOMINATOR, SPECIES_COUNT, EXP_TO_ADULT, EXP_TO_LEGEND, EXPEDITION_COOLDOWN,
     };
 
     mod errors {
@@ -164,12 +167,14 @@ pub mod Portage {
         pub const INVALID_PRICE: felt252 = 'INVALID_PRICE';
         pub const NOT_FOUND: felt252 = 'NOT_FOUND';
         pub const NOT_READY: felt252 = 'NOT_READY';
+        pub const ON_COOLDOWN: felt252 = 'ON_COOLDOWN';
     }
 
     #[storage]
     struct Storage {
         creatures: Map<u256, Creature>,
         listings: Map<u256, Listing>,
+        last_expedition: Map<u256, u64>,
         hatch_count: u64,
         total_supply: u256,
     }
@@ -338,6 +343,18 @@ pub mod Portage {
         }
     }
 
+    /// Exp earned per expedition tick, scaled by rarity (rarity_mult / 10).
+    pub fn exp_yield(rarity: Rarity) -> u128 {
+        match rarity {
+            Rarity::Common => 10,
+            Rarity::Uncommon => 13,
+            Rarity::Rare => 16,
+            Rarity::Epic => 20,
+            Rarity::Legendary => 25,
+            Rarity::Mythic => 35,
+        }
+    }
+
     #[abi(embed_v0)]
     pub impl PortageImpl of IPortage<ContractState> {
         fn hatch(ref self: ContractState, seed: felt252) -> u256 {
@@ -380,12 +397,19 @@ pub mod Portage {
             creature_stats(c.species, c.rarity, c.stage)
         }
 
-        fn gain_exp(ref self: ContractState, token_id: u256, amount: u128) {
+        fn expedition(ref self: ContractState, token_id: u256) {
             let caller = get_caller_address();
             let mut creature = self.creatures.read(token_id);
             assert(creature.owner == caller, errors::NOT_OWNER);
+
+            let now = get_block_timestamp();
+            let last = self.last_expedition.read(token_id);
+            assert(now >= last + EXPEDITION_COOLDOWN, errors::ON_COOLDOWN);
+
+            let amount = exp_yield(creature.rarity);
             creature.exp += amount;
             self.creatures.write(token_id, creature);
+            self.last_expedition.write(token_id, now);
             self.emit(ExpGained { token_id, amount, new_total: creature.exp });
         }
 

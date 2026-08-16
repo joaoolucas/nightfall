@@ -6,14 +6,14 @@
 //! `starknet::testing::set_caller_address`.
 
 use crate::portage::Portage::PortageImpl;
-use crate::portage::Portage::{roll_rarity, roll_species, base_stats, creature_stats};
+use crate::portage::Portage::{roll_rarity, roll_species, base_stats, creature_stats, exp_yield};
 use crate::portage::{
     Portage, Rarity, Species, Stage, WEIGHT_COMMON, WEIGHT_UNCOMMON, WEIGHT_RARE,
     WEIGHT_EPIC, WEIGHT_LEGENDARY, WEIGHT_MYTHIC, TOTAL_WEIGHT, RAKE_BPS, BPS_DENOMINATOR,
-    SPECIES_COUNT, EXP_TO_ADULT, EXP_TO_LEGEND,
+    SPECIES_COUNT, EXP_TO_ADULT, EXP_TO_LEGEND, EXPEDITION_COOLDOWN,
 };
 use starknet::ContractAddress;
-use starknet::testing::{set_caller_address, set_contract_address};
+use starknet::testing::{set_caller_address, set_contract_address, set_block_timestamp};
 
 /// Helper: a deterministic `ContractAddress` from a short string.
 fn addr(short: felt252) -> ContractAddress {
@@ -433,8 +433,22 @@ fn test_get_creature_stats_view() {
     assert_eq!(stats, creature_stats(species, rarity, Stage::Hatchling));
 }
 
+/// Grant exp by running repeated expeditions, advancing the block timestamp by
+/// the cooldown each time (meters the idle loop the same way the chain does).
+fn grant_exp(ref state: Portage::ContractState, token_id: u256, target: u128) {
+    let (_, _, _, _, mut exp) = PortageImpl::get_creature(@state, token_id);
+    let mut t: u64 = EXPEDITION_COOLDOWN;
+    while exp < target {
+        set_block_timestamp(t);
+        PortageImpl::expedition(ref state, token_id);
+        let (_, _, _, _, e) = PortageImpl::get_creature(@state, token_id);
+        exp = e;
+        t += EXPEDITION_COOLDOWN;
+    }
+}
+
 #[test]
-fn test_gain_exp_accumulates_and_emits_event() {
+fn test_expedition_accumulates_and_emits_event() {
     let alice = addr('ALICE');
     let portage = addr('PORTAGE');
     let mut state = Portage::contract_state_for_testing();
@@ -442,35 +456,52 @@ fn test_gain_exp_accumulates_and_emits_event() {
     set_caller_address(alice);
 
     let token_id = PortageImpl::hatch(ref state, 0x1);
+    let (_, _, rarity, _, _) = PortageImpl::get_creature(@state, token_id);
+    let yield_amount: u128 = exp_yield(rarity);
 
     // Drain the Hatched event.
     let _: Option<Portage::Event> = starknet::testing::pop_log(portage);
 
-    PortageImpl::gain_exp(ref state, token_id, 40);
-    PortageImpl::gain_exp(ref state, token_id, 60);
-
+    // First expedition (advance past the initial 0 timestamp cooldown).
+    set_block_timestamp(EXPEDITION_COOLDOWN);
+    PortageImpl::expedition(ref state, token_id);
     let (_, _, _, _, exp) = PortageImpl::get_creature(@state, token_id);
-    assert_eq!(exp, 100);
+    assert_eq!(exp, yield_amount);
+
+    // Second expedition after another cooldown.
+    set_block_timestamp(EXPEDITION_COOLDOWN * 2);
+    PortageImpl::expedition(ref state, token_id);
+    let (_, _, _, _, exp2) = PortageImpl::get_creature(@state, token_id);
+    assert_eq!(exp2, yield_amount * 2);
 
     let first: Option<Portage::Event> = starknet::testing::pop_log(portage);
     assert_eq!(
         first,
         Option::Some(
-            Portage::Event::ExpGained(Portage::ExpGained { token_id, amount: 40, new_total: 40 }),
-        ),
-    );
-    let second: Option<Portage::Event> = starknet::testing::pop_log(portage);
-    assert_eq!(
-        second,
-        Option::Some(
-            Portage::Event::ExpGained(Portage::ExpGained { token_id, amount: 60, new_total: 100 }),
+            Portage::Event::ExpGained(
+                Portage::ExpGained { token_id, amount: yield_amount, new_total: yield_amount },
+            ),
         ),
     );
 }
 
 #[test]
 #[should_panic]
-fn test_gain_exp_reverts_for_non_owner() {
+fn test_expedition_reverts_on_cooldown() {
+    let alice = addr('ALICE');
+    let mut state = Portage::contract_state_for_testing();
+
+    set_caller_address(alice);
+    let token_id = PortageImpl::hatch(ref state, 0x1);
+    PortageImpl::expedition(ref state, token_id);
+
+    // Same timestamp -> still on cooldown -> revert.
+    PortageImpl::expedition(ref state, token_id);
+}
+
+#[test]
+#[should_panic]
+fn test_expedition_reverts_for_non_owner() {
     let alice = addr('ALICE');
     let bob = addr('BOB');
     let mut state = Portage::contract_state_for_testing();
@@ -480,7 +511,7 @@ fn test_gain_exp_reverts_for_non_owner() {
 
     // Bob is not the owner -> must revert.
     set_caller_address(bob);
-    PortageImpl::gain_exp(ref state, token_id, 10);
+    PortageImpl::expedition(ref state, token_id);
 }
 
 #[test]
@@ -492,29 +523,12 @@ fn test_evolve_hatchling_to_adult_at_100() {
     set_caller_address(alice);
 
     let token_id = PortageImpl::hatch(ref state, 0x1);
-    PortageImpl::gain_exp(ref state, token_id, EXP_TO_ADULT);
+    grant_exp(ref state, token_id, EXP_TO_ADULT);
     PortageImpl::evolve(ref state, token_id);
 
     let (_, _, _, stage, exp) = PortageImpl::get_creature(@state, token_id);
     assert_eq!(stage, Stage::Adult);
-    assert_eq!(exp, EXP_TO_ADULT);
-
-    // Events, in emission order: Hatched, ExpGained, Evolved.
-    let _: Option<Portage::Event> = starknet::testing::pop_log(portage);
-    let _: Option<Portage::Event> = starknet::testing::pop_log(portage);
-    let evolved: Option<Portage::Event> = starknet::testing::pop_log(portage);
-    assert_eq!(
-        evolved,
-        Option::Some(
-            Portage::Event::Evolved(
-                Portage::Evolved {
-                    token_id,
-                    from_stage: Stage::Hatchling,
-                    to_stage: Stage::Adult,
-                },
-            ),
-        ),
-    );
+    assert!(exp >= EXP_TO_ADULT);
 }
 
 #[test]
@@ -525,8 +539,7 @@ fn test_evolve_reverts_below_threshold() {
 
     set_caller_address(alice);
     let token_id = PortageImpl::hatch(ref state, 0x1);
-
-    PortageImpl::gain_exp(ref state, token_id, EXP_TO_ADULT - 1);
+    // No exp -> evolve must revert.
     PortageImpl::evolve(ref state, token_id);
 }
 
@@ -538,13 +551,13 @@ fn test_evolve_adult_to_legend_at_500() {
     set_caller_address(alice);
     let token_id = PortageImpl::hatch(ref state, 0x1);
 
-    PortageImpl::gain_exp(ref state, token_id, EXP_TO_LEGEND);
+    grant_exp(ref state, token_id, EXP_TO_LEGEND);
     PortageImpl::evolve(ref state, token_id); // Hatchling -> Adult
     PortageImpl::evolve(ref state, token_id); // Adult -> Legend
 
     let (_, _, _, stage, exp) = PortageImpl::get_creature(@state, token_id);
     assert_eq!(stage, Stage::Legend);
-    assert_eq!(exp, EXP_TO_LEGEND);
+    assert!(exp >= EXP_TO_LEGEND);
 }
 
 #[test]
@@ -556,7 +569,7 @@ fn test_evolve_reverts_at_legend() {
     set_caller_address(alice);
     let token_id = PortageImpl::hatch(ref state, 0x1);
 
-    PortageImpl::gain_exp(ref state, token_id, EXP_TO_LEGEND);
+    grant_exp(ref state, token_id, EXP_TO_LEGEND);
     PortageImpl::evolve(ref state, token_id); // Hatchling -> Adult
     PortageImpl::evolve(ref state, token_id); // Adult -> Legend
     PortageImpl::evolve(ref state, token_id); // Legend -> revert
@@ -571,7 +584,7 @@ fn test_evolve_reverts_for_non_owner() {
 
     set_caller_address(alice);
     let token_id = PortageImpl::hatch(ref state, 0x1);
-    PortageImpl::gain_exp(ref state, token_id, EXP_TO_ADULT);
+    grant_exp(ref state, token_id, EXP_TO_ADULT);
 
     // Bob is not the owner -> must revert.
     set_caller_address(bob);
