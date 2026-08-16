@@ -51,26 +51,57 @@ distinct element and silhouette language.
 
 **Rarities:** Common · Uncommon · Rare · Epic · Legendary · Mythic.
 
-## 5. Provably-fair RNG (the on-chain core)
+## 5. Creature stats, exp & evolution (idle loop)
+
+Every creature has stats derived from its **species + rarity + stage**, plus an
+**exp** balance. This is the idle progression — inspired by the OpenTibia
+monster model (`health`, `attack`, `defense`, `speed`, `exp`) and its exp curve.
+
+### Stats
+
+- **Base stats per species** (each biome has a profile):
+  | Species | Health | Attack | Defense | Speed |
+  |---|---|---|---|---|
+  | Ember | 60 | 90 | 50 | 70 |
+  | Creek | 90 | 60 | 60 | 60 |
+  | Grove | 100 | 50 | 80 | 50 |
+  | Stone | 80 | 60 | 100 | 40 |
+  | Mist | 50 | 80 | 40 | 100 |
+  | Sky | 60 | 70 | 50 | 90 |
+
+- **Rarity multiplier:** Common ×1 · Uncommon ×1.3 · Rare ×1.6 · Epic ×2.0 ·
+  Legendary ×2.5 · Mythic ×3.5.
+- **Stage multiplier:** Hatchling ×0.5 · Adult ×1.0 · Legend ×2.0.
+- `final = base_species × rarity_mult × stage_mult` (integer math on-chain).
+
+### Exp & evolution
+
+- Expeditions earn exp over time (idle); exp is checkpointed on-chain via
+  `gain_exp(token_id, amount)`.
+- Level thresholds drive **evolution** (`evolve(token_id)`):
+  - Hatchling → Adult at **100 exp**
+  - Adult → Legend at **500 exp**
+- Evolving upgrades the stage (and thus the stats via the stage multiplier).
+- `expYield` is a creature stat (how much exp it earns per expedition tick),
+  scaled by rarity so rarer creatures progress faster.
+
+## 6. Provably-fair RNG (the on-chain core)
 
 - A **hatch** commits a seed, then reveals a creature deterministically
-  (Fisher–Yates over the species pool, Poseidon-hashed from the seed + block).
+  (Fisher–Yates over the species pool, Poseidon-hashed from the seed + hatch count).
 - The roll, rarity table, and result are all on-chain — a player (or anyone) can
   recompute and verify the hatch was fair.
 - **Privacy (STRK20):** ownership and trades move through shielded transfers;
   *what* you hatch can stay private until you choose to reveal it.
 
-This reuses the exact proving pattern already built in the Nightfall engine
-(committed-seed deal + deterministic shuffle), repurposed for creature rolls.
-
-## 6. Marketplace + economy
+## 7. Marketplace + economy
 
 - Creatures are NFTs; trades settle on-chain with a small **rake** to the protocol.
 - **Portal energy** and **evolution mats** are earned idle, bought, or won in raids.
 - Rare creatures are genuinely scarce: the rarity table is fixed on-chain, so
   neither the team nor anyone else can print legendaries.
 
-## 7. Identity — visual direction
+## 8. Identity — visual direction
 
 **Name:** Portage.fun — from *portage*, carrying a load between places (the
 journey between biomes).
@@ -89,7 +120,7 @@ journey between biomes).
 - Hatch screen = the portal opening, with the reveal + on-chain proof badge.
 - Marketplace = grid of creature cards with rarity borders.
 
-## 8. Components (repo)
+## 9. Components (repo)
 
 ```
 ├── contracts/          # Cairo: hatch RNG, creatures (NFT), marketplace, energy
@@ -99,7 +130,7 @@ journey between biomes).
 └── docs/               # SPEC + guides
 ```
 
-## 9. v0 scope (hackathon)
+## 10. v0 scope (hackathon)
 
 - [ ] On-chain **hatch** with provably-fair RNG (commit seed → reveal creature).
 - [ ] Creature NFT (mint, own, transfer) with rarity + species metadata.
@@ -108,7 +139,7 @@ journey between biomes).
 - [ ] Pixel-art creatures for at least 2 biomes × 3 stages.
 - [ ] 3+ mainnet txs in `strk20.json` + demo URL + video.
 
-## 10. Definition of Done (v0)
+## 11. Definition of Done (v0)
 
 - A player can **open a portal**, **hatch a verifiably-fair creature**, send it
   on an **expedition**, and **trade it** — on mainnet.
