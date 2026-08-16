@@ -9,7 +9,7 @@ import {
 } from "@/utils/game";
 import { useNightfallState } from "./useNightfallState";
 import { useStoreWallet } from "@/app/components/Wallet/walletContext";
-import { joinGame, startGame } from "@/utils/nightfall-write";
+import { deployNightfall, joinGame, startGame } from "@/utils/nightfall-write";
 
 // The Cairo contract allows up to MAX_PLAYERS (12) joined seats; v0 renders a
 // 6-seat MVP table but the lobby still lets extra seats join on chain.
@@ -51,9 +51,13 @@ export default function Lobby() {
   const isConnected = useStoreWallet((state) => state.isConnected);
 
   // Which tx is in flight (only one at a time) + inline error/hash for the last attempt.
-  const [pending, setPending] = useState<"join" | "start" | null>(null);
+  const [pending, setPending] = useState<"join" | "start" | "deploy" | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [deployResult, setDeployResult] = useState<{
+    classHash: string;
+    contractAddress: string;
+  } | null>(null);
 
   // On chain the first `onChainSeats` seats are occupied (join_game assigns
   // seats 0..n-1 sequentially); in demo mode every seat is an open placeholder.
@@ -64,6 +68,7 @@ export default function Lobby() {
 
   const canJoin = onChain && isConnected && onChainSeats < MAX_PLAYERS;
   const canStart = onChain && isConnected && onChainSeats >= 3;
+  const canDeploy = isConnected && !onChain;
 
   const handleJoin = async () => {
     if (!account) return;
@@ -88,6 +93,25 @@ export default function Lobby() {
     try {
       const hash = await startGame(account, randomFeltSeed());
       setTxHash(hash);
+    } catch (err) {
+      setTxError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const handleDeploy = async () => {
+    if (!account) return;
+    setPending("deploy");
+    setTxError(null);
+    setTxHash(null);
+    setDeployResult(null);
+    try {
+      const result = await deployNightfall(account);
+      setDeployResult({
+        classHash: result.classHash,
+        contractAddress: result.contractAddress,
+      });
     } catch (err) {
       setTxError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -127,6 +151,19 @@ export default function Lobby() {
           ))}
         </div>
 
+        {!onChain && (
+          <div className={styles.deployRow}>
+            <button
+              type="button"
+              className={styles.deployBtn}
+              disabled={!canDeploy || pending !== null}
+              onClick={handleDeploy}
+            >
+              {pending === "deploy" ? "Deploying Nightfall…" : "Deploy Nightfall"}
+            </button>
+          </div>
+        )}
+
         <div className={styles.actionRow}>
           <button
             type="button"
@@ -145,6 +182,25 @@ export default function Lobby() {
             {pending === "start" ? "Starting…" : "Start Game"}
           </button>
         </div>
+
+        {deployResult && (
+          <div className={styles.deployResult}>
+            <p className={styles.deployResultTitle}>Nightfall deployed ✓</p>
+            <div className={styles.deployField}>
+              <span>Contract address</span>
+              <code>{deployResult.contractAddress}</code>
+            </div>
+            <div className={styles.deployField}>
+              <span>Class hash</span>
+              <code>{deployResult.classHash}</code>
+            </div>
+            <p className={styles.deployHint}>
+              Paste the address into <code>.env.local</code> as{" "}
+              <code>NEXT_PUBLIC_NIGHTFALL_ADDRESS={deployResult.contractAddress}</code>{" "}
+              and restart the dev server.
+            </p>
+          </div>
+        )}
 
         {txError && (
           <p className={styles.txError} role="alert">
@@ -167,7 +223,9 @@ export default function Lobby() {
 
         <p className={styles.startHint}>
           {!onChain
-            ? "Join / Start are disabled until the Nightfall contract is deployed."
+            ? isConnected
+              ? "No contract configured — deploy Nightfall to enable Join / Start."
+              : "Connect a wallet and deploy Nightfall to enable Join / Start."
             : !isConnected
             ? "Connect a wallet to join the table and start the game."
             : onChainSeats < 3

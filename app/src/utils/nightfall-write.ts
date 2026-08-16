@@ -9,8 +9,16 @@
 // and broadcasts via `account.execute`.
 
 import { Contract, num } from "starknet";
-import type { Abi, AccountInterface, RawArgs } from "starknet";
+import type {
+  Abi,
+  AccountInterface,
+  CompiledSierra,
+  CompiledSierraCasm,
+  RawArgs,
+} from "starknet";
 import NightfallAbi from "@/abis/nightfall.abi.json";
+import sierra from "@/abis/nightfall.sierra.json";
+import casm from "@/abis/nightfall.casm.json";
 import { NIGHTFALL_ADDRESS } from "@/utils/nightfall";
 
 /** felt252 upper bound: 2^251 - 1 (the Cairo field prime). */
@@ -92,4 +100,34 @@ export async function castVote(
   target: number
 ): Promise<string> {
   return execute(account, "cast_vote", [toU32(seat), toU32(target)]);
+}
+
+/** Clean result of a `declareAndDeploy` against the Nightfall class. */
+export interface DeployNightfallResult {
+  classHash: string;
+  contractAddress: string;
+  declareTx: string;
+  deployTx: string;
+}
+
+/**
+ * `deployNightfall()` — declare the Nightfall Fair Game Engine (Sierra class +
+ * CASM) and deploy a fresh instance via the UDC, all signed by the connected
+ * wallet. No private key is touched by the client: `account` comes from the
+ * wallet store. Returns the class hash, deployed address, and both tx hashes.
+ */
+export async function deployNightfall(
+  account: AccountInterface
+): Promise<DeployNightfallResult> {
+  const result = await account.declareAndDeploy({
+    contract: sierra as unknown as CompiledSierra,
+    casm: casm as unknown as CompiledSierraCasm,
+  });
+
+  return {
+    classHash: num.toHex(result.declare.class_hash),
+    contractAddress: result.deploy.contract_address,
+    declareTx: result.declare.transaction_hash ?? "",
+    deployTx: result.deploy.transaction_hash,
+  };
 }
