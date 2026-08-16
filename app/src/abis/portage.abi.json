@@ -98,6 +98,28 @@
   },
   {
     "type": "struct",
+    "name": "strk20_invoke_helper::portage::Stats",
+    "members": [
+      {
+        "name": "health",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "attack",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "defense",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "speed",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "type": "struct",
     "name": "core::array::Span::<core::integer::u16>",
     "members": [
       {
@@ -169,10 +191,54 @@
         ],
         "outputs": [
           {
-            "type": "(core::starknet::contract_address::ContractAddress, strk20_invoke_helper::portage::Species, strk20_invoke_helper::portage::Rarity, strk20_invoke_helper::portage::Stage)"
+            "type": "(core::starknet::contract_address::ContractAddress, strk20_invoke_helper::portage::Species, strk20_invoke_helper::portage::Rarity, strk20_invoke_helper::portage::Stage, core::integer::u128)"
           }
         ],
         "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "get_creature_stats",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "strk20_invoke_helper::portage::Stats"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "gain_exp",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u128"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "evolve",
+        "inputs": [
+          {
+            "name": "token_id",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
       },
       {
         "type": "function",
@@ -375,6 +441,50 @@
   },
   {
     "type": "event",
+    "name": "strk20_invoke_helper::portage::Portage::ExpGained",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "token_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      },
+      {
+        "name": "amount",
+        "type": "core::integer::u128",
+        "kind": "data"
+      },
+      {
+        "name": "new_total",
+        "type": "core::integer::u128",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "strk20_invoke_helper::portage::Portage::Evolved",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "token_id",
+        "type": "core::integer::u256",
+        "kind": "key"
+      },
+      {
+        "name": "from_stage",
+        "type": "strk20_invoke_helper::portage::Stage",
+        "kind": "data"
+      },
+      {
+        "name": "to_stage",
+        "type": "strk20_invoke_helper::portage::Stage",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
     "name": "strk20_invoke_helper::portage::Portage::Event",
     "kind": "enum",
     "variants": [
@@ -396,6 +506,16 @@
       {
         "name": "Cancelled",
         "type": "strk20_invoke_helper::portage::Portage::Cancelled",
+        "kind": "nested"
+      },
+      {
+        "name": "ExpGained",
+        "type": "strk20_invoke_helper::portage::Portage::ExpGained",
+        "kind": "nested"
+      },
+      {
+        "name": "Evolved",
+        "type": "strk20_invoke_helper::portage::Portage::Evolved",
         "kind": "nested"
       }
     ]

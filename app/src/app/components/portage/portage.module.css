@@ -133,6 +133,80 @@
   border-top: 1px solid rgba(169, 158, 201, 0.16);
 }
 
+/* --- Creature stats, exp & evolve (SPEC §5) ------------------------------ */
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 12px;
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.stat {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.statValue {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.expBlock {
+  margin-top: 10px;
+}
+.expTrack {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(169, 158, 201, 0.18);
+  overflow: hidden;
+}
+.expFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--violet-bright), var(--amber));
+  transition: width 160ms ease;
+}
+.expLabel {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.evolveRow {
+  display: flex;
+  justify-content: flex-end;
+}
+.evolveBtn {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--violet-bright);
+  border: none;
+  border-radius: 999px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: filter 140ms ease, transform 120ms ease;
+}
+.evolveBtn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.evolveBtn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.evolveBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* --- Portal (hatch) ------------------------------------------------------ */
 .portal {
   display: flex;
@@ -257,19 +331,69 @@
   background: var(--green);
 }
 .listBtn:hover,
-.buyBtn:hover {
+.buyBtn:hover,
+.cancelBtn:hover {
   filter: brightness(1.08);
 }
 .listBtn:active,
-.buyBtn:active {
+.buyBtn:active,
+.cancelBtn:active {
   transform: scale(0.97);
+}
+.listBtn:disabled,
+.buyBtn:disabled,
+.cancelBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.cancelBtn {
+  color: #fff;
+  background: var(--violet-bright);
+}
+
+/* --- On-chain / demo badge + notices ------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-top: 12px;
+}
+.badgeOn {
+  color: #9fe6b0;
+  border: 1px solid rgba(62, 125, 90, 0.7);
+  background: rgba(62, 125, 90, 0.22);
+}
+.badgeDemo {
+  color: var(--amber);
+  border: 1px dashed rgba(240, 169, 58, 0.6);
+  background: rgba(240, 169, 58, 0.12);
+}
+.notice {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin: 14px auto 0;
+  max-width: 520px;
+  line-height: 1.5;
+}
+.noticeError {
+  color: #ff8fa3;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .card,
   .portalButton,
   .listBtn,
-  .buyBtn {
+  .buyBtn,
+  .cancelBtn,
+  .evolveBtn {
     transition: none;
   }
   .revealPulse {

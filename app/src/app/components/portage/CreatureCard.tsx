@@ -3,11 +3,13 @@
 import type { ReactNode } from "react";
 import styles from "./portage.module.css";
 import { shortAddress, type Creature } from "@/utils/creatures";
-import { RARITY, SPECIES, STAGE } from "@/utils/portage";
+import { EXP_THRESHOLDS, RARITY, SPECIES, STAGE } from "@/utils/portage";
 
 /**
- * Shared creature card — species name, rarity badge (colored border) and stage
- * label. Used by both the Caravan and the Marketplace (which passes a footer).
+ * Shared creature card — species name, rarity badge (colored border), stage
+ * label, a compact stat row (HP / ATK / DEF / SPD) and an exp bar toward the
+ * next evolution threshold. Used by the Caravan, Marketplace and Portal (which
+ * may pass a footer).
  */
 export default function CreatureCard({
   creature,
@@ -19,6 +21,8 @@ export default function CreatureCard({
   const species = SPECIES[creature.species];
   const rarity = RARITY[creature.rarity];
   const stage = STAGE[creature.stage];
+  const next = EXP_THRESHOLDS[creature.stage];
+  const pct = next === null ? 100 : Math.min(100, Math.round((creature.exp / next) * 100));
 
   return (
     <article
@@ -44,6 +48,40 @@ export default function CreatureCard({
       >
         {rarity.label}
       </span>
+
+      <div className={styles.statRow} aria-label="Creature stats">
+        <span className={styles.stat}>
+          <b className={styles.statValue}>{creature.health}</b>
+          HP
+        </span>
+        <span className={styles.stat}>
+          <b className={styles.statValue}>{creature.attack}</b>
+          ATK
+        </span>
+        <span className={styles.stat}>
+          <b className={styles.statValue}>{creature.defense}</b>
+          DEF
+        </span>
+        <span className={styles.stat}>
+          <b className={styles.statValue}>{creature.speed}</b>
+          SPD
+        </span>
+      </div>
+
+      <div className={styles.expBlock}>
+        <div
+          className={styles.expTrack}
+          role="progressbar"
+          aria-valuenow={creature.exp}
+          aria-valuemin={0}
+          aria-valuemax={next ?? creature.exp}
+        >
+          <span className={styles.expFill} style={{ width: `${pct}%` }} />
+        </div>
+        <span className={styles.expLabel}>
+          {next === null ? `EXP ${creature.exp} · MAX` : `EXP ${creature.exp}/${next}`}
+        </span>
+      </div>
 
       <p className={styles.cardOwner} title={creature.owner}>
         {shortAddress(creature.owner)}

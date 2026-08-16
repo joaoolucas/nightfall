@@ -93,3 +93,85 @@ export const STAGE_LIST: readonly Stage[] = ["hatchling", "adult", "legend"];
 export const speciesLabel = (s: Species): string => SPECIES[s].label;
 export const rarityLabel = (r: Rarity): string => RARITY[r].label;
 export const stageLabel = (s: Stage): string => STAGE[s].label;
+
+// ---------------------------------------------------------------------------
+// Creature stats, exp & evolution (SPEC §5)
+// ---------------------------------------------------------------------------
+
+/** Base stats per species (health, attack, defense, speed) — SPEC §5 table. */
+export const BASE_STATS: Record<
+  Species,
+  { health: number; attack: number; defense: number; speed: number }
+> = {
+  ember: { health: 60, attack: 90, defense: 50, speed: 70 },
+  creek: { health: 90, attack: 60, defense: 60, speed: 60 },
+  grove: { health: 100, attack: 50, defense: 80, speed: 50 },
+  stone: { health: 80, attack: 60, defense: 100, speed: 40 },
+  mist: { health: 50, attack: 80, defense: 40, speed: 100 },
+  sky: { health: 60, attack: 70, defense: 50, speed: 90 },
+};
+
+/** Rarity multiplier — SPEC §5. */
+export const RARITY_MULT: Record<Rarity, number> = {
+  common: 1.0,
+  uncommon: 1.3,
+  rare: 1.6,
+  epic: 2.0,
+  legendary: 2.5,
+  mythic: 3.5,
+};
+
+/** Stage multiplier — SPEC §5. */
+export const STAGE_MULT: Record<Stage, number> = {
+  hatchling: 0.5,
+  adult: 1.0,
+  legend: 2.0,
+};
+
+/**
+ * Exp needed to evolve to the next stage. `null` = no further evolution.
+ * Hatchling → Adult at 100 exp, Adult → Legend at 500 exp (SPEC §5).
+ */
+export const EXP_THRESHOLDS: Record<Stage, number | null> = {
+  hatchling: 100,
+  adult: 500,
+  legend: null,
+};
+
+/** Rarity index, least → most scarce (0 = Common … 5 = Mythic). */
+export const RARITY_INDEX: Record<Rarity, number> = {
+  common: 0,
+  uncommon: 1,
+  rare: 2,
+  epic: 3,
+  legendary: 4,
+  mythic: 5,
+};
+
+/** Final derived creature stats. */
+export interface CreatureStats {
+  health: number;
+  attack: number;
+  defense: number;
+  speed: number;
+}
+
+/**
+ * Final stats for a creature: `base_species × rarity_mult × stage_mult`,
+ * rounded to the nearest integer (SPEC §5).
+ */
+export function creatureStats(species: Species, rarity: Rarity, stage: Stage): CreatureStats {
+  const base = BASE_STATS[species];
+  const mult = RARITY_MULT[rarity] * STAGE_MULT[stage];
+  return {
+    health: Math.round(base.health * mult),
+    attack: Math.round(base.attack * mult),
+    defense: Math.round(base.defense * mult),
+    speed: Math.round(base.speed * mult),
+  };
+}
+
+/** Exp a creature earns per expedition tick, scaled by rarity (SPEC §5). */
+export function expYield(rarity: Rarity): number {
+  return 1 + RARITY_INDEX[rarity];
+}
