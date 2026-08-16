@@ -1,9 +1,17 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import Image from "next/image";
 import styles from "./portage.module.css";
 import { shortAddress, type Creature } from "@/utils/creatures";
-import { EXP_THRESHOLDS, RARITY, SPECIES, STAGE } from "@/utils/portage";
+import {
+  EXP_THRESHOLDS,
+  RARITY,
+  SPECIES,
+  STAGE,
+  creatureSpritePath,
+  elementIconPath,
+} from "@/utils/portage";
 
 /**
  * Shared creature card — species name, rarity badge (colored border), stage
@@ -24,17 +32,30 @@ export default function CreatureCard({
   const next = EXP_THRESHOLDS[creature.stage];
   const pct = next === null ? 100 : Math.min(100, Math.round((creature.exp / next) * 100));
 
+  // The rarity color is exposed as a CSS custom property so the card name can
+  // pick up a rarity-tinted shimmer/gradient for Epic+ creatures (pure CSS).
+  const cardStyle = {
+    borderColor: rarity.borderColor,
+    boxShadow: `inset 0 0 0 1px ${rarity.borderColor}, 0 14px 34px -22px ${rarity.glow}, 0 0 22px -6px ${rarity.glow}`,
+    "--rarity-color": rarity.color,
+  } as CSSProperties;
+
   return (
-    <article
-      className={styles.card}
-      style={{
-        borderColor: rarity.borderColor,
-        boxShadow: `inset 0 0 0 1px ${rarity.borderColor}, 0 14px 34px -22px ${rarity.glow}`,
-      }}
-    >
+    <article className={styles.card} data-rarity={creature.rarity} style={cardStyle}>
       <div className={styles.cardTop}>
         <span className={styles.cardId}>#{creature.tokenId}</span>
         <span className={styles.stagePill}>{stage.label}</span>
+      </div>
+
+      <div className={styles.spriteWrap}>
+        <Image
+          className={styles.spriteImg}
+          src={creatureSpritePath(creature.species, creature.stage)}
+          alt={`${species.label} ${stage.label} sprite`}
+          width={96}
+          height={96}
+          unoptimized
+        />
       </div>
 
       <h3 className={styles.cardName}>{species.label}</h3>
@@ -42,12 +63,25 @@ export default function CreatureCard({
         {species.example} · {species.element}
       </p>
 
-      <span
-        className={styles.rarityBadge}
-        style={{ color: rarity.color, borderColor: rarity.borderColor }}
-      >
-        {rarity.label}
-      </span>
+      <div className={styles.badgeRow}>
+        <span
+          className={styles.rarityBadge}
+          style={{ color: rarity.color, borderColor: rarity.borderColor }}
+        >
+          {rarity.label}
+        </span>
+        <span className={styles.elementBadge} title={`${species.element} element`}>
+          <Image
+            src={elementIconPath(creature.species)}
+            alt=""
+            width={16}
+            height={16}
+            unoptimized
+            aria-hidden
+          />
+          {species.element}
+        </span>
+      </div>
 
       <div className={styles.statRow} aria-label="Creature stats">
         <span className={styles.stat}>

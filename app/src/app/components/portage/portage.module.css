@@ -43,7 +43,8 @@
 }
 .title {
   font-size: clamp(26px, 4vw, 38px);
-  font-weight: 600;
+  font-weight: 700;
+  font-family: var(--font-display), monospace;
   letter-spacing: -0.02em;
   margin: 0;
 }
@@ -99,7 +100,8 @@
 }
 .cardName {
   font-size: 20px;
-  font-weight: 650;
+  font-weight: 700;
+  font-family: var(--font-display), monospace;
   letter-spacing: -0.01em;
   margin: 8px 0 0;
 }
@@ -108,8 +110,43 @@
   color: var(--muted);
   margin: 0;
 }
+
+/* --- Creature sprite + element badge ------------------------------------ */
+.spriteWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 0 6px;
+}
+.spriteImg {
+  image-rendering: pixelated;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.35));
+}
+.badgeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.elementBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  background: rgba(169, 158, 201, 0.16);
+  border: 1px solid rgba(169, 158, 201, 0.35);
+  border-radius: 999px;
+  padding: 4px 10px 4px 6px;
+}
+.elementBadge img {
+  image-rendering: pixelated;
+}
 .rarityBadge {
-  align-self: flex-start;
+  align-self: center;
   display: inline-flex;
   font-size: 12px;
   font-weight: 700;
@@ -118,7 +155,32 @@
   border: 1px solid;
   border-radius: 999px;
   padding: 4px 11px;
-  margin-top: 8px;
+}
+
+/* Epic+ creature names get a rarity-tinted gradient shimmer (pure CSS). */
+.card[data-rarity="epic"] .cardName,
+.card[data-rarity="legendary"] .cardName,
+.card[data-rarity="mythic"] .cardName {
+  background: linear-gradient(
+    100deg,
+    var(--rarity-color) 0%,
+    #ffffff 50%,
+    var(--rarity-color) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: nameShimmer 3.5s linear infinite;
+}
+@keyframes nameShimmer {
+  from {
+    background-position: 220% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
 }
 .cardOwner {
   font-family: var(--font-mono-ui), monospace;
@@ -220,10 +282,30 @@
 
 /* --- Portal (hatch) ------------------------------------------------------ */
 .portal {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 28px;
+  padding: 40px 24px;
+  border-radius: 24px;
+  overflow: hidden;
+  background-color: var(--night);
+  background-size: cover;
+  background-position: center;
+  background-image: url("/game-assets/backgrounds/portal-meadow.png");
+  border: 1px solid rgba(169, 158, 201, 0.25);
+}
+/* Dark overlay keeps the biome backdrop readable behind the portal UI. */
+.portalOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(20, 16, 42, 0.68), rgba(16, 12, 36, 0.88));
+}
+.portal > :not(.portalOverlay) {
+  position: relative;
+  z-index: 1;
 }
 .portalButton {
   position: relative;
@@ -408,6 +490,11 @@
     transition: none;
   }
   .revealPulse {
+    animation: none;
+  }
+  .card[data-rarity="epic"] .cardName,
+  .card[data-rarity="legendary"] .cardName,
+  .card[data-rarity="mythic"] .cardName {
     animation: none;
   }
 }

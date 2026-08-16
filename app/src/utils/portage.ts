@@ -95,6 +95,63 @@ export const rarityLabel = (r: Rarity): string => RARITY[r].label;
 export const stageLabel = (s: Stage): string => STAGE[s].label;
 
 // ---------------------------------------------------------------------------
+// Art asset mapping (app/public/game-assets)
+// ---------------------------------------------------------------------------
+
+/** Species → creature sprite id (the flagship creature of each biome, SPEC §4). */
+export const SPECIES_SPRITE_ID: Record<Species, string> = {
+  ember: "cinderling",
+  creek: "ripple",
+  grove: "bramble",
+  stone: "shard",
+  mist: "wisp",
+  sky: "aurora",
+};
+
+/** The sprite filename stem for a species (e.g. "ember" → "cinderling"). */
+export function creatureSpriteId(species: Species): string {
+  return SPECIES_SPRITE_ID[species];
+}
+
+/**
+ * Stage-specific creature sprite (transparent PNG):
+ *   hatchling → /game-assets/creatures/<id>-hatchling.png
+ *   adult     → /game-assets/creatures/<id>-adult.png
+ *   legend    → /game-assets/creatures/<id>-legend.png
+ */
+export function creatureSpritePath(species: Species, stage: Stage): string {
+  const id = creatureSpriteId(species);
+  switch (stage) {
+    case "hatchling":
+      return `/game-assets/creatures/${id}-hatchling.png`;
+    case "adult":
+      return `/game-assets/creatures/${id}-adult.png`;
+    case "legend":
+      return `/game-assets/creatures/${id}-legend.png`;
+    default:
+      return creatureFallbackSpritePath(species);
+  }
+}
+
+/** Base (non-stage) creature sprite, used as a fallback: /game-assets/creatures/<id>.png. */
+export function creatureFallbackSpritePath(species: Species): string {
+  return `/game-assets/creatures/${creatureSpriteId(species)}.png`;
+}
+
+/** Element icon for a species: /game-assets/elements/icon-<species>.png. */
+export function elementIconPath(species: Species): string {
+  return `/game-assets/elements/icon-${species}.png`;
+}
+
+/** Biome backdrop for a species: /game-assets/backgrounds/bg-<species>.png. */
+export function biomeBackgroundPath(species: Species): string {
+  return `/game-assets/backgrounds/bg-${species}.png`;
+}
+
+/** Neutral meadow backdrop used before a hatch reveals a biome. */
+export const MEADOW_BACKGROUND_PATH = "/game-assets/backgrounds/portal-meadow.png";
+
+// ---------------------------------------------------------------------------
 // Creature stats, exp & evolution (SPEC §5)
 // ---------------------------------------------------------------------------
 

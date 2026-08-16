@@ -4,6 +4,10 @@ import { useState } from "react";
 import styles from "./portage.module.css";
 import { MOCK_CREATURES, type Creature } from "@/utils/creatures";
 import CreatureCard from "./CreatureCard";
+import {
+  MEADOW_BACKGROUND_PATH,
+  biomeBackgroundPath,
+} from "@/utils/portage";
 import { hasPortageContract, PortageClient, randomFeltSeed } from "@/utils/portage-client";
 import { useStoreWallet } from "@/app/components/Wallet/walletContext";
 
@@ -59,6 +63,12 @@ export default function Portal() {
     }, 900);
   }
 
+  // Show the revealed creature's biome behind the portal, or the neutral
+  // meadow while waiting for a hatch.
+  const biomeBg = revealed
+    ? biomeBackgroundPath(revealed.species)
+    : MEADOW_BACKGROUND_PATH;
+
   return (
     <section className={styles.section}>
       <header className={styles.sectionHead}>
@@ -74,7 +84,9 @@ export default function Portal() {
         </span>
       </header>
 
-      <div className={styles.portal}>
+      <div className={styles.portal} style={{ backgroundImage: `url(${biomeBg})` }}>
+        <span className={styles.portalOverlay} aria-hidden />
+
         <button
           type="button"
           className={styles.portalButton}

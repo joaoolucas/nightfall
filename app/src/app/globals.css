@@ -91,6 +91,14 @@ body {
   overflow-x: hidden;
 }
 
+/* Pixel display face for headings, titles and card names (Portage.fun theme).
+   Body copy keeps --font-body (Inter). */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display), 'Silkscreen', monospace;
+}
+
 /* Redesigned app is committed to a single light "aurora" theme. */
 html {
   color-scheme: light;
