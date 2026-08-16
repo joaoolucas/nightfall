@@ -1,5 +1,10 @@
 use starknet::ContractAddress;
 
+pub mod nightfall;
+
+#[cfg(test)]
+pub mod tests;
+
 // Must match privacy::objects::OpenNoteDeposit (positional Serde).
 #[derive(Serde, Copy, Drop, PartialEq, Debug)]
 pub struct OpenNoteDeposit {
