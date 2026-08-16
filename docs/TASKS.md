@@ -10,7 +10,7 @@ follow **[`STRK20_INTEGRATION_PLAN.md`](../STRK20_INTEGRATION_PLAN.md)**.
 
 - All content in **English**.
 - Idle creature-collecting (not Werewolf).
-- Provably-fair on-chain hatch (committed-seed deterministic RNG).
+- Target: manipulation-resistant, publicly verifiable on-chain hatch.
 - Creatures = on-chain assets (NFT); marketplace with rake.
 - 6 biomes: Ember, Creek, Grove, Stone, Mist, Sky.
 - Rarities: Common · Uncommon · Rare · Epic · Legendary · Mythic.
@@ -18,7 +18,7 @@ follow **[`STRK20_INTEGRATION_PLAN.md`](../STRK20_INTEGRATION_PLAN.md)**.
 ## Wave 1 — Foundations (file-disjoint, parallel)
 
 ### T1 — Contracts: Portage core (Cairo)
-- [x] `hatch(seed)` — committed-seed deterministic RNG → creature (species + rarity).
+- [x] Prototype `hatch(seed)` — deterministic RNG → creature (species + rarity); caller seed is grindable.
 - [x] Fixed rarity table on-chain (public, verifiable).
 - [x] Creature NFT: mint, owner_of, transfer.
 - [x] Species metadata (biome, stage) readable on-chain.

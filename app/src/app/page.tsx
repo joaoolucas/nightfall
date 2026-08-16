@@ -62,8 +62,8 @@ export default function Page() {
           <span className={styles.heroAccent}>Carry your creatures</span>
         </h1>
         <p className={styles.heroSub}>
-          An idle creature-collecting game on Starknet — provably-fair hatches,
-          expeditions, and an on-chain marketplace.
+          An idle creature-collecting game on Starknet — deterministic hatch previews,
+          expeditions, and an on-chain marketplace prototype.
         </p>
       </header>
 

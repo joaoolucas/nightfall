@@ -1,8 +1,8 @@
 # Portage.fun — Idle Creature-Collecting on Starknet
 
-> A cozy idle creature-collecting game with **provably-fair on-chain hatches**,
-> **ownable, tradable creatures**, and a **player-driven marketplace** — built on
-> STRK20 privacy on Starknet.
+> Product target: a cozy idle creature-collecting game with manipulation-resistant,
+> publicly verifiable hatches, ownable creatures and private STRK payment support on Starknet.
+> The current prototype is not Mainnet-ready; §6–7 list the open security gates.
 
 ## 1. Vision
 
@@ -11,8 +11,8 @@ the odds, and owns your collection. **Portage.fun** makes the RNG mathematically
 verifiable on-chain and makes every creature a real asset you own, trade, and
 take across the game.
 
-**Positioning:** "Provably-fair creature collecting — every hatch is verified
-on-chain, and every creature is yours."
+**Target positioning after the entropy gate is complete:** "Provably-fair creature
+collecting — every hatch is verified on-chain, and every creature is yours."
 
 ## 2. The fantasy
 
@@ -23,8 +23,8 @@ and go on expeditions for you. Your collection is a living caravan.
 ## 3. Core loop
 
 1. **Open a Portal (hatch)** — spend energy/shards to open a portal and conjure
-   a creature. The result is a **provably-fair RNG roll committed on-chain**: you
-   can verify the rarity that dropped was mathematically fair.
+   a creature. Target flow: commit before entropy is known, then reveal a roll that
+   anyone can recompute. The current caller-seeded prototype does not satisfy this yet.
 2. **Expeditions (idle)** — creatures explore biomes over real time and return
    with resources (shards, evolution mats). Progress runs off-chain and is
    check-pointed on-chain.
@@ -85,7 +85,7 @@ monster model (`health`, `attack`, `defense`, `speed`, `exp`) and its exp curve.
 - `expYield` is a creature stat (how much exp it earns per expedition tick),
   scaled by rarity so rarer creatures progress faster.
 
-## 6. Provably-fair RNG (the on-chain core)
+## 6. Target fair RNG (the on-chain core)
 
 - Target design: a **hatch** commits before entropy is known, then reveals a creature
   deterministically with replay/front-running protection and timeout/refund behavior.

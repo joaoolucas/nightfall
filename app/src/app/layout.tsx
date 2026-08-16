@@ -23,8 +23,8 @@ const silkscreen = Silkscreen({
 })
 
 export const metadata: Metadata = {
-  title: 'Portage.fun — Provably-fair creature collecting',
-  description: 'An idle creature-collecting game on Starknet — provably-fair on-chain hatches, ownable creatures, and a player-driven marketplace, powered by STRK20 privacy.',
+  title: 'Portage.fun — Creature collecting on Starknet',
+  description: 'An idle creature-collecting prototype on Starknet with deterministic hatch previews, ownable creatures, expeditions, and STRK20 private STRK controls.',
 }
 
 export default function RootLayout({
