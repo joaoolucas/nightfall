@@ -1,6 +1,7 @@
 use starknet::ContractAddress;
 
 pub mod nightfall;
+pub mod engine;
 
 #[cfg(test)]
 pub mod tests;
