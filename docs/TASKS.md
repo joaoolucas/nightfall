@@ -22,35 +22,36 @@ for one overnight loop. Checkboxes are updated as work lands.
 ## Wave 1 — Foundations (file-disjoint, parallel)
 
 ### T1 — Contracts: Fair Game Engine + Nightfall v0
-- [ ] Replace echo-only helper with a real game contract.
-- [ ] State machine: Lobby → Deal → Night → Day → Vote → Reveal → Settle.
-- [ ] Roles MVP: Werewolf, Minion, Seer, Robber, Troublemaker, Villager.
-- [ ] `privacy_invoke` buy-in / payout (`OpenNoteDeposit`).
-- [ ] Game actions via calldata (join, start, night action, vote, reveal, settle).
-- [ ] Cairo tests for happy path + invalid transitions.
-- [ ] Keep echo helper as a separate module if useful for STRK20 smoke.
+- [x] Replace echo-only helper with a real game contract.
+- [x] State machine: Lobby → Deal → Night → Day → Vote → Reveal → Settle.
+- [x] Roles MVP: Werewolf, Minion, Seer, Robber, Troublemaker, Villager.
+- [x] `privacy_invoke` buy-in / payout (`OpenNoteDeposit`).
+- [x] Game actions via calldata (join, start, night action, vote, reveal, settle).
+- [x] Cairo tests for happy path + invalid transitions (9/9 pass).
+- [x] Keep echo helper as a separate module (StrkInvokeHelper).
 
 ### T2 — App: Nightfall shell on starter kit
-- [ ] Rebrand page to Nightfall: One Night.
-- [ ] Lobby UI: create/join table, seat list, free vs staked.
-- [ ] Game table UI: phase banner, role cards (hidden/revealed), action + vote.
-- [ ] Keep wallet connect + STRK20 actions (needed for Day 0 / scoring).
-- [ ] Wire constants for Nightfall contract address (env, default 0x0).
+- [x] Rebrand page to Nightfall: One Night.
+- [x] Lobby UI: create/join table, seat list, free vs staked.
+- [x] Game table UI: phase banner, role cards (hidden/revealed), action + vote.
+- [x] Keep wallet connect + STRK20 actions.
+- [x] Wire constants for Nightfall contract address (env, default 0x0).
 
 ### T3 — Keeper: AI seat service skeleton
-- [ ] `keeper/package.json` + TypeScript entry.
-- [ ] Personas (aggressive / cautious / deceptive).
-- [ ] Decide loop with structured output (action / vote).
-- [ ] Default LLM via OrcaRouter (not OpenRouter Gemini).
-- [ ] Mock chain adapter so it runs without a live game.
+- [x] `keeper/package.json` + TypeScript entry.
+- [x] Personas (aggressive / cautious / deceptive).
+- [x] Decide loop with structured output (action / vote).
+- [x] Default LLM via OrcaRouter (kimi-k3).
+- [x] Mock chain adapter so it runs without a live game.
 
 ### T4 — Docs
-- [ ] Root README (what / why / how to run).
-- [ ] Fair Game Engine reuse notes.
-- [ ] Keep SPEC as source of truth.
+- [x] Root README (what / why / how to run).
+- [x] Fair Game Engine reuse notes.
+- [x] Keep SPEC as source of truth.
 
 ## Wave 2 — Core loop (after Wave 1 builds)
 
+- [x] Export Nightfall ABI for app/keeper (`app/src/abis/nightfall.abi.json`).
 - [ ] App talks to deployed/local contract (read game state).
 - [ ] Night action + vote submission path (even if mocked STRK20 calldata).
 - [ ] Keeper joins a lobby seat and emits a decision.
@@ -61,6 +62,11 @@ for one overnight loop. Checkboxes are updated as work lands.
 - [ ] Day 0: at least document how to shield + first mainnet tx.
 - [ ] Fill `strk20.json` as txs land (do not invent hashes).
 - [ ] Session-key / paymaster notes (implement if time).
+
+## Review / architecture (done)
+
+- [x] Reviewer pass — Claude Opus 5 (out of credits) → Kimi K3; Supervisor review done.
+- [x] Architect (Grok 4.6) — REQUEST CHANGES: codegen, privacy gates, GameEngine trait (Wave 2/3).
 
 ## Definition of Done tonight (minimum)
 
