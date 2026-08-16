@@ -21,11 +21,15 @@ cannot make an AI opponent cheat.
 ```
 keeper/
 ├── src/
-│   ├── index.ts        # entrypoint: watch games, drive AI seats
-│   ├── persona.ts      # persona system (aggressive/cautious/deceptive...)
-│   ├── decide.ts       # LLM prompt -> action/vote decision
-│   ├── submit.ts       # privacy_invoke submission (reuse app/ SDK helpers)
-│   └── config.ts       # models, RPC, pool/helper addresses
+│   ├── index.ts            # entrypoint: drive one AI seat
+│   ├── drive-seat.ts       # adapter selection + one decide() run
+│   ├── persona.ts          # persona system (aggressive/cautious/deceptive...)
+│   ├── decide.ts           # LLM prompt -> action/vote decision
+│   ├── chain-adapter.ts    # ChainAdapter interface
+│   ├── starknet-adapter.ts # real Starknet Fair Game Engine adapter (reads)
+│   ├── mock-chain.ts       # in-memory adapter for zero-config runs
+│   ├── types.ts            # shared domain types
+│   └── config.ts           # models, RPC, pool/helper addresses
 └── package.json
 ```
 
