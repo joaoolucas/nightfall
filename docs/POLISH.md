@@ -5,15 +5,15 @@ creature-collector. Organized by impact → effort. All English.
 
 ## Wave 4 — Visual identity (foundation)
 
-- [ ] **Logo** — a round portal ring with a creature silhouette stepping through (PixelLab or SVG).
-- [ ] **Favicon / app icon** — replace the starter icon.
-- [ ] **Typography** — a cozy/pixel display font (e.g. Silkscreen / VT323 / Press Start 2P) + body font.
-- [ ] **Biome backgrounds** — one portal background per biome (Ember/Creek/Grove/Stone/Mist/Sky), matching the creature palette.
-- [ ] **Element icons** — 6 small glyphs (fire/water/nature/earth/shadow/light) for badges.
+- [x] **Logo** — a round portal ring with a creature silhouette stepping through (PixelLab or SVG).
+- [x] **Favicon / app icon** — replace the starter icon.
+- [x] **Typography** — a cozy/pixel display font (e.g. Silkscreen / VT323 / Press Start 2P) + body font.
+- [x] **Biome backgrounds** — one portal background per biome (Ember/Creek/Grove/Stone/Mist/Sky), matching the creature palette.
+- [x] **Element icons** — 6 small glyphs (fire/water/nature/earth/shadow/light) for badges.
 
 ## Wave 5 — Complete the creatures (content)
 
-- [ ] Sprites for **all 6 species × 3 stages** (currently only Ember + Creek have stages):
+- [x] Sprites for **all 6 species × 3 stages** (currently only Ember + Creek have stages):
   - [ ] Bramble (Grove) — hatchling/adult/legend
   - [ ] Shard (Stone) — hatchling/adult/legend
   - [ ] Wisp (Mist) — hatchling/adult/legend
@@ -21,18 +21,18 @@ creature-collector. Organized by impact → effort. All English.
 
 ## Wave 6 — Card & UI polish
 
-- [ ] CreatureCard renders the **real sprite** (not placeholder) + rarity glow ring + element badge.
-- [ ] **Rarity effects** — colored glow/sparkle by rarity (Common→Mythic).
-- [ ] **Exp bar** — smooth, with a fill animation and threshold label.
-- [ ] **Creature detail modal** — full stats, species lore, stage progression.
-- [ ] **Responsive** — mobile-first grid (most players are on phones).
+- [x] CreatureCard renders the **real sprite** (not placeholder) + rarity glow ring + element badge.
+- [x] **Rarity effects** — colored glow/sparkle by rarity (Common→Mythic).
+- [x] **Exp bar** — smooth, with a fill animation and threshold label.
+- [x] **Creature detail modal** — full stats, species lore, stage progression.
+- [x] **Responsive** — mobile-first grid (most players are on phones).
 
 ## Wave 7 — Game feel & animation
 
-- [ ] **Portal hatch animation** — portal swirls open → creature revealed (suspense beat).
-- [ ] **Reveal** — rarity flash/shake before the card settles.
-- [ ] **Evolution** — sparkle burst when a creature evolves.
-- [ ] **Micro-interactions** — hover lift, press scale, card flip.
+- [x] **Portal hatch animation** — portal swirls open → creature revealed (suspense beat).
+- [x] **Reveal** — rarity flash/shake before the card settles.
+- [x] **Evolution** — sparkle burst when a creature evolves.
+- [x] **Micro-interactions** — hover lift, press scale, card flip.
 - [ ] (stretch) **Sound** — soft chime on hatch/evolve.
 
 ## Wave 8 — Mechanics that make it a game
