@@ -4,15 +4,13 @@
  * Turns pi into a multi-role orchestrator for a non-stop workflow:
  *
  *   Supervisor  -> GPT-5.6 Sol            (planning & coordination)
- *   Worker      -> hcnsec/DeepSeek-V4-Pro (implementation)
+ *   Worker      -> hcnsec/DeepSeek-V4-Flash (fast implementation)
  *   Reviewer    -> hcnsec/Kimi-K2.6       (code review + vision)
  *   Merger      -> hcnsec/DeepSeek-V4-Pro (merge/conflict resolution)
  *   Architect   -> hcnsec/glm-5.2         (architecture review)
  *
  * Each subagent runs in a separate `pi` process (isolated context), with its
  * own model, thinking level, and tool set.
- *
- * Fallback chain (if primary fails): openai-codex → orcarouter → hcnsec/auto
  *
  * Usage:
  *   /role <role>        switch the main agent to a role
@@ -48,7 +46,7 @@ const ROLES: Record<Role, RoleSpec> = {
   },
   worker: {
     model: "hcnsec/DeepSeek-V4-Flash",
-    thinking: "high",
+    thinking: "off",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
     systemPrompt: [
       "You are a worker (DeepSeek V4 Flash). Implement the assigned task end-to-end, autonomously.",
@@ -59,12 +57,11 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Notes - info for the reviewer (key files, decisions)",
       "Do not stop until the task is complete.",
     ].join("\n"),
-    label: "Worker (DeepSeek V4 Flash · high)",
-    fallback: "hcnsec/auto",
+    label: "Worker (DeepSeek V4 Flash · fast)",
   },
   reviewer: {
     model: "hcnsec/Kimi-K2.6",
-    thinking: "high",
+    thinking: "off",
     tools: ["read", "grep", "find", "ls", "bash"],
     systemPrompt: [
       "You are a senior code reviewer. Review the recent changes.",
@@ -76,12 +73,11 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Verdict - APPROVE or REQUEST CHANGES",
       "Be specific with paths and line numbers.",
     ].join("\n"),
-    label: "Reviewer (Kimi K2.6 · high · vision)",
-    fallback: "hcnsec/auto",
+    label: "Reviewer (Kimi K2.6 · vision)",
   },
   merger: {
     model: "hcnsec/DeepSeek-V4-Pro",
-    thinking: "high",
+    thinking: "off",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
     systemPrompt: [
       "You are a merger. Resolve conflicts and integrate the changes.",
@@ -92,12 +88,11 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Verification - build/tests run and their result",
       "## Files Changed - changed files",
     ].join("\n"),
-    label: "Merger (DeepSeek V4 Pro · high)",
-    fallback: "hcnsec/auto",
+    label: "Merger (DeepSeek V4 Pro)",
   },
   architect: {
     model: "hcnsec/glm-5.2",
-    thinking: "high",
+    thinking: "off",
     tools: ["read", "grep", "find", "ls"],
     systemPrompt: [
       "You are a software architect. Review the solution architecture without editing anything.",
@@ -108,8 +103,7 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Recommendations",
       "## Verdict - APPROVE or REQUEST CHANGES",
     ].join("\n"),
-    label: "Architect (GLM 5.2 · high)",
-    fallback: "hcnsec/auto",
+    label: "Architect (GLM 5.2)",
   },
 };
 

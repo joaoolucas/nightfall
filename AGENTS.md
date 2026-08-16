@@ -22,10 +22,10 @@ specialized models.
 | Role | Model | Thinking | Tools |
 |------|-------|----------|-------|
 | Supervisor | `openai-codex/gpt-5.6-sol` | high | read, bash, edit, write, grep, find, ls, run_agent |
-| Worker | `orcarouter/deepseek/deepseek-v4-pro-0813` | high | read, bash, edit, write, grep, find, ls |
-| Reviewer | `orcarouter/kimi/kimi-k3` | high | read, grep, find, ls, bash (read-only) |
-| Merger | `orcarouter/deepseek/deepseek-v4-pro-0813` | high | read, bash, edit, write, grep, find, ls |
-| Architect | `orcarouter/grok/grok-4.6` | high | read, grep, find, ls |
+| Worker | `hcnsec/DeepSeek-V4-Flash` | off (provider-managed) | read, bash, edit, write, grep, find, ls |
+| Reviewer | `hcnsec/Kimi-K2.6` | off (provider-managed) | read, grep, find, ls, bash (read-only) |
+| Merger | `hcnsec/DeepSeek-V4-Pro` | off (provider-managed) | read, bash, edit, write, grep, find, ls |
+| Architect | `hcnsec/glm-5.2` | off (provider-managed) | read, grep, find, ls |
 
 Commands: `/role <role>` switches the main agent's model; `/kickoff <goal>`
 starts the non-stop loop.

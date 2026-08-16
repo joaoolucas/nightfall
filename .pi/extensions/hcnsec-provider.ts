@@ -44,7 +44,9 @@ export default function registerHcnsec(pi: ExtensionAPI) {
       input: ["text"],
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       contextWindow: 128_000,
-      maxTokens: 16_384,
+      // Keep completion reservations small enough for the provider's pre-charge
+      // while allowing tool-driven agents to continue over multiple turns.
+      maxTokens: 2_048,
     })),
   });
 }
