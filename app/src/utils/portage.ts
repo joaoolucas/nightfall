@@ -111,21 +111,21 @@ export const BASE_STATS: Record<
   sky: { health: 60, attack: 70, defense: 50, speed: 90 },
 };
 
-/** Rarity multiplier — SPEC §5. */
+/** Rarity multiplier numerators (basis points) — mirror the Cairo contract. */
 export const RARITY_MULT: Record<Rarity, number> = {
-  common: 1.0,
-  uncommon: 1.3,
-  rare: 1.6,
-  epic: 2.0,
-  legendary: 2.5,
-  mythic: 3.5,
+  common: 100,
+  uncommon: 130,
+  rare: 160,
+  epic: 200,
+  legendary: 250,
+  mythic: 350,
 };
 
-/** Stage multiplier — SPEC §5. */
+/** Stage multiplier numerators (basis points) — mirror the Cairo contract. */
 export const STAGE_MULT: Record<Stage, number> = {
-  hatchling: 0.5,
-  adult: 1.0,
-  legend: 2.0,
+  hatchling: 50,
+  adult: 100,
+  legend: 200,
 };
 
 /**
@@ -157,21 +157,23 @@ export interface CreatureStats {
 }
 
 /**
- * Final stats for a creature: `base_species × rarity_mult × stage_mult`,
- * rounded to the nearest integer (SPEC §5).
+ * Final stats for a creature. Mirrors the Cairo integer math EXACTLY so the UI
+ * never disagrees with the chain: `floor(floor(base * r / 100) * s / 100)`.
  */
 export function creatureStats(species: Species, rarity: Rarity, stage: Stage): CreatureStats {
   const base = BASE_STATS[species];
-  const mult = RARITY_MULT[rarity] * STAGE_MULT[stage];
+  const r = RARITY_MULT[rarity];
+  const s = STAGE_MULT[stage];
+  const scale = (v: number) => Math.floor((Math.floor((v * r) / 100) * s) / 100);
   return {
-    health: Math.round(base.health * mult),
-    attack: Math.round(base.attack * mult),
-    defense: Math.round(base.defense * mult),
-    speed: Math.round(base.speed * mult),
+    health: scale(base.health),
+    attack: scale(base.attack),
+    defense: scale(base.defense),
+    speed: scale(base.speed),
   };
 }
 
-/** Exp a creature earns per expedition tick, scaled by rarity (SPEC §5). */
+/** Exp a creature earns per expedition tick (mirrors `exp_yield` in Cairo). */
 export function expYield(rarity: Rarity): number {
-  return 1 + RARITY_INDEX[rarity];
+  return RARITY_MULT[rarity] / 10;
 }

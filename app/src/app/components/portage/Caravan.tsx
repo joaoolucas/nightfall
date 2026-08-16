@@ -17,8 +17,9 @@ export default function Caravan() {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
   const address = useStoreWallet((s) => s.address);
   const isConnected = useStoreWallet((s) => s.isConnected);
+  const provider = useStoreWallet((s) => s.provider);
 
-  const [evolving, setEvolving] = useState<number | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const count = onChain ? totalSupply : creatures.length;
@@ -32,22 +33,33 @@ export default function Caravan() {
     }
   }
 
-  async function evolve(creature: Creature) {
+  async function run(creature: Creature, action: "evolve" | "expedition") {
     const wallet = account ?? myWalletAccount;
     if (!wallet) {
-      setNotice("Connect a wallet to evolve.");
+      setNotice("Connect a wallet.");
       return;
     }
-    setEvolving(creature.tokenId);
+    setBusy(`${action}:${creature.tokenId}`);
     setNotice(null);
     try {
       const client = new PortageClient(wallet);
-      await client.evolve(wallet, creature.tokenId);
+      const res =
+        action === "evolve"
+          ? await client.evolve(wallet, creature.tokenId)
+          : await client.expedition(wallet, creature.tokenId);
+      // Wait for the tx so refresh() reads post-tx state, not pre-tx.
+      if (provider) {
+        try {
+          await provider.waitForTransaction(res.transaction_hash);
+        } catch {
+          /* refresh anyway */
+        }
+      }
       refresh();
     } catch (err) {
       setNotice(err instanceof Error ? err.message : String(err));
     } finally {
-      setEvolving(null);
+      setBusy(null);
     }
   }
 
@@ -71,25 +83,35 @@ export default function Caravan() {
         <div className={styles.grid}>
           {creatures.map((creature) => {
             const next = EXP_THRESHOLDS[creature.stage];
-            const canEvolve = next !== null && creature.exp >= next;
             const isOwner = owns(creature.owner);
-            const enabled =
-              onChain && isConnected && canEvolve && isOwner && evolving !== creature.tokenId;
+            const canEvolve = next !== null && creature.exp >= next;
+            const ownerOnChain = onChain && isConnected && isOwner;
+            const evolveEnabled = ownerOnChain && canEvolve && busy === null;
+            const expeditionEnabled = ownerOnChain && next !== null && busy === null;
+            const key = `${creature.tokenId}`;
 
             return (
               <CreatureCard
                 key={creature.tokenId}
                 creature={creature}
                 footer={
-                  next !== null ? (
+                  ownerOnChain && next !== null ? (
                     <div className={styles.evolveRow}>
                       <button
                         type="button"
-                        className={styles.evolveBtn}
-                        onClick={() => evolve(creature)}
-                        disabled={!enabled}
+                        className={styles.expeditionBtn}
+                        onClick={() => run(creature, "expedition")}
+                        disabled={!expeditionEnabled}
                       >
-                        {evolving === creature.tokenId ? "Evolving…" : "Evolve"}
+                        {busy === `expedition:${key}` ? "Exploring…" : "Expedition"}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.evolveBtn}
+                        onClick={() => run(creature, "evolve")}
+                        disabled={!evolveEnabled}
+                      >
+                        {busy === `evolve:${key}` ? "Evolving…" : "Evolve"}
                       </button>
                     </div>
                   ) : undefined

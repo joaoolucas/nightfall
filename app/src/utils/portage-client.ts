@@ -155,9 +155,9 @@ export class PortageClient {
     return account.execute([call]);
   }
 
-  /** `gain_exp(token_id, amount)` — checkpoint idle exp on-chain (owner-only). */
-  gainExp(account: AccountInterface, tokenId: number | bigint, amount: number | bigint): Promise<InvokeFunctionResponse> {
-    const call = this.contract.populate("gain_exp", [BigInt(tokenId), num.toHex(amount)]);
+  /** `expedition(token_id)` — run a metered idle expedition (owner-only, cooldown). */
+  expedition(account: AccountInterface, tokenId: number | bigint): Promise<InvokeFunctionResponse> {
+    const call = this.contract.populate("expedition", [BigInt(tokenId)]);
     return account.execute([call]);
   }
 

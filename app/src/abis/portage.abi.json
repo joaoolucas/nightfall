@@ -214,15 +214,11 @@
       },
       {
         "type": "function",
-        "name": "gain_exp",
+        "name": "expedition",
         "inputs": [
           {
             "name": "token_id",
             "type": "core::integer::u256"
-          },
-          {
-            "name": "amount",
-            "type": "core::integer::u128"
           }
         ],
         "outputs": [],

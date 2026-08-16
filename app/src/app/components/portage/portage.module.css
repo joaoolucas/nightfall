@@ -183,26 +183,37 @@
 .evolveRow {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
 }
-.evolveBtn {
+.evolveBtn,
+.expeditionBtn {
   font-family: var(--font-body), system-ui, sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: #fff;
-  background: var(--violet-bright);
   border: none;
   border-radius: 999px;
   padding: 7px 16px;
   cursor: pointer;
   transition: filter 140ms ease, transform 120ms ease;
 }
-.evolveBtn:hover:not(:disabled) {
+.evolveBtn {
+  background: var(--violet-bright);
+}
+.expeditionBtn {
+  background: var(--amber);
+  color: #201238;
+}
+.evolveBtn:hover:not(:disabled),
+.expeditionBtn:hover:not(:disabled) {
   filter: brightness(1.1);
 }
-.evolveBtn:active:not(:disabled) {
+.evolveBtn:active:not(:disabled),
+.expeditionBtn:active:not(:disabled) {
   transform: scale(0.97);
 }
-.evolveBtn:disabled {
+.evolveBtn:disabled,
+.expeditionBtn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
