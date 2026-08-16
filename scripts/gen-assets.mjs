@@ -102,7 +102,7 @@ const CREATURES = [
   { id: "aurora", biome: "Sky", desc: `feathered kite creature, iridescent aurora wings, ${STYLE}` },
 ];
 
-// Evolution stages (2 biomes for v0: Ember + Creek)
+// Evolution stages (all 6 biomes, 3 stages each)
 const EVOLUTIONS = [
   { id: "cinderling-hatchling", desc: `tiny round baby smoldering lizard creature, glowing ember scales, cute, ${STYLE}` },
   { id: "cinderling-adult", desc: `small smoldering lizard creature, glowing ember scales, tiny flames on its back, ${STYLE}` },
@@ -110,6 +110,43 @@ const EVOLUTIONS = [
   { id: "ripple-hatchling", desc: `tiny round baby droplet frog creature, translucent blue, cute bubble, ${STYLE}` },
   { id: "ripple-adult", desc: `round droplet frog creature, translucent blue, rippling water swirl, ${STYLE}` },
   { id: "ripple-legend", desc: `large majestic droplet frog creature, translucent blue, crashing wave aura, glowing crown, ${STYLE}` },
+  { id: "bramble-hatchling", desc: `tiny round baby leafy fox creature, green leaf fur, cute sprout tail, ${STYLE}` },
+  { id: "bramble-adult", desc: `leafy fox creature, fur made of green leaves, curling vine tail, ${STYLE}` },
+  { id: "bramble-legend", desc: `large majestic leafy fox creature, glowing forest aura, crown of vines and berries, ${STYLE}` },
+  { id: "shard-hatchling", desc: `tiny round baby geode bear creature, rocky body, small crystal shard, cute, ${STYLE}` },
+  { id: "shard-adult", desc: `geode bear creature, rocky body with glowing crystal shards, ${STYLE}` },
+  { id: "shard-legend", desc: `large majestic geode bear creature, armored crystal body, glowing crown and radiant gem aura, ${STYLE}` },
+  { id: "wisp-hatchling", desc: `tiny round baby moth creature, smoky purple body, one glowing eye, cute, ${STYLE}` },
+  { id: "wisp-adult", desc: `wispy moth creature, smoky purple body, glowing eyes, ${STYLE}` },
+  { id: "wisp-legend", desc: `large majestic shadow moth creature, ethereal smoke wings, glowing crown and moon aura, ${STYLE}` },
+  { id: "aurora-hatchling", desc: `tiny round baby kite creature, small iridescent wings, cute, ${STYLE}` },
+  { id: "aurora-adult", desc: `feathered kite creature, iridescent aurora wings, ${STYLE}` },
+  { id: "aurora-legend", desc: `large majestic phoenix kite creature, radiant aurora wings, glowing crown and star aura, ${STYLE}` },
+];
+
+// One portal background per biome, matching the creature palette.
+const BACKGROUNDS = [
+  { id: "bg-ember", desc: `pixel art cozy portal in a volcanic ember field, swirling violet portal ring, glowing cinders and lava cracks, 16-bit game background` },
+  { id: "bg-creek", desc: `pixel art cozy portal on a calm river creek, swirling violet portal ring, rippling water and lily pads, 16-bit game background` },
+  { id: "bg-grove", desc: `pixel art cozy portal in a lush green grove, swirling violet portal ring, fireflies and vines, 16-bit game background` },
+  { id: "bg-stone", desc: `pixel art cozy portal in a crystal cave, swirling violet portal ring, glowing geodes, 16-bit game background` },
+  { id: "bg-mist", desc: `pixel art cozy portal in a foggy night marsh, swirling violet portal ring, wisps and moonlight, 16-bit game background` },
+  { id: "bg-sky", desc: `pixel art cozy portal on a floating sky island, swirling violet portal ring, aurora and stars, 16-bit game background` },
+];
+
+// Brand mark: a round portal ring with a small creature silhouette stepping through.
+const BRAND = [
+  { id: "logo", desc: `pixel art game logo mark, round violet portal ring, cute small creature silhouette stepping through, glowing amber accents, bold clean silhouette, no text`, size: [256, 256] },
+];
+
+// Element icons (one per biome), 32x32 transparent.
+const ELEMENT_ICONS = [
+  { id: "icon-ember", desc: `pixel art tiny fire flame icon, orange and red, transparent background, crisp pixels, no text` },
+  { id: "icon-creek", desc: `pixel art tiny water droplet icon, blue, transparent background, crisp pixels, no text` },
+  { id: "icon-grove", desc: `pixel art tiny green leaf icon, transparent background, crisp pixels, no text` },
+  { id: "icon-stone", desc: `pixel art tiny crystal gem icon, purple geode, transparent background, crisp pixels, no text` },
+  { id: "icon-mist", desc: `pixel art tiny smoke wisp icon, purple shadow, transparent background, crisp pixels, no text` },
+  { id: "icon-sky", desc: `pixel art tiny star icon, gold aurora, transparent background, crisp pixels, no text` },
 ];
 
 const ASSETS = [
@@ -124,6 +161,24 @@ const ASSETS = [
     kind: "pixen",
     out: path.join(OUT_DIR, "creatures", `${c.id}.png`),
     params: { description: c.desc, size: [128, 128], noBackground: true },
+  })),
+  ...BACKGROUNDS.map((b) => ({
+    id: b.id,
+    kind: "pixflux",
+    out: path.join(OUT_DIR, "backgrounds", `${b.id}.png`),
+    params: { description: b.desc, size: [320, 180] },
+  })),
+  ...BRAND.map((b) => ({
+    id: b.id,
+    kind: "pixen",
+    out: path.join(OUT_DIR, "brand", `${b.id}.png`),
+    params: { description: b.desc, size: b.size, noBackground: true },
+  })),
+  ...ELEMENT_ICONS.map((i) => ({
+    id: i.id,
+    kind: "pixen",
+    out: path.join(OUT_DIR, "elements", `${i.id}.png`),
+    params: { description: i.desc, size: [32, 32], noBackground: true },
   })),
   {
     id: "background",
