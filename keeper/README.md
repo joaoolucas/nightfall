@@ -9,7 +9,7 @@ Each AI player is cryptographically identical to a human:
 - Holds a **wallet + viewing key** for its seat.
 - Decrypts **only its own seat's** encrypted role note (via the STRK20 discovery
   service / viewing key).
-- Decides its night action and vote with an LLM (default: `openrouter/google/gemini-3.7-flash`)
+- Decides its night action and vote with an LLM (default: `orcarouter/kimi/kimi-k3`)
   under a persona.
 - Submits through the **same `privacy_invoke` path** a human wallet uses, paymaster-sponsored.
 
@@ -41,8 +41,8 @@ keeper/
 
 | Seat budget | Model |
 |---|---|
-| default (fast/cheap) | `openrouter/google/gemini-3.7-flash` |
-| "strong" personality | `openrouter/deepseek/deepseek-v4-pro-0813` |
+| default (fast/cheap) | `orcarouter/kimi/kimi-k3` |
+| "strong" personality | `orcarouter/deepseek/deepseek-v4-pro-0813` |
 
 ## Notes
 
