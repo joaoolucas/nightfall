@@ -360,8 +360,42 @@
 .footer a:hover { text-decoration: underline; }
 .footerDot { color: #d8d8de; }
 
-/* --- Tabbed action interface (Umbra-style) ------------------------------ */
-.panel { width: min(520px, calc(100vw - 32px)); margin: 0 auto; }
+/* --- Portage privacy economy panel -------------------------------------- */
+.panel {
+  width: min(600px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 20px 60px -42px rgba(59, 42, 99, 0.55);
+}
+.privacyHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.privacyKicker {
+  margin: 0 0 5px;
+  color: var(--pink-text);
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.privacyTitle { margin: 0; font-size: 21px; letter-spacing: -.02em; }
+.privacyStatus {
+  flex: none;
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--muted);
+  background: var(--inset);
+  font-size: 11px;
+  font-weight: 700;
+}
+.privacyStatusOn { color: var(--green); background: var(--green-soft); }
 
 .tabs {
   display: flex;
@@ -402,6 +436,32 @@
   margin: 8px 0 12px;
 }
 .bigValue { font-size: 40px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+.amountInput {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: -.03em;
+}
+.recipientInput {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  outline: none;
+  color: var(--ink);
+  background: #fff;
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 12px;
+}
+.recipientInput:focus { border-color: var(--pink); }
 .tokenPill {
   display: inline-flex;
   align-items: center;
@@ -462,6 +522,33 @@
 .btnCta:not(:disabled):hover { filter: brightness(1.06); }
 .btnCta:active { transform: scale(0.99); }
 .btnCta:disabled { opacity: 0.4; cursor: not-allowed; }
+.resultNote { margin: 10px 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.privacyBoundary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+.privacyBoundary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--inset);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.privacyBoundary b { color: var(--ink); font-size: 13px; }
+.maturityNote { margin: 12px 2px 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+@media (max-width: 560px) {
+  .panel { padding: 16px; }
+  .privacyHead { flex-direction: column; }
+  .privacyBoundary { grid-template-columns: 1fr; }
+  .feeRow { align-items: flex-start; flex-direction: column; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .btn, .connectPill, .btnCta, .tab { transition: none; }

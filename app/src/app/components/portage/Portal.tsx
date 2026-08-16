@@ -81,8 +81,8 @@ export default function Portal() {
         <p className={styles.kicker}>Hatch</p>
         <h2 className={styles.title}>Open a portal</h2>
         <p className={styles.sub}>
-          Spend portal energy to conjure a creature. The rarity drop is provably
-          fair — committed and verifiable on-chain.
+          Preview the deterministic on-chain hatch. The current prototype uses a
+          caller-provided seed; manipulation-resistant commit/reveal is required before Mainnet.
         </p>
         <span className={`${styles.badge} ${onChain ? styles.badgeOn : styles.badgeDemo}`}>
           <span className={styles.proofDot} aria-hidden />
@@ -120,7 +120,7 @@ export default function Portal() {
           <div className={styles.reveal}>
             <span className={styles.proofBadge}>
               <span className={styles.proofDot} aria-hidden />
-              Hatched on-chain — tx {txHash.slice(0, 10)}…{txHash.slice(-6)}
+              Deterministic prototype hatch — tx {txHash.slice(0, 10)}…{txHash.slice(-6)}
             </span>
             <p className={styles.notice}>Your new creature is joining the caravan.</p>
           </div>

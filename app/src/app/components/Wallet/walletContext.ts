@@ -25,6 +25,9 @@ export interface WalletState {
     setSelectWalletUI: (displaySelectWalletUI: boolean) => void,
     walletApiList: string[],
     setWalletApiList: (version: string[]) => void,
+    privacySupported: boolean,
+    privacyCapabilityReason: string,
+    setPrivacyCapability: (supported: boolean, reason?: string) => void,
     selectedApiVersion: string,
     setSelectedApiVersion: (version: string) => void,
 
@@ -48,7 +51,12 @@ export const useStoreWallet = create<WalletState>()(set => ({
     displaySelectWalletUI: false,
     setSelectWalletUI: (displaySelectWalletUI: boolean) => { set(state => ({ displaySelectWalletUI })) },
     walletApiList: [],
-    setWalletApiList: (walletApi: string[]) => { set(state => ({ walletApiList: walletApi })) },
+    setWalletApiList: (walletApi: string[]) => { set(() => ({ walletApiList: walletApi })) },
+    privacySupported: false,
+    privacyCapabilityReason: "Connect a STRK20-capable wallet to use private payments.",
+    setPrivacyCapability: (privacySupported: boolean, privacyCapabilityReason = "") => {
+      set(() => ({ privacySupported, privacyCapabilityReason }));
+    },
     selectedApiVersion: "default",
     setSelectedApiVersion: (selectedApiVersion: string) => { set(state => ({ selectedApiVersion })) },
     }));

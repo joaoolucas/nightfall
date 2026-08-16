@@ -81,7 +81,8 @@ export default function Marketplace() {
       } else if (isOwner) {
         await client.cancel(wallet, tokenId);
       } else {
-        await client.buy(wallet, tokenId);
+        setNotice("Private marketplace settlement is not enabled until the Portage anonymizer is independently reviewed and deployed.");
+        return;
       }
       setListed((prev) => ({ ...prev, [tokenId]: !isListed }));
     } catch (err) {
@@ -97,8 +98,8 @@ export default function Marketplace() {
         <p className={styles.kicker}>Marketplace</p>
         <h2 className={styles.title}>Trade creatures</h2>
         <p className={styles.sub}>
-          List your creatures for STRK or buy from other Porters.
-          {onChain ? " Settlement happens on-chain." : " Mock prices — on-chain settlement lands with the marketplace contract."}
+          List creatures publicly; private STRK payment needs the reviewed Portage anonymizer.
+          {onChain ? " On-chain list/cancel is live, but buying stays disabled until real settlement is deployed." : " Mock mode previews the intended marketplace."}
         </p>
         <span className={`${styles.badge} ${onChain ? styles.badgeOn : styles.badgeDemo}`}>
           <span className={styles.proofDot} aria-hidden />
@@ -129,9 +130,9 @@ export default function Marketplace() {
               label = "Cancel";
               btnClass = styles.cancelBtn;
             } else {
-              label = "Buy";
+              label = "Private buy soon";
               btnClass = styles.buyBtn;
-              disabled = busy || !isConnected;
+              disabled = true;
             }
           } else {
             label = isListed ? "Buy" : "List";

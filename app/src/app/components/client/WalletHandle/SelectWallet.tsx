@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { walletV6, validateAndParseAddress, constants as SNconstants, WalletAccountV6 } from "starknet";
 import { WALLET_API } from "@starknet-io/types-js";
 import { myFrontendProviders } from "@/utils/constants";
+import { detectPrivacyCapability } from "@/utils/strk20";
 import { createStore, type Store } from "@starknet-io/get-starknet-discovery";
 import type {
   WalletWithStarknetFeatures,
@@ -24,7 +25,6 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
   const setMyWallet = useStoreWallet(state => state.setMyStarknetWalletObject);
 
   const setMyWalletAccount = useStoreWallet(state => state.setMyWalletAccount);
-  const myFrontendProviderIndex = useFrontendProvider(state => state.currentFrontendProviderIndex);
   const { setCurrentFrontendProviderIndex } = useFrontendProvider(state => state);
 
   const isConnected = useStoreWallet(state => state.isConnected);
@@ -32,6 +32,7 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
   const address = useStoreWallet(state => state.address);
 
   const setWalletApi = useStoreWallet(state => state.setWalletApiList);
+  const setPrivacyCapability = useStoreWallet(state => state.setPrivacyCapability);
 
   const setChain = useStoreWallet(state => state.setChain);
   const setAddressAccount = useStoreWallet(state => state.setAddressAccount);
@@ -59,33 +60,37 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
     return !id.includes("metamask") && !id.includes("braavos");
   });
 
-  // Unchanged connection flow: takes the wallet-standard wallet and populates
-  // the zustand store with a WalletAccountV6 + account/chain/permissions.
+  // Connect using the provider for the wallet's actual chain, then perform a
+  // metadata-only privacy capability check. No balances are read here.
   async function handleSelectedWallet(selectedWallet: WalletWithStarknetFeatures) {
-    setMyWallet(selectedWallet); // zustand
-    console.log("Trying to connect wallet=", selectedWallet);
-    const myWA = await WalletAccountV6.connect(myFrontendProviders[2], selectedWallet);
+    setMyWallet(selectedWallet);
+    // starknet.js 10.4.0 aliases wallet-standard 6.0.2 internally; discovery
+    // 6.0.3 is runtime-compatible but has a distinct declaration identity.
+    const compatibleWallet = selectedWallet as unknown as Parameters<typeof walletV6.requestAccounts>[0];
+    const result = await walletV6.requestAccounts(compatibleWallet);
+    if (!Array.isArray(result) || !result[0]) {
+      throw new Error("This wallet did not return a Starknet account.");
+    }
+
+    const chainId = (await walletV6.requestChainId(compatibleWallet)) as string;
+    const providerIndex = chainId === SNconstants.StarknetChainId.SN_MAIN
+      ? 0
+      : chainId === SNconstants.StarknetChainId.SN_SEPOLIA
+        ? 2
+        : 1;
+    const myWA = await WalletAccountV6.connect(myFrontendProviders[providerIndex], compatibleWallet);
     setMyWalletAccount(myWA);
-    console.log("WalletAccount created=", myWA);
-    const result = await walletV6.requestAccounts(selectedWallet);
-    if (typeof (result) == "string") {
-      console.log("This Wallet is not compatible.");
-      return;
-    }
-    console.log("Current account addr =", result);
-    if (Array.isArray(result)) {
-      const addr = validateAndParseAddress(result[0]);
-      setAddressAccount(addr); // zustand
-    }
-    const isConnectedWallet: boolean = await walletV6.getPermissions(selectedWallet).then((res: any) => (res as WALLET_API.Permission[]).includes(WALLET_API.Permission.ACCOUNTS));
-    setConnected(isConnectedWallet); // zustand
-    if (isConnectedWallet) {
-      const chainId = (await walletV6.requestChainId(selectedWallet)) as string;
-      setChain(chainId);
-      setCurrentFrontendProviderIndex(chainId === SNconstants.StarknetChainId.SN_MAIN ? 0 : 2);
-      console.log("change Provider index to :", myFrontendProviderIndex);
-    }
-    setWalletApi(await walletV6.supportedSpecs(selectedWallet));
+    setAddressAccount(validateAndParseAddress(result[0]));
+    setChain(chainId);
+    setCurrentFrontendProviderIndex(providerIndex);
+
+    const permissions = await walletV6.getPermissions(compatibleWallet) as WALLET_API.Permission[];
+    const isConnectedWallet = permissions.includes(WALLET_API.Permission.ACCOUNTS);
+    setConnected(isConnectedWallet);
+
+    const capability = await detectPrivacyCapability(selectedWallet);
+    setWalletApi(capability.versions);
+    setPrivacyCapability(capability.supported, capability.reason);
   }
 
   // Open the wallet picker so the user can choose (Ready, Xverse, ...).
