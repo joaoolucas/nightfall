@@ -44,12 +44,14 @@ North star: `docs/SPEC.md` §9–10. Non-stop loop plan.
 
 - [x] App talks to deployed contract (hatch + read creatures) — client + hook wired.
 - [x] Marketplace buy/sell path via wallet.
-- [ ] Idle expedition loop (off-chain progress + on-chain checkpoint via gain_exp).
+- [x] Idle expedition loop (cooldown-gated `expedition` on-chain + button in UI).
+- [x] Stats + exp/evolution (SPEC §5) in contract and app.
 
 ## Wave 3 — STRK20 + demo
 
 - [x] Registry updated to Portage.fun (hub PR #70, applied).
-- [ ] Deploy to Sepolia/Mainnet (scripts/deploy.mjs).
+- [x] Deploy script points at Portage (scripts/deploy.mjs).
+- [ ] Deploy to Sepolia/Mainnet (`DEPLOYER_ADDRESS=… DEPLOYER_PRIVATE_KEY=… node --env-file=.env scripts/deploy.mjs`).
 - [ ] 3+ mainnet txs in `strk20.json`.
 - [ ] Demo URL + 3-min video.
 
