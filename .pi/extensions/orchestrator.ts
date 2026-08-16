@@ -60,11 +60,11 @@ const ROLES: Record<Role, RoleSpec> = {
     label: "Worker (DeepSeek V4 Pro · high)",
   },
   reviewer: {
-    model: "claude-bridge/claude-opus-5",
+    model: "orcarouter/kimi/kimi-k3",
     thinking: "high",
     tools: ["read", "grep", "find", "ls", "bash"],
     systemPrompt: [
-      "You are a senior code reviewer (Claude Opus 5). Review the recent changes.",
+      "You are a senior code reviewer (Kimi K3). Review the recent changes.",
       "Bash is read-only: git diff, git log, git show. Do NOT modify files or run builds.",
       "Final output:",
       "## Critical (must fix) - with file:line",
@@ -73,7 +73,7 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Verdict - APPROVE or REQUEST CHANGES",
       "Be specific with paths and line numbers.",
     ].join("\n"),
-    label: "Reviewer (Claude Opus 5 via bridge · high)",
+    label: "Reviewer (Kimi K3 · high · vision)",
   },
   merger: {
     model: "orcarouter/deepseek/deepseek-v4-pro-0813",
