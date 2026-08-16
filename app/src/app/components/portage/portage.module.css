@@ -59,8 +59,11 @@
 /* --- Creature cards ------------------------------------------------------ */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 18px;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
 }
 .card {
   position: relative;
@@ -73,6 +76,13 @@
   background: linear-gradient(180deg, var(--night-2), var(--night-3));
   color: var(--text);
   transition: transform 140ms ease, filter 140ms ease;
+}
+.cardClickable {
+  cursor: pointer;
+}
+.card:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
 }
 .card:hover {
   transform: translateY(-3px);
@@ -129,6 +139,7 @@
 }
 .badgeRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin-top: 8px;
@@ -198,6 +209,190 @@
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid rgba(169, 158, 201, 0.16);
+}
+
+/* --- Creature detail modal ----------------------------------------------- */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 7, 24, 0.74);
+  backdrop-filter: blur(4px);
+  animation: backdropIn 160ms ease;
+}
+.modal {
+  position: relative;
+  width: min(440px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 28px;
+  border-radius: 22px;
+  border: 2px solid var(--rarity-color, var(--violet-bright));
+  background: linear-gradient(180deg, var(--night-2), var(--night-3));
+  color: var(--text);
+  box-shadow:
+    inset 0 0 0 1px var(--rarity-color, rgba(109, 79, 194, 0.5)),
+    0 24px 60px -18px rgba(0, 0, 0, 0.7),
+    0 0 46px -8px var(--rarity-color, rgba(109, 79, 194, 0.6));
+  animation: modalIn 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modalIn {
+  from {
+    transform: translateY(10px) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+.modalClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  background: rgba(169, 158, 201, 0.14);
+  border: 1px solid rgba(169, 158, 201, 0.3);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+.modalClose:hover {
+  color: var(--text);
+  background: rgba(169, 158, 201, 0.26);
+}
+.modalClose:active {
+  transform: scale(0.94);
+}
+.modalSpriteWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0 0;
+}
+.modalSprite {
+  image-rendering: pixelated;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.45));
+}
+.modalName {
+  font-size: 25px;
+  font-weight: 700;
+  font-family: var(--font-display), monospace;
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-align: center;
+}
+.modalSub {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+  text-align: center;
+}
+.modalLore {
+  font-size: 13.5px;
+  font-style: italic;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 4px 0 0;
+  text-align: center;
+}
+.modalStats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(169, 158, 201, 0.08);
+  border: 1px solid rgba(169, 158, 201, 0.16);
+}
+.modalStats .stat {
+  flex: 1 1 40%;
+  min-width: 70px;
+}
+.stageProgression {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.stageStep {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(169, 158, 201, 0.3);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.stageStepCurrent {
+  color: var(--text);
+  border-color: var(--rarity-color, var(--violet-bright));
+  background: rgba(109, 79, 194, 0.28);
+  box-shadow: 0 0 16px -5px var(--rarity-color, var(--violet-bright));
+}
+.stageStepDone {
+  color: var(--text);
+  border-color: rgba(62, 125, 90, 0.65);
+}
+.stageDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.stageConnector {
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.modalOwner {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 4px 0 0;
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 12px;
+  color: var(--text);
+  text-align: center;
+  word-break: break-all;
+}
+.modalOwnerLabel {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
 }
 
 /* --- Hatch reveal + evolution sparkle animations ------------------------- */
@@ -281,6 +476,7 @@
 /* --- Creature stats, exp & evolve (SPEC §5) ------------------------------ */
 .statRow {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 6px;
   margin-top: 12px;
@@ -327,6 +523,7 @@
 }
 .evolveRow {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
 }
@@ -511,6 +708,7 @@
 /* --- Marketplace --------------------------------------------------------- */
 .market {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -607,7 +805,8 @@
   .buyBtn,
   .cancelBtn,
   .evolveBtn,
-  .expeditionBtn {
+  .expeditionBtn,
+  .modalClose {
     transition: none;
   }
   .card:hover,
@@ -620,12 +819,77 @@
   .portalRing,
   .revealCard,
   .sparkleBurst,
-  .sparkleBurst::before {
+  .sparkleBurst::before,
+  .modalBackdrop,
+  .modal {
     animation: none;
   }
   .card[data-rarity="epic"] .cardName,
   .card[data-rarity="legendary"] .cardName,
   .card[data-rarity="mythic"] .cardName {
     animation: none;
+  }
+}
+
+/* --- Small screens (<480px): tighten cards + full-width modal ------------- */
+@media (max-width: 480px) {
+  .shell {
+    padding: 40px 14px 56px;
+  }
+  .grid {
+    gap: 12px;
+  }
+  .card {
+    padding: 14px;
+    border-radius: 15px;
+    gap: 5px;
+  }
+  .cardName {
+    font-size: 17px;
+  }
+  .cardSub {
+    font-size: 12px;
+  }
+  .cardId {
+    font-size: 11px;
+  }
+  .stagePill {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+  .statRow {
+    font-size: 9.5px;
+    gap: 4px;
+  }
+  .statValue {
+    font-size: 12px;
+  }
+  .expLabel {
+    font-size: 9.5px;
+  }
+  .rarityBadge {
+    font-size: 11px;
+    padding: 3px 9px;
+  }
+  .elementBadge {
+    font-size: 10px;
+    padding: 3px 8px 3px 5px;
+  }
+  .evolveBtn,
+  .expeditionBtn,
+  .listBtn,
+  .buyBtn,
+  .cancelBtn {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  .modalBackdrop {
+    padding: 12px;
+  }
+  .modal {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    padding: 20px 16px;
+    border-radius: 18px;
   }
 }

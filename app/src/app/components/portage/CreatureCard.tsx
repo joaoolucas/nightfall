@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 import Image from "next/image";
 import styles from "./portage.module.css";
 import { shortAddress, type Creature } from "@/utils/creatures";
@@ -23,11 +23,14 @@ export default function CreatureCard({
   creature,
   footer,
   className,
+  onOpen,
 }: {
   creature: Creature;
   footer?: ReactNode;
   /** Extra animation classes (e.g. hatch reveal, evolution sparkle). */
   className?: string;
+  /** Open the creature detail modal (makes the card clickable). */
+  onOpen?: () => void;
 }) {
   const species = SPECIES[creature.species];
   const rarity = RARITY[creature.rarity];
@@ -43,11 +46,28 @@ export default function CreatureCard({
     "--rarity-color": rarity.color,
   } as CSSProperties;
 
+  // Enter / Space open the detail modal only when the card itself is focused
+  // (not one of its footer buttons, which have their own handlers).
+  function handleKeyDown(e: KeyboardEvent<HTMLElement>) {
+    if (!onOpen) return;
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onOpen();
+    }
+  }
+
   return (
     <article
-      className={[styles.card, className].filter(Boolean).join(" ")}
+      className={[styles.card, onOpen ? styles.cardClickable : "", className]
+        .filter(Boolean)
+        .join(" ")}
       data-rarity={creature.rarity}
       style={cardStyle}
+      onClick={onOpen}
+      onKeyDown={handleKeyDown}
+      tabIndex={onOpen ? 0 : undefined}
+      aria-haspopup={onOpen ? "dialog" : undefined}
     >
       <div className={styles.cardTop}>
         <span className={styles.cardId}>#{creature.tokenId}</span>
@@ -128,7 +148,12 @@ export default function CreatureCard({
         {shortAddress(creature.owner)}
       </p>
 
-      {footer ? <div className={styles.cardFooter}>{footer}</div> : null}
+      {footer ? (
+        // Stop footer button clicks from bubbling up and opening the modal.
+        <div className={styles.cardFooter} onClick={(e) => e.stopPropagation()}>
+          {footer}
+        </div>
+      ) : null}
     </article>
   );
 }

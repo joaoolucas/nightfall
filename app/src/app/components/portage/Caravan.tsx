@@ -4,6 +4,7 @@ import { useState } from "react";
 import { num } from "starknet";
 import styles from "./portage.module.css";
 import CreatureCard from "./CreatureCard";
+import CreatureDetail from "./CreatureDetail";
 import { usePortageState } from "./usePortageState";
 import { EXP_THRESHOLDS } from "@/utils/portage";
 import { PortageClient } from "@/utils/portage-client";
@@ -22,6 +23,7 @@ export default function Caravan() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [sparkle, setSparkle] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Creature | null>(null);
 
   const count = onChain ? totalSupply : creatures.length;
 
@@ -104,6 +106,7 @@ export default function Caravan() {
                 key={creature.tokenId}
                 creature={creature}
                 className={sparkle === key ? styles.sparkleBurst : undefined}
+                onOpen={() => setSelected(creature)}
                 footer={
                   ownerOnChain && next !== null ? (
                     <div className={styles.evolveRow}>
@@ -134,6 +137,10 @@ export default function Caravan() {
 
       {error ? <p className={`${styles.notice} ${styles.noticeError}`}>{error}</p> : null}
       {notice ? <p className={`${styles.notice} ${styles.noticeError}`}>{notice}</p> : null}
+
+      {selected ? (
+        <CreatureDetail creature={selected} onClose={() => setSelected(null)} />
+      ) : null}
     </section>
   );
 }

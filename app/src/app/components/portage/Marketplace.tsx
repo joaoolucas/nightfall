@@ -6,6 +6,7 @@ import styles from "./portage.module.css";
 import { MOCK_CREATURES, type Creature } from "@/utils/creatures";
 import type { Rarity } from "@/utils/portage";
 import CreatureCard from "./CreatureCard";
+import CreatureDetail from "./CreatureDetail";
 import { PortageClient } from "@/utils/portage-client";
 import { useStoreWallet } from "@/app/components/Wallet/walletContext";
 import { usePortageState } from "./usePortageState";
@@ -34,6 +35,7 @@ export default function Marketplace() {
   const [listed, setListed] = useState<Record<number, boolean>>({});
   const [pending, setPending] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Creature | null>(null);
 
   const items = onChain ? creatures : MOCK_CREATURES;
 
@@ -140,6 +142,7 @@ export default function Marketplace() {
             <CreatureCard
               key={tokenId}
               creature={creature}
+              onOpen={() => setSelected(creature)}
               footer={
                 <div className={styles.market}>
                   <span className={styles.price}>
@@ -162,6 +165,10 @@ export default function Marketplace() {
       )}
 
       {notice ? <p className={`${styles.notice} ${styles.noticeError}`}>{notice}</p> : null}
+
+      {selected ? (
+        <CreatureDetail creature={selected} onClose={() => setSelected(null)} />
+      ) : null}
     </section>
   );
 }

@@ -39,6 +39,16 @@ export const SPECIES: Record<Species, SpeciesInfo> = {
   sky: { label: "Sky", element: "Light", theme: "aurora, wind", example: "Aurora" },
 };
 
+/** One-line lore per species (English), shown in the creature detail modal. */
+export const LORE: Record<Species, string> = {
+  ember: "Born from the last ember of a dying forge, it kindles warmth in every caravan it joins.",
+  creek: "A gentle current given form, it hums the songs of every river it has flowed through.",
+  grove: "Rooted in ancient groves, it carries the patience of a thousand seasons in its bark.",
+  stone: "Chiseled from mountain crystal, it remembers every age it has quietly witnessed.",
+  mist: "Woven from fog and whispered secrets, it appears only where the veil grows thin.",
+  sky: "A scrap of aurora caught in the wind, it glides wherever the light leads.",
+};
+
 export interface RarityInfo {
   /** English display label, e.g. "Epic". */
   label: string;
