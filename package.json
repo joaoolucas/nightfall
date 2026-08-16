@@ -1,0 +1,14 @@
+{
+  "name": "nightfall",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Nightfall — provably-fair, privacy-native social games on STRK20 (Starknet).",
+  "scripts": {
+    "export-abi": "node scripts/export-abi.mjs",
+    "deploy": "node scripts/deploy.mjs"
+  },
+  "dependencies": {
+    "starknet": "10.4.0"
+  }
+}
