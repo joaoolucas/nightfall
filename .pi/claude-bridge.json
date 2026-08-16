@@ -1,0 +1,13 @@
+{
+  "askClaude": {
+    "enabled": true,
+    "allowFullMode": true,
+    "defaultIsolated": false
+  },
+  "provider": {
+    "plan": "max",
+    "longContextExtraUsage": false,
+    "strictMcpConfig": true,
+    "pathToClaudeCodeExecutable": "C:/Users/joaol/.local/bin/claude"
+  }
+}

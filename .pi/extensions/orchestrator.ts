@@ -38,14 +38,14 @@ interface RoleSpec {
 
 const ROLES: Record<Role, RoleSpec> = {
   supervisor: {
-    model: "openrouter/openai/gpt-5.6-sol",
+    model: "openai-codex/gpt-5.6-sol",
     thinking: "high",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
     systemPrompt: "You are the Supervisor. Plan, dispatch workers, review, merge, and validate until the Definition of Done is met.",
-    label: "Supervisor (GPT-5.6 Sol · high)",
+    label: "Supervisor (GPT-5.6 Sol · high · vision)",
   },
   worker: {
-    model: "openrouter/deepseek/deepseek-v4-pro-0813",
+    model: "orcarouter/deepseek/deepseek-v4-pro-0813",
     thinking: "high",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
     systemPrompt: [
@@ -60,11 +60,11 @@ const ROLES: Record<Role, RoleSpec> = {
     label: "Worker (DeepSeek V4 Pro · high)",
   },
   reviewer: {
-    model: "openrouter/google/gemini-3.7-flash",
+    model: "claude-bridge/claude-opus-5",
     thinking: "high",
     tools: ["read", "grep", "find", "ls", "bash"],
     systemPrompt: [
-      "You are a senior code reviewer (Gemini 3.7 Flash). Review the recent changes.",
+      "You are a senior code reviewer (Claude Opus 5). Review the recent changes.",
       "Bash is read-only: git diff, git log, git show. Do NOT modify files or run builds.",
       "Final output:",
       "## Critical (must fix) - with file:line",
@@ -73,10 +73,10 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Verdict - APPROVE or REQUEST CHANGES",
       "Be specific with paths and line numbers.",
     ].join("\n"),
-    label: "Reviewer (Gemini 3.7 Flash · high)",
+    label: "Reviewer (Claude Opus 5 via bridge · high)",
   },
   merger: {
-    model: "openrouter/deepseek/deepseek-v4-pro-0813",
+    model: "orcarouter/deepseek/deepseek-v4-pro-0813",
     thinking: "high",
     tools: ["read", "bash", "edit", "write", "grep", "find", "ls"],
     systemPrompt: [
@@ -91,7 +91,7 @@ const ROLES: Record<Role, RoleSpec> = {
     label: "Merger (DeepSeek V4 Pro · high)",
   },
   architect: {
-    model: "xai/grok-4.5",
+    model: "orcarouter/grok/grok-4.6",
     thinking: "high",
     tools: ["read", "grep", "find", "ls"],
     systemPrompt: [
@@ -103,7 +103,7 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Recommendations",
       "## Verdict - APPROVE or REQUEST CHANGES",
     ].join("\n"),
-    label: "Architect (Grok 4.5 · high)",
+    label: "Architect (Grok 4.6 · high)",
   },
 };
 

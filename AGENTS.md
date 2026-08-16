@@ -25,11 +25,11 @@ specialized models.
 
 | Role | Model | Thinking | Tools |
 |------|-------|----------|-------|
-| Supervisor | `openrouter/openai/gpt-5.6-sol` | high | read, bash, edit, write, grep, find, ls, run_agent |
-| Worker | `openrouter/deepseek/deepseek-v4-pro-0813` | high | read, bash, edit, write, grep, find, ls |
-| Reviewer | `openrouter/google/gemini-3.7-flash` | high | read, grep, find, ls, bash (read-only) |
-| Merger | `openrouter/deepseek/deepseek-v4-pro-0813` | high | read, bash, edit, write, grep, find, ls |
-| Architect | `xai/grok-4.5` | high | read, grep, find, ls |
+| Supervisor | `openai-codex/gpt-5.6-sol` | high | read, bash, edit, write, grep, find, ls, run_agent |
+| Worker | `orcarouter/deepseek/deepseek-v4-pro-0813` | high | read, bash, edit, write, grep, find, ls |
+| Reviewer | `claude-bridge/claude-opus-5` | high | read, grep, find, ls, bash (read-only) |
+| Merger | `orcarouter/deepseek/deepseek-v4-pro-0813` | high | read, bash, edit, write, grep, find, ls |
+| Architect | `orcarouter/grok/grok-4.6` | high | read, grep, find, ls |
 
 Commands: `/role <role>` switches the main agent's model; `/kickoff <goal>`
 starts the non-stop loop.

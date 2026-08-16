@@ -1,11 +1,11 @@
 {
-  "defaultProvider": "openrouter",
-  "defaultModel": "openai/gpt-5.6-sol",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.6-sol",
   "defaultThinkingLevel": "high",
   "enabledModels": [
-    "openrouter/openai/gpt-5.6-sol:high",
-    "openrouter/deepseek/deepseek-v4-pro-0813:high",
-    "openrouter/google/gemini-3.7-flash:high",
-    "xai/grok-4.5:high"
+    "openai-codex/gpt-5.6-sol:high",
+    "claude-bridge/claude-opus-5:high",
+    "orcarouter/deepseek/deepseek-v4-pro-0813:high",
+    "orcarouter/grok/grok-4.6:high"
   ]
 }
