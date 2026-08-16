@@ -2,8 +2,11 @@
 
 import type { CSSProperties } from 'react';
 import styles from './uni.module.css';
+import gameStyles from './components/game/nightfall.module.css';
 import SelectWallet from './components/client/WalletHandle/SelectWallet';
 import WalletAccountV6Tag from './components/client/WalletHandle/WalletAccountV6Tag';
+import GameTable from './components/game/GameTable';
+import Lobby from './components/game/Lobby';
 import { StrkCoin, BtcCoin, EthCoin, UsdcCoin, ZecCoin } from './components/TokenIcons';
 
 // Scattered, blurred token coins on the sides of the page (background ambience).
@@ -51,32 +54,41 @@ export default function Page() {
         <div className={styles.brand}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/tokens/strk20.png" alt="STRK20" className={styles.brandImg} />
+          <span>Nightfall</span>
         </div>
         <SelectWallet variant="nav" />
       </nav>
 
       <header className={styles.hero}>
         <h1 className={styles.heroTitle}>
-          Just Encrypt
+          Nightfall
           <br />
-          <span className={styles.heroAccent}>Everything</span>
+          <span className={styles.heroAccent}>One Night</span>
         </h1>
         <p className={styles.heroSub}>
-          Shield, unshield, privately transfer and build your own private apps
-          on Starknet.
+          Provably-fair social deduction on Starknet. Stake STRK, deal hidden roles
+          as encrypted notes, and hunt the werewolves — knowing the house can&apos;t cheat.
         </p>
       </header>
 
       <main>
-        <WalletAccountV6Tag />
+        <GameTable />
+        <Lobby />
+
+        {/* STRK20 actions — shield / unshield / private transfer / echo. Kept intact
+            for Day 0 scoring (shield + first mainnet tx). */}
+        <section className={gameStyles.section} style={{ marginTop: 28 }} aria-label="STRK20 actions">
+          <h2 className={gameStyles.sectionTitle}>STRK20 actions</h2>
+          <WalletAccountV6Tag />
+        </section>
       </main>
 
       <footer className={styles.footer}>
-        <a href="https://github.com/PhilippeR26/Starknet-WalletAccount" target="_blank" rel="noreferrer">
-          Repo
+        <a href="https://strk20.starknet.io" target="_blank" rel="noreferrer">
+          STRK20
         </a>
         <span className={styles.footerDot}>·</span>
-        <span>Powered by Starknet.js v10.4.0</span>
+        <span>Nightfall: One Night — powered by Starknet.js v10.4.0</span>
       </footer>
     </div>
   );

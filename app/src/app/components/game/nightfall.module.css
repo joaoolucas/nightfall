@@ -1,0 +1,329 @@
+/* Nightfall game UI — dark "one night" theme layered over the light aurora
+   starter shell. Self-contained so the existing STRK20 panel styling is untouched. */
+
+.section {
+  width: min(720px, calc(100vw - 32px));
+  margin: 28px auto 0;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a7292;
+  margin-bottom: 12px;
+}
+.sectionTitle::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, #e2dcf1, transparent);
+}
+
+/* ─── Phase banner ───────────────────────────────────────────────────────── */
+.phaseBanner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid #2a2540;
+  background:
+    radial-gradient(120% 160% at 85% -10%, rgba(124, 58, 237, 0.35), transparent 55%),
+    radial-gradient(120% 160% at 10% 110%, rgba(16, 185, 129, 0.22), transparent 55%),
+    linear-gradient(160deg, #19152a 0%, #12101f 100%);
+  color: #ece9f6;
+  padding: 20px 20px 18px;
+  box-shadow: 0 18px 50px -24px rgba(20, 12, 40, 0.9);
+}
+.phaseRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.phaseLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #a99fd0;
+}
+.phaseCurrent {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.phaseCurrent::before {
+  content: "🌙 ";
+}
+.phaseSteps {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.phaseStep {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #7d74a3;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background 140ms, color 140ms, border-color 140ms;
+}
+.phaseStep .stepNum {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2a2442;
+  color: #8a81b4;
+  font-size: 10px;
+  font-weight: 800;
+}
+.phaseStepActive {
+  color: #f5f2ff;
+  background: rgba(124, 58, 237, 0.22);
+  border-color: rgba(167, 139, 250, 0.5);
+}
+.phaseStepActive .stepNum {
+  background: #8b5cf6;
+  color: #fff;
+}
+.phaseStepDone {
+  color: #b6e8d4;
+}
+.phaseStepDone .stepNum {
+  background: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+}
+.phaseArrow {
+  color: #4c4468;
+  font-size: 12px;
+  user-select: none;
+}
+
+/* ─── Role cards ─────────────────────────────────────────────────────────── */
+.roleGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+.roleCard {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 14px;
+  border: 1px solid #332c52;
+  background: #1a1630;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 140ms, box-shadow 140ms;
+}
+.roleCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -14px rgba(20, 12, 40, 0.9);
+}
+.roleCardInner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+}
+.roleCardImg {
+  width: 62%;
+  height: auto;
+  image-rendering: pixelated;
+  border-radius: 10px;
+  border: 1px solid #3a3160;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.6);
+}
+.roleCardName {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ece9f6;
+  text-align: center;
+  line-height: 1.2;
+}
+.roleCardTeam {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.teamWolves { color: #ff9d8a; background: rgba(244, 63, 94, 0.16); }
+.teamVillage { color: #8be0c0; background: rgba(16, 185, 129, 0.16); }
+
+.roleCardBack {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.02) 0 8px,
+      transparent 8px 16px
+    ),
+    linear-gradient(160deg, #231d3f 0%, #161230 100%);
+  color: #8a81b4;
+}
+.roleCardBackIcon {
+  font-size: 26px;
+  filter: grayscale(0.4);
+}
+.roleCardBackText {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.roleHint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #6d648f;
+  text-align: center;
+}
+
+/* ─── Lobby ──────────────────────────────────────────────────────────────── */
+.lobby {
+  border-radius: 20px;
+  border: 1px solid #eaeaef;
+  background: #ffffff;
+  box-shadow: 0 16px 44px -26px rgba(13, 14, 14, 0.35);
+  padding: 20px;
+}
+.lobbyHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.lobbyTitle {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0d0e0e;
+}
+.modeToggle {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  border-radius: 999px;
+  background: #f1eff7;
+  border: 1px solid #eaeaef;
+}
+.modeBtn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6d648f;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 140ms, color 140ms;
+}
+.modeBtnActive {
+  color: #0d0e0e;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(13, 14, 14, 0.12);
+}
+.modeBtnActiveStaked { color: #b0491f; }
+.modeNote {
+  font-size: 12px;
+  color: #7d7d8a;
+  margin: 10px 0 0;
+}
+
+.seatList {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.seat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 13px;
+  border-radius: 14px;
+  border: 1px solid #eaeaef;
+  background: #fafafb;
+}
+.seatIndex {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #f1eff7;
+  color: #6d648f;
+  font-weight: 700;
+  font-size: 13px;
+  flex: none;
+}
+.seatOccupied .seatIndex {
+  background: #e7f7ef;
+  color: #0e9f6e;
+}
+.seatInfo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.seatName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0d0e0e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.seatState { font-size: 12px; color: #7d7d8a; }
+
+.startBtn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 15px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(120deg, #8b5cf6, #6d28d9);
+  border: none;
+  border-radius: 16px;
+  cursor: not-allowed;
+  opacity: 0.45;
+  transition: opacity 140ms;
+}
+.startHint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #7d7d8a;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .roleGrid { grid-template-columns: repeat(3, 1fr); }
+  .seatList { grid-template-columns: repeat(2, 1fr); }
+}

@@ -17,8 +17,8 @@ const spaceMono = Space_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Shielded STRK · WalletAccountV6',
-  description: 'Shield, unshield and privately move STRK on Starknet with WalletAccountV6',
+  title: 'Nightfall: One Night',
+  description: 'Provably-fair, privacy-native One Night Werewolf on Starknet — stake STRK, deal hidden roles as encrypted notes, and hunt the werewolves.',
 }
 
 export default function RootLayout({
