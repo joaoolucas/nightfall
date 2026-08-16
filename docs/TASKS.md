@@ -14,42 +14,44 @@ North star: `docs/SPEC.md` §9–10. Non-stop loop plan.
 ## Wave 1 — Foundations (file-disjoint, parallel)
 
 ### T1 — Contracts: Portage core (Cairo)
-- [ ] `hatch(seed)` — committed-seed deterministic RNG → creature (species + rarity).
-- [ ] Fixed rarity table on-chain (public, verifiable).
-- [ ] Creature NFT: mint, owner_of, transfer.
-- [ ] Species metadata (biome, stage) readable on-chain.
-- [ ] Marketplace: list / buy / cancel with protocol rake.
-- [ ] Cairo tests: hatch determinism, rarity distribution, transfer, buy/sell.
+- [x] `hatch(seed)` — committed-seed deterministic RNG → creature (species + rarity).
+- [x] Fixed rarity table on-chain (public, verifiable).
+- [x] Creature NFT: mint, owner_of, transfer.
+- [x] Species metadata (biome, stage) readable on-chain.
+- [x] Marketplace: list / buy / cancel with protocol rake.
+- [x] Creature stats (health/attack/defense/speed) + exp + evolve (100/500 thresholds).
+- [x] Cairo tests: 23 tests (determinism, rarity, transfer, buy/sell, stats, evolve, reverts).
 
 ### T2 — App: Portage client (Next.js)
-- [ ] Rebrand page to Portage.fun (done: hero + wallet).
-- [ ] Caravan UI: creature lineup cards.
-- [ ] Portal UI: hatch button + reveal + on-chain proof badge.
-- [ ] Marketplace UI: list/buy grid with rarity borders.
-- [ ] Domain model (Species, Rarity, Stage) + contract client (read/write).
+- [x] Rebrand page to Portage.fun.
+- [x] Caravan UI: creature lineup cards (with stats + exp bar).
+- [x] Portal UI: hatch button + reveal + on-chain proof badge.
+- [x] Marketplace UI: list/buy grid with rarity borders.
+- [x] Domain model (Species, Rarity, Stage, stats) + contract client (read/write).
+- [x] Evolve button (on-chain, owner + threshold-gated).
 
 ### T3 — Art: creature sprites (PixelLab)
-- [ ] Rewrite `scripts/gen-assets.mjs` manifest for Portage creatures.
-- [ ] Generate 6 base creatures (1 per biome) — pixel art, transparent bg.
-- [ ] Generate evolution stages (Hatchling → Adult → Legend) for 2 biomes.
-- [ ] Background (portal biome scene).
+- [x] Rewrite `scripts/gen-assets.mjs` manifest for Portage creatures.
+- [x] Generate 6 base creatures (1 per biome) — pixel art, transparent bg.
+- [x] Generate evolution stages (Hatchling → Adult → Legend) for 2 biomes.
+- [x] Background (portal biome scene).
 
 ### T4 — Docs
-- [ ] README (what/why/how-to-run) — in English.
-- [ ] Fair RNG + marketplace notes.
+- [x] README (what/why/how-to-run) — in English.
+- [x] Fair RNG + marketplace + stats/exp notes (SPEC §5–7).
 
 ## Wave 2 — Core loop
 
-- [ ] App talks to deployed contract (hatch + read creatures).
-- [ ] Marketplace buy/sell path via wallet.
-- [ ] Idle expedition loop (off-chain progress + on-chain checkpoint).
+- [x] App talks to deployed contract (hatch + read creatures) — client + hook wired.
+- [x] Marketplace buy/sell path via wallet.
+- [ ] Idle expedition loop (off-chain progress + on-chain checkpoint via gain_exp).
 
 ## Wave 3 — STRK20 + demo
 
+- [x] Registry updated to Portage.fun (hub PR #70, applied).
 - [ ] Deploy to Sepolia/Mainnet (scripts/deploy.mjs).
 - [ ] 3+ mainnet txs in `strk20.json`.
 - [ ] Demo URL + 3-min video.
-- [ ] Re-register on the hackathon hub with the new pitch.
 
 ## Definition of Done (v0)
 
