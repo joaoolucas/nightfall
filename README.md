@@ -2,6 +2,10 @@
 
 **Live demo:** https://portage-topaz.vercel.app
 
+![Portage kickoff](docs/screenshots/kickoff.png)
+
+![Portage game dashboard](docs/screenshots/dashboard.png)
+
 A cozy idle creature-collecting game on Starknet. Portage combines ownable creatures,
 idle expeditions and a marketplace prototype with STRK20 shielded STRK actions.
 

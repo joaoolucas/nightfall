@@ -39,7 +39,8 @@ creature-collector. Organized by impact → effort. All English.
 
 - [ ] **Portal energy** — hatch costs energy; energy regenerates over time (idle loop).
 - [ ] **Leaderboard** — top collectors / strongest creatures.
-- [ ] **Onboarding** — first-open walkthrough ("open a portal, hatch, send on expedition").
+- [x] **Kickoff + game dashboard** — cinematic entry, dense pixel HUD, portal/caravan/market/privacy navigation.
+- [ ] **Interactive walkthrough** — guided first portal, hatch and expedition.
 - [ ] (stretch) **Guilds / weekly raids**.
 
 ## Wave 9 — STRK20 privacy (the moat)
@@ -52,7 +53,7 @@ creature-collector. Organized by impact → effort. All English.
 
 - [ ] Deploy (Sepolia → Mainnet) + 3 mainnet txs in `strk20.json`.
 - [ ] Vercel demo URL + 3-min video.
-- [ ] README screenshots.
+- [x] README kickoff + desktop dashboard screenshots.
 
 ## Order of attack (tonight)
 
