@@ -12,7 +12,9 @@
     "dev": "tsx watch src/index.ts",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {},
+  "dependencies": {
+    "starknet": "10.4.0"
+  },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "tsx": "^4.19.2",

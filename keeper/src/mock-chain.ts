@@ -7,6 +7,7 @@
  * for the real `privacy_invoke` submission path.
  */
 
+import type { ChainAdapter, SubmitResult } from './chain-adapter.js';
 import type { Decision, GameState, Phase, Seat } from './types.js';
 
 export interface CreateGameOptions {
@@ -16,17 +17,9 @@ export interface CreateGameOptions {
   phase?: Phase;
 }
 
-export interface SubmitResult {
-  gameId: string;
-  seat: number;
-  decision: Decision;
-  /** Fake transaction hash; placeholder until the real contract exists. */
-  txHash: string;
-  block: number;
-  submittedAt: string;
-}
+export class MockChain implements ChainAdapter {
+  readonly kind = 'mock' as const;
 
-export class MockChain {
   private readonly games = new Map<string, GameState>();
   private readonly submissions: SubmitResult[] = [];
   private block = 0;
@@ -62,6 +55,17 @@ export class MockChain {
     game.actionHistory.push(entry);
   }
 
+  async readGameState(gameId: string): Promise<GameState> {
+    const game = this.games.get(gameId);
+    if (!game) throw new Error(`Unknown game '${gameId}'`);
+    // Return a deep copy so callers cannot mutate the adapter's internal state.
+    return {
+      ...game,
+      seats: game.seats.map((s) => ({ ...s })),
+      actionHistory: [...game.actionHistory],
+    };
+  }
+
   /**
    * Stands in for `privacy_invoke`. Logs and records the decision; returns a
    * fake receipt. Async to mirror the real submission flow.
@@ -69,8 +73,11 @@ export class MockChain {
   async submitDecision(
     seat: number,
     decision: Decision,
-    gameId: string,
+    gameId?: string,
   ): Promise<SubmitResult> {
+    if (!gameId) {
+      throw new Error('MockChain.submitDecision requires a gameId');
+    }
     const game = this.games.get(gameId);
     if (!game) throw new Error(`Unknown game '${gameId}'`);
 
