@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-08-17T19:38:19.490Z",
+  "generated_at": "2026-08-17T19:38:40.666Z",
   "characters": {
     "wayfarer": {
       "character_id": "3ed4671b-ce5e-4b63-b4b7-af8b9e832bf1",
@@ -819,7 +819,19 @@
         "f0c36160-29fb-44a4-bd33-ede999ea9004"
       ],
       "walk_complete": true,
-      "animations": {}
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "cross-punch",
+          "directions": [
+            "north",
+            "west",
+            "south",
+            "east"
+          ],
+          "frames": 6
+        }
+      }
     }
   },
   "assets": {

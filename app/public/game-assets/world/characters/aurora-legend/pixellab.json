@@ -11,9 +11,9 @@
     "attack": {
       "directions": [
         "north",
+        "west",
         "south",
-        "east",
-        "west"
+        "east"
       ],
       "frames": 6,
       "template": "cross-punch"
