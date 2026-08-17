@@ -3,7 +3,6 @@
 import Image from "next/image";
 import {
   IDLE_ZONES,
-  activeCreatures,
   creatureCombatStats,
   formatDuration,
   partyDps,
@@ -18,6 +17,7 @@ import {
 } from "@/utils/idle-game";
 import { biomeBackgroundPath, creatureSpritePath, elementIconPath, RARITY, rarityLabel, speciesLabel, stageLabel } from "@/utils/portage";
 import type { IdleGameController } from "./useIdleGame";
+import IdleWorld from "./IdleWorld";
 import styles from "./idle-game.module.css";
 
 interface ViewProps { controller: IdleGameController }
@@ -30,7 +30,6 @@ function Bar({ value, max, tone = "green", label = "Progress" }: { value: number
 export function IdleHunt({ controller }: ViewProps) {
   const { game } = controller;
   const zone = zoneFor(game.zoneId);
-  const party = activeCreatures(game);
   const maxHp = partyMaxHp(game);
   const dps = partyDps(game);
   const killSeconds = Math.max(1, game.enemy.hp / dps);
@@ -46,37 +45,14 @@ export function IdleHunt({ controller }: ViewProps) {
         </div>
       </div>
 
-      <div className={styles.battlefield} style={{ backgroundImage: `linear-gradient(rgba(12,13,31,.12), rgba(12,13,31,.68)), url(${biomeBackgroundPath(game.zoneId)})` }}>
+      <div className={styles.worldStage}>
         <div className={styles.bossTrack}>
           <span>WARDEN</span>
           <div>{Array.from({ length: 10 }, (_, index) => <i key={index} className={index < zoneProgress(game) ? styles.trackDone : ""} />)}</div>
           <b>{zoneProgress(game)}/10</b>
         </div>
-
-        <div className={styles.partyFighter}>
-          <div className={styles.partySprites}>
-            {party.map((creature, index) => (
-              <Image key={creature.id} src={creatureSpritePath(creature.species, creature.stage)} alt={creature.name} width={index === 0 ? 116 : 82} height={index === 0 ? 116 : 82} className={index === 0 ? styles.leadSprite : styles.supportSprite} priority={index === 0} />
-            ))}
-          </div>
-          <div className={styles.combatPlate}>
-            <span>CARAVAN VITALITY</span><b>{Math.ceil(game.partyHp)} / {maxHp}</b>
-            <Bar value={game.partyHp} max={maxHp} tone="green" label="Caravan vitality" />
-          </div>
-        </div>
-
-        <div className={`${styles.enemyFighter} ${game.enemy.isBoss ? styles.bossEnemy : ""}`} key={game.enemy.serial}>
-          {game.enemy.isBoss ? <span className={styles.bossBadge}>WARDEN</span> : null}
-          <Image src={creatureSpritePath(game.enemy.species, game.enemy.isBoss ? "legend" : "adult")} alt={game.enemy.name} width={game.enemy.isBoss ? 164 : 126} height={game.enemy.isBoss ? 164 : 126} className={styles.enemySprite} />
-          <div className={styles.combatPlate}>
-            <span>LV. {game.enemy.level}</span><b>{game.enemy.name}</b>
-            <Bar value={game.enemy.hp} max={game.enemy.maxHp} tone="red" label={`${game.enemy.name} health`} />
-            <small>{Math.max(0, Math.ceil(game.enemy.hp))} / {game.enemy.maxHp} HP</small>
-          </div>
-        </div>
-
-        <div className={styles.damageLine} aria-hidden><span>⚔</span><i /></div>
-        {!game.running ? <div className={styles.camped}><b>CARAVAN CAMPED</b><span>Resume the hunt when you are ready.</span></div> : game.recoveringUntil > game.lastUpdatedAt ? <div className={styles.camped}><b>RECOVERING</b><span>The caravan will return to battle in a few seconds.</span></div> : null}
+        <IdleWorld controller={controller} />
+        {!game.running ? <div className={styles.camped}><b>CARAVAN CAMPED</b><span>Move freely or resume auto-hunt when ready.</span></div> : game.recoveringUntil > game.lastUpdatedAt ? <div className={styles.camped}><b>RECOVERING</b><span>The caravan will return to battle in a few seconds.</span></div> : null}
       </div>
 
       <div className={styles.huntActions}>

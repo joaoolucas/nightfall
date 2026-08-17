@@ -6,13 +6,17 @@
 
 ![Portage game dashboard](docs/screenshots/dashboard.png)
 
+![Portage spatial auto-hunt](docs/screenshots/world-hunt.png)
+
 A cozy idle creature-collecting RPG. The current browser build prioritizes a playable,
 local-first hunt loop; the Starknet contracts remain in the repository for later integration.
 
 ## Current status
 
-- **Playable idle mode:** real-time deterministic combat, six routes, Wardens, shared EXP,
-  loot, party management, evolution, permanent training and up to eight hours of offline progress.
+- **Playable top-down idle RPG:** tile movement, click-to-move, camera, collision, populated
+  outposts, NPCs, spawn regions, auto-roam pathfinding, spatial combat and a minimap.
+- Six routes include Wardens, shared EXP, loot, party management, evolution, permanent
+  training and up to eight hours of offline progress.
 - Progress autosaves locally and unsafe offline fights make camp instead of fabricating rewards.
 - See [`docs/IDLE_GAME.md`](docs/IDLE_GAME.md) for mechanics, balance rules and architecture.
 - Creature minting, stats, evolution, expeditions and listing logic are implemented in Cairo.

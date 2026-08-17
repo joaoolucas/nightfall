@@ -10,6 +10,7 @@ import {
   createInitialGame,
   evolveCreature,
   hydrateGame,
+  setEngaged,
   setGameSetting,
   setRunning,
   togglePartyMember,
@@ -28,6 +29,8 @@ export interface IdleGameController {
   saveStatus: "loading" | "saved" | "failed";
   dismissOfflineReport: () => void;
   toggleRunning: () => void;
+  setCombatEngaged: (engaged: boolean) => void;
+  setWorldMounted: (mounted: boolean) => void;
   selectZone: (zone: Species) => void;
   toggleSetting: (key: keyof IdleGameState["settings"]) => void;
   purchaseUpgrade: (key: UpgradeKey) => void;
@@ -43,6 +46,8 @@ export function useIdleGame(): IdleGameController {
   const [offlineReport, setOfflineReport] = useState<OfflineReport | null>(null);
   const [saveStatus, setSaveStatus] = useState<"loading" | "saved" | "failed">("loading");
   const gameRef = useRef(game);
+  const worldMountedRef = useRef(false);
+  const abstractTravelAtRef = useRef(0);
 
   useEffect(() => {
     gameRef.current = game;
@@ -68,6 +73,23 @@ export function useIdleGame(): IdleGameController {
     const timer = window.setInterval(() => {
       const now = Date.now();
       const current = gameRef.current;
+      if (!current.engaged) {
+        // When the world canvas is not mounted, auto-roam becomes a short abstract
+        // travel phase between encounters instead of stopping after one victory.
+        if (!worldMountedRef.current && current.settings.autoRoam) {
+          if (!abstractTravelAtRef.current) abstractTravelAtRef.current = now + 1_400;
+          if (now >= abstractTravelAtRef.current) {
+            const next = setEngaged(current, true, now);
+            abstractTravelAtRef.current = 0;
+            gameRef.current = next;
+            setGame(next);
+          }
+        } else {
+          abstractTravelAtRef.current = 0;
+        }
+        return;
+      }
+      abstractTravelAtRef.current = 0;
       if (current.lastUpdatedAt > 0 && now - current.lastUpdatedAt > 30_000) {
         const result = applyOfflineProgress(current, now);
         gameRef.current = result.state;
@@ -112,6 +134,11 @@ export function useIdleGame(): IdleGameController {
   }, [hydrated]);
 
   const toggleRunning = useCallback(() => setGame((current) => setRunning(current, !current.running, Date.now())), []);
+  const setCombatEngaged = useCallback((engaged: boolean) => setGame((current) => setEngaged(current, engaged, Date.now())), []);
+  const setWorldMounted = useCallback((mounted: boolean) => {
+    worldMountedRef.current = mounted;
+    abstractTravelAtRef.current = 0;
+  }, []);
   const selectZone = useCallback((zone: Species) => setGame((current) => changeZone(current, zone)), []);
   const toggleSetting = useCallback((key: keyof IdleGameState["settings"]) => setGame((current) => setGameSetting(current, key, !current.settings[key])), []);
   const purchaseUpgrade = useCallback((key: UpgradeKey) => setGame((current) => buyUpgrade(current, key)), []);
@@ -136,6 +163,8 @@ export function useIdleGame(): IdleGameController {
     saveStatus,
     dismissOfflineReport: () => setOfflineReport(null),
     toggleRunning,
+    setCombatEngaged,
+    setWorldMounted,
     selectZone,
     toggleSetting,
     purchaseUpgrade,

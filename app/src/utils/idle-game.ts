@@ -59,6 +59,7 @@ export interface IdleGameState {
   shards: number;
   zoneId: Species;
   running: boolean;
+  engaged: boolean;
   kills: number;
   zoneKills: number;
   partyHp: number;
@@ -67,7 +68,7 @@ export interface IdleGameState {
   activeIds: string[];
   inventory: { tonics: number; crystals: number; relics: number };
   upgrades: { attack: number; armor: number; fortune: number };
-  settings: { autoPotion: boolean; autoAdvance: boolean };
+  settings: { autoPotion: boolean; autoAdvance: boolean; autoRoam: boolean };
   rngSeed: number;
   log: GameLogEntry[];
   nextLogId: number;
@@ -114,6 +115,7 @@ export function createInitialGame(): IdleGameState {
     shards: 8,
     zoneId: "ember",
     running: true,
+    engaged: false,
     kills: 0,
     zoneKills: 0,
     partyHp: 1,
@@ -122,7 +124,7 @@ export function createInitialGame(): IdleGameState {
     activeIds: ["cinder", "ripple", "bramble"],
     inventory: { tonics: 3, crystals: 0, relics: 0 },
     upgrades: { attack: 0, armor: 0, fortune: 0 },
-    settings: { autoPotion: true, autoAdvance: false },
+    settings: { autoPotion: true, autoAdvance: false, autoRoam: true },
     rngSeed: 0x51f15e,
     log: [{ id: 1, tone: "system", text: "The caravan entered Cinderpath. The hunt has begun." }],
     nextLogId: 2,
@@ -245,6 +247,7 @@ function spawnEnemy(state: IdleGameState): IdleGameState {
   return {
     ...state,
     rngSeed,
+    engaged: false,
     enemy: { serial: state.enemy.serial + 1, name, species: state.zoneId, level, isBoss, hp: maxHp, maxHp, attack },
   };
 }
@@ -297,7 +300,7 @@ function defeatEnemy(state: IdleGameState): IdleGameState {
 }
 
 export function advanceGame(state: IdleGameState, now: number): IdleGameState {
-  if (!state.running) return state.lastUpdatedAt === now ? state : { ...state, lastUpdatedAt: now };
+  if (!state.running || !state.engaged) return state.lastUpdatedAt === now ? state : { ...state, lastUpdatedAt: now };
   if (state.recoveringUntil > now) return { ...state, lastUpdatedAt: now };
   const elapsed = state.lastUpdatedAt > 0 ? Math.min(1, Math.max(0, (now - state.lastUpdatedAt) / 1000)) : 0;
   if (elapsed <= 0) return { ...state, recoveringUntil: 0, lastUpdatedAt: now };
@@ -373,7 +376,12 @@ export function changeZone(state: IdleGameState, zoneId: Species): IdleGameState
 }
 
 export function setRunning(state: IdleGameState, running: boolean, now: number): IdleGameState {
-  return addLog({ ...state, running, lastUpdatedAt: now }, running ? "The hunt resumed." : "The caravan made camp.", "system");
+  return addLog({ ...state, running, engaged: running ? state.engaged : false, lastUpdatedAt: now }, running ? "The hunt resumed." : "The caravan made camp.", "system");
+}
+
+export function setEngaged(state: IdleGameState, engaged: boolean, now: number): IdleGameState {
+  if (state.engaged === engaged) return state;
+  return { ...state, engaged, lastUpdatedAt: now };
 }
 
 export function setGameSetting(state: IdleGameState, key: keyof IdleGameState["settings"], value: boolean): IdleGameState {
@@ -439,7 +447,9 @@ export function evolveCreature(state: IdleGameState, creatureId: string): IdleGa
 
 export function applyOfflineProgress(state: IdleGameState, now: number): { state: IdleGameState; report: OfflineReport | null } {
   const elapsed = Math.min(MAX_OFFLINE_SECONDS, Math.max(0, Math.floor((now - state.lastUpdatedAt) / 1000)));
-  if (!state.running || state.lastUpdatedAt <= 0 || elapsed < 5) return { state: { ...state, lastUpdatedAt: now }, report: null };
+  if (!state.running || !state.settings.autoRoam || state.lastUpdatedAt <= 0 || elapsed < 5) {
+    return { state: { ...state, lastUpdatedAt: now }, report: null };
+  }
   const zone = zoneFor(state.zoneId);
   const index = zoneIndex(state.zoneId);
   // Estimate regular encounters even if the save happened during a Warden.

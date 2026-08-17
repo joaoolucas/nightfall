@@ -11,6 +11,8 @@ import {
   hydrateGame,
   partyDps,
   partyMaxHp,
+  setEngaged,
+  setRunning,
   togglePartyMember,
   upgradeCost,
 } from "./idle-game";
@@ -25,7 +27,7 @@ test("initial game has a playable three-creature party", () => {
 });
 
 test("live combat defeats enemies and grants persistent rewards", () => {
-  let game = { ...createInitialGame(), lastUpdatedAt: 1_000 };
+  let game = { ...createInitialGame(), engaged: true, lastUpdatedAt: 1_000 };
   const initialGold = game.gold;
   for (let second = 2; second <= 30 && game.kills === 0; second += 1) {
     game = advanceGame(game, second * 1_000);
@@ -77,6 +79,7 @@ test("maximum offline progress leaves the current route beatable", () => {
 test("three consecutive defeats stop an unsafe first-route hunt", () => {
   let game = {
     ...createInitialGame(),
+    engaged: true,
     gold: 100,
     partyHp: 1,
     enemy: { ...createInitialGame().enemy, attack: 10_000 },
@@ -101,10 +104,32 @@ test("party changes preserve vitality ratio instead of granting a free heal", ()
 });
 
 test("ordinary foreground stalls are simulated instead of discarded", () => {
-  const start = { ...createInitialGame(), lastUpdatedAt: 1_000 };
+  const start = { ...createInitialGame(), engaged: true, lastUpdatedAt: 1_000 };
   const settled = advanceGameTo(start, 11_000);
   assert.equal(settled.lastUpdatedAt, 11_000);
   assert.ok(settled.enemy.hp < start.enemy.hp || settled.kills > 0);
+});
+
+test("manual mode does not chain offline encounters even when currently engaged", () => {
+  const game = {
+    ...createInitialGame(),
+    engaged: true,
+    settings: { ...createInitialGame().settings, autoRoam: false },
+    lastUpdatedAt: 1_000,
+  };
+  const result = applyOfflineProgress(game, 3_601_000);
+  assert.equal(result.report, null);
+  assert.equal(result.state.kills, 0);
+});
+
+test("resuming beside a target can restore engagement", () => {
+  const started = { ...createInitialGame(), engaged: true, lastUpdatedAt: 1_000 };
+  const paused = setRunning(started, false, 2_000);
+  const resumed = setRunning(paused, true, 3_000);
+  const engaged = setEngaged(resumed, true, 3_000);
+  assert.equal(paused.engaged, false);
+  assert.equal(engaged.running, true);
+  assert.equal(engaged.engaged, true);
 });
 
 test("an impossible offline fight safely camps without fabricated victories", () => {
@@ -130,7 +155,7 @@ test("invalid or obsolete saves safely restart", () => {
 });
 
 test("combat stays deterministic after a JSON save round-trip", () => {
-  let first = { ...createInitialGame(), lastUpdatedAt: 1_000 };
+  let first = { ...createInitialGame(), engaged: true, lastUpdatedAt: 1_000 };
   let second = JSON.parse(JSON.stringify(first)) as typeof first;
   for (let tick = 2; tick <= 50; tick += 1) {
     first = advanceGame(first, tick * 1_000);

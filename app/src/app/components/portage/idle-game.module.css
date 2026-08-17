@@ -18,6 +18,29 @@
 
 .battlefield { position: relative; flex: 1; min-height: 480px; overflow: hidden; background-position: center; background-size: cover; isolation: isolate; }
 .battlefield::after { content: ''; position: absolute; inset: auto 0 0; z-index: -1; height: 30%; background: linear-gradient(transparent, rgba(9,8,22,.6)); }
+.worldStage { position: relative; flex: 1; min-height: 500px; overflow: hidden; background: #171226; }
+.worldCanvasWrap { position: absolute; inset: 0; overflow: hidden; background: #171226; }
+.worldCanvas { width: 100%; height: 100%; display: block; outline: none; cursor: crosshair; image-rendering: pixelated; }
+.worldCanvas:focus-visible { box-shadow: inset 0 0 0 3px #e3b45a; }
+.worldA11y { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+.worldDpad { position: absolute; right: 238px; bottom: 54px; z-index: 9; display: grid; grid-template-columns: repeat(3, 25px); grid-template-rows: repeat(2, 25px); gap: 2px; }
+.worldDpad button { border: 2px solid #2c1725; border-radius: 3px; color: #f6ddad; background: rgba(70,39,59,.92); font-size: 9px; cursor: pointer; }
+.worldDpad button:hover, .worldDpad button:focus-visible { color: white; background: #844aa0; outline: 1px solid #e4b85e; }
+.worldDpad button:nth-child(1) { grid-column: 2; }
+.worldDpad button:nth-child(2) { grid-column: 1; grid-row: 2; }
+.worldDpad button:nth-child(3) { grid-column: 2; grid-row: 2; }
+.worldDpad button:nth-child(4) { grid-column: 3; grid-row: 2; }
+.worldLocation, .worldControls, .worldTarget { position: absolute; z-index: 7; display: flex; border: 2px solid rgba(37,19,31,.9); border-radius: 4px; color: #f8eddd; background: rgba(37,23,36,.92); box-shadow: inset 0 0 0 1px rgba(178,99,112,.45), 0 5px 14px rgba(5,5,12,.35); pointer-events: none; }
+.worldLocation { top: 15px; left: 15px; flex-direction: column; gap: 2px; padding: 8px 11px; }
+.worldLocation span { color: #ffd77d; font-family: var(--font-display), monospace; font-size: 9px; }
+.worldLocation b { color: #a793a8; font-family: var(--font-mono-ui), monospace; font-size: 7px; }
+.worldControls { left: 15px; bottom: 15px; align-items: center; gap: 10px; padding: 8px 11px; }
+.worldControls b { color: #75def0; font-family: var(--font-display), monospace; font-size: 8px; }
+.worldControls span { color: #bca9b9; font-size: 9px; }
+.worldTarget { right: 15px; bottom: 15px; min-width: 210px; display: grid; grid-template-columns: auto 1fr; gap: 2px 9px; padding: 9px 11px; }
+.worldTarget span { grid-row: 1/3; align-self: center; padding: 5px 7px; color: #ffd777; background: #5c313a; font-family: var(--font-mono-ui), monospace; font-size: 7px; font-weight: 900; }
+.worldTarget b { font-size: 10px; }
+.worldTarget small { color: #bca8b7; font-size: 8px; }
 .bossTrack { position: absolute; top: 15px; left: 50%; z-index: 4; transform: translateX(-50%); min-width: 300px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; padding: 7px 10px; border: 2px solid rgba(57,31,45,.85); border-radius: 5px; background: rgba(25,16,30,.86); }
 .bossTrack > span, .bossTrack > b { color: #edc25e; font-family: var(--font-mono-ui), monospace; font-size: 8px; }
 .bossTrack > div { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
@@ -149,6 +172,11 @@
   .huntStats { width: 100%; }
   .huntStats > span { flex: 1; min-width: 0; }
   .battlefield { min-height: 470px; }
+  .worldStage { min-height: 520px; }
+  .worldLocation { top: 48px; }
+  .worldControls { right: 12px; bottom: 62px; justify-content: center; }
+  .worldDpad { right: 12px; top: 48px; bottom: auto; }
+  .worldTarget { left: 12px; right: 12px; bottom: 12px; }
   .partyFighter { left: -18px; transform: scale(.74); transform-origin: bottom left; }
   .enemyFighter { right: -8px; transform: scale(.78); transform-origin: bottom right; }
   .damageLine { left: 34%; right: 32%; }

@@ -39,11 +39,11 @@ function Kickoff({ onStart }: { onStart: () => void }) {
         <p className={styles.kickoffEyebrow}>AN IDLE CARAVAN RPG</p>
         <h1 className={styles.kickoffTitle}>Carry wonder<br /><span>through the wilds.</span></h1>
         <p className={styles.kickoffCopy}>
-          Assemble three companions, hunt creatures in real time, defeat biome wardens and return to the rewards your caravan earned while you were away.
+          Walk through living pixel biomes, assemble three companions, track wild creatures, defeat Wardens and return to the rewards your caravan earned while away.
         </p>
         <div className={styles.kickoffSteps}>
-          <div><b>01</b><span>Choose a route</span><small>Six biomes with rising danger and rewards</small></div>
-          <div><b>02</b><span>Hunt while idle</span><small>Automatic combat continues for up to 8 hours</small></div>
+          <div><b>01</b><span>Explore the world</span><small>Move with WASD or click across six biomes</small></div>
+          <div><b>02</b><span>Hunt while idle</span><small>Auto-roam tracks spawns for up to 8 hours</small></div>
           <div><b>03</b><span>Train the caravan</span><small>Level, evolve and unlock permanent upgrades</small></div>
         </div>
         <button type="button" className={styles.kickoffButton} onClick={onStart}>
@@ -129,7 +129,7 @@ export default function PortageGame() {
         <main className={styles.centerStage}>
           <div className={styles.stageHeader}>
             <div><span>WORLD // {zone.name.toUpperCase()}</span><b>{NAV.find((item) => item.id === view)?.label}</b></div>
-            <div className={styles.worldStatus}><span className={game.running ? styles.liveDot : styles.demoDot} />{game.running ? "LIVE HUNT" : "CARAVAN CAMPED"}</div>
+            <div className={styles.worldStatus}><span className={game.running ? styles.liveDot : styles.demoDot} />{game.engaged ? "IN COMBAT" : game.running ? "ROAMING" : "CARAVAN CAMPED"}</div>
           </div>
           <div className={styles.stageViewport}>
             {view === "hunt" ? <IdleHunt controller={controller} /> : null}
@@ -148,9 +148,9 @@ export default function PortageGame() {
         <aside className={styles.rightRail}>
           <section className={styles.frame}>
             <div className={styles.frameTitle}><span>AUTOMATIONS</span><small>ACTIVE</small></div>
+            <label className={styles.toggleRow}><input type="checkbox" checked={game.settings.autoRoam} onChange={() => controller.toggleSetting("autoRoam")} /><span><b>Auto-roam</b><small>Pathfind to the next wild spawn</small></span><i /></label>
             <label className={styles.toggleRow}><input type="checkbox" checked={game.settings.autoPotion} onChange={() => controller.toggleSetting("autoPotion")} /><span><b>Auto-tonic</b><small>Heal below 30% vitality</small></span><i /></label>
             <label className={styles.toggleRow}><input type="checkbox" checked={game.settings.autoAdvance} onChange={() => controller.toggleSetting("autoAdvance")} /><span><b>Advance routes</b><small>Move after 25 victories when unlocked</small></span><i /></label>
-            <label className={`${styles.toggleRow} ${styles.toggleDisabled}`}><input type="checkbox" disabled /><span><b>Auto-evolve</b><small>Requires manual crystal choices</small></span><i /></label>
             <p className={styles.localOnly}>Combat and offline rewards are simulated locally. Maximum offline progress: 8 hours.</p>
           </section>
 
