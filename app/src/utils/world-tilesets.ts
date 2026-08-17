@@ -51,12 +51,22 @@ const CORNER_LOOKUP: Record<string, string> = {
   "upperupperupperupper": "15",
 };
 
-let tilesetCache: Map<Species, TilesetData> = new Map();
-let imageCache: Map<string, HTMLImageElement> = new Map();
+const tilesetCache: Map<Species, TilesetData> = new Map();
+const imageCache: Map<string, HTMLImageElement> = new Map();
+/** In-flight loads, so concurrent callers share one request rather than racing. */
+const tilesetPending: Map<Species, Promise<TilesetData>> = new Map();
 
-export async function loadTileset(zoneId: Species): Promise<TilesetData> {
-  if (tilesetCache.has(zoneId)) return tilesetCache.get(zoneId)!;
+export function loadTileset(zoneId: Species): Promise<TilesetData> {
+  const ready = tilesetCache.get(zoneId);
+  if (ready) return Promise.resolve(ready);
+  const inFlight = tilesetPending.get(zoneId);
+  if (inFlight) return inFlight;
+  const task = fetchTileset(zoneId).finally(() => tilesetPending.delete(zoneId));
+  tilesetPending.set(zoneId, task);
+  return task;
+}
 
+async function fetchTileset(zoneId: Species): Promise<TilesetData> {
   const response = await fetch(`/game-assets/world/tilesets/${zoneId}/metadata.json`);
   if (!response.ok) throw new Error(`Failed to load tileset for ${zoneId}`);
   const data = await response.json();
@@ -76,15 +86,20 @@ export async function loadTileset(zoneId: Species): Promise<TilesetData> {
 
   tilesetCache.set(zoneId, tileset);
 
-  // Preload images
-  for (const tile of tiles) {
-    const img = new Image();
-    img.src = tile.imagePath;
-    await new Promise<void>((resolve) => {
-      img.onload = () => { imageCache.set(tile.imagePath, img); resolve(); };
-      img.onerror = () => resolve();
-    });
-  }
+  // Sixteen tiles in parallel rather than one after another: loading them
+  // sequentially made first paint of the ground wait on a full round-trip
+  // chain, which is barely noticeable locally and very noticeable over a
+  // real network.
+  await Promise.all(
+    tiles.map((tile) =>
+      new Promise<void>((resolve) => {
+        const image = new Image();
+        image.onload = () => { imageCache.set(tile.imagePath, image); resolve(); };
+        image.onerror = () => resolve();
+        image.src = tile.imagePath;
+      }),
+    ),
+  );
 
   return tileset;
 }

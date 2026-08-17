@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-08-17T19:30:25.800Z",
+  "generated_at": "2026-08-17T19:35:22.559Z",
   "characters": {
     "wayfarer": {
       "character_id": "3ed4671b-ce5e-4b63-b4b7-af8b9e832bf1",
@@ -581,7 +581,27 @@
         "889eaf12-7be4-48c9-8cd7-906275e8211f"
       ],
       "walk_complete": true,
-      "animations": {}
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "attack-left",
+          "directions": [
+            "south",
+            "north",
+            "west",
+            "east"
+          ],
+          "frames": 7
+        },
+        "hurt": {
+          "complete": true,
+          "template": "angry",
+          "directions": [
+            "south"
+          ],
+          "frames": 9
+        }
+      }
     },
     "wisp-hatchling": {
       "character_id": "f8a2c1ba-8f3b-43c0-b852-8863f3bde539",
@@ -601,7 +621,20 @@
         "354ba37f-2353-4f67-96d9-426c1a3e6980",
         "4d2277cc-70dc-48eb-9ce1-380b13430bf6"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "angry",
+          "directions": [
+            "north",
+            "south",
+            "east",
+            "west"
+          ],
+          "frames": 7
+        }
+      }
     },
     "wisp-legend": {
       "character_id": "db909e5b-d05d-42d3-a5b0-bdd81e895405",
@@ -621,7 +654,17 @@
         "7d97e815-0e8a-453a-99b5-eb30d5924eff",
         "64adddf0-cb50-4ac9-9e83-a3fde9f85ce7"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "angry",
+          "directions": [
+            "north"
+          ],
+          "frames": 7
+        }
+      }
     },
     "aurora-hatchling": {
       "character_id": "4fb834de-a97a-40b8-9c8f-93a2544823db",
@@ -641,7 +684,8 @@
         "3a44b9fa-98cd-4193-88b8-6068a6d74601",
         "e2fb7dd2-310a-45f9-b31d-189fc1ad6aa7"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {}
     },
     "wisp-adult": {
       "character_id": "bb4fe071-cb6d-4d17-b8f8-dce2b29b6b24",
@@ -664,8 +708,15 @@
       "walk_complete": true,
       "animations": {
         "attack": {
-          "complete": false,
-          "skipped": true
+          "complete": true,
+          "template": "angry",
+          "directions": [
+            "north",
+            "east",
+            "south",
+            "west"
+          ],
+          "frames": 7
         },
         "hurt": {
           "complete": false,

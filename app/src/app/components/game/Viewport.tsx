@@ -11,10 +11,18 @@ import {
   tileAtPoint,
 } from "@/game/render/renderer";
 import { loadCharacter } from "@/game/render/sprites";
-import { loadAll, zoneEnvironmentSources } from "@/utils/world-art";
+import {
+  AMBIENT_CHARACTERS,
+  NPC_CHARACTER,
+  PLAYER_CHARACTER,
+  creatureCharacterId,
+  loadAll,
+  zoneEnvironmentSources,
+} from "@/utils/world-art";
+import { SPECIES_LIST, STAGE_LIST } from "@/utils/portage";
 import { loadTileset, type TilesetData } from "@/utils/world-tilesets";
-import { itemSpritePath } from "@/game/world/items";
-import { ITEMS } from "@/game/world/items";
+import { MONSTERS } from "@/game/world/monsters";
+import { ITEMS, itemSpritePath } from "@/game/world/items";
 import type { GameSim } from "./useGameSim";
 import styles from "./client.module.css";
 
@@ -37,18 +45,31 @@ export default function Viewport({ sim }: { sim: GameSim }) {
 
   useEffect(() => { simRef.current = sim; }, [sim]);
 
-  // Load every sprite the current biome can show.
+  /**
+   * Load every sprite the biome can show, keyed on the zone alone.
+   *
+   * This must not depend on `state.entities`: that array is rebuilt every tick,
+   * so the effect re-ran ten times a second and restarted the tileset load each
+   * time. Locally the cache hid it; over real network latency the requests
+   * stampeded and the ground never appeared. The set of characters a zone can
+   * show is static, so it is derived from the catalogues instead.
+   */
   useEffect(() => {
     const zone = sim.state.zoneId;
-    const ids = new Set<string>();
-    for (const entity of sim.state.entities) ids.add(entity.charId);
-    for (const companion of sim.state.companions) ids.add(`${companion.species}`);
-    ids.add("wayfarer");
+    const ids = new Set<string>([PLAYER_CHARACTER]);
+    for (const id of Object.values(NPC_CHARACTER)) ids.add(id);
+    for (const id of AMBIENT_CHARACTERS) ids.add(id);
+    for (const template of MONSTERS) if (template.species === zone) ids.add(template.charId);
+    for (const species of SPECIES_LIST) {
+      for (const stage of STAGE_LIST) ids.add(creatureCharacterId(species, stage));
+    }
     for (const id of ids) void loadCharacter(id);
     void loadAll(zoneEnvironmentSources(zone));
     void loadAll(ITEMS.map((item) => itemSpritePath(item.id)));
-    loadTileset(zone).then((tileset) => { tilesetRef.current = tileset; }).catch(() => { tilesetRef.current = null; });
-  }, [sim.state.zoneId, sim.state.entities, sim.state.companions]);
+    loadTileset(zone)
+      .then((tileset) => { tilesetRef.current = tileset; })
+      .catch(() => { tilesetRef.current = null; });
+  }, [sim.state.zoneId]);
 
   // Feed newly produced simulation events into the transient visuals.
   useEffect(() => {
