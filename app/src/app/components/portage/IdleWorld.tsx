@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { creatureSpritePath, type Stage } from "@/utils/portage";
 import { worldIdleSpritePath, worldWalkSpritePath, directionFromDelta, cardinalFromDelta, preloadWorldCharacterSprites, preloadZoneEnemySprites, type WorldDirection, type CardinalDirection } from "@/utils/world-sprites";
+import { loadTileset, selectWangTile, getTileImage, preloadAllTilesets, type TilesetData } from "@/utils/world-tilesets";
 import {
   createWorldMap,
   findPath,
@@ -170,25 +171,57 @@ function drawStructure(ctx: CanvasRenderingContext2D, structure: WorldMap["struc
   ctx.restore();
 }
 
-function drawGround(ctx: CanvasRenderingContext2D, map: WorldMap, cameraX: number, cameraY: number, width: number, height: number) {
+function drawGround(ctx: CanvasRenderingContext2D, map: WorldMap, cameraX: number, cameraY: number, width: number, height: number, tileset: TilesetData | null) {
   const palette = PALETTES[map.zoneId];
   const minX = Math.max(0, Math.floor(cameraX / DRAW_TILE) - 1);
   const minY = Math.max(0, Math.floor(cameraY / DRAW_TILE) - 1);
   const maxX = Math.min(map.width, Math.ceil((cameraX + width) / DRAW_TILE) + 1);
   const maxY = Math.min(map.height, Math.ceil((cameraY + height) / DRAW_TILE) + 1);
-  for (let y = minY; y < maxY; y += 1) for (let x = minX; x < maxX; x += 1) {
-    const tile = map.tiles[y * map.width + x];
-    const sx = x * DRAW_TILE - cameraX;
-    const sy = y * DRAW_TILE - cameraY;
-    let color: string = (x + y) % 2 ? palette.ground : palette.ground2;
-    if (tile.kind === "path") color = palette.path;
-    if (tile.kind === "plaza") color = palette.plaza;
-    if (tile.kind === "water") color = palette.water;
-    if (tile.kind === "hazard") color = palette.hazard;
-    ctx.fillStyle = color; ctx.fillRect(Math.floor(sx), Math.floor(sy), DRAW_TILE + 1, DRAW_TILE + 1);
-    ctx.strokeStyle = tile.kind === "plaza" ? "rgba(239,216,190,.12)" : palette.grid; ctx.lineWidth = 1; ctx.strokeRect(Math.floor(sx) + .5, Math.floor(sy) + .5, DRAW_TILE, DRAW_TILE);
-    if (tile.kind === "water" || tile.kind === "hazard") { ctx.fillStyle = "rgba(255,255,255,.11)"; ctx.fillRect(sx + ((x * 13 + y * 7) % 17), sy + 9, 12, 2); }
-    else if ((x * 17 + y * 11) % 9 === 0) { ctx.fillStyle = "rgba(255,255,255,.09)"; ctx.fillRect(sx + 8, sy + 12, 3, 3); }
+  
+  if (tileset) {
+    // Render using Wang tileset
+    for (let y = minY; y < maxY; y += 1) for (let x = minX; x < maxX; x += 1) {
+      const wangTile = selectWangTile(tileset, map, x, y);
+      if (wangTile) {
+        const img = getTileImage(wangTile.imagePath);
+        if (img) {
+          const sx = x * DRAW_TILE - cameraX;
+          const sy = y * DRAW_TILE - cameraY;
+          ctx.drawImage(img, Math.floor(sx), Math.floor(sy), DRAW_TILE, DRAW_TILE);
+        }
+      }
+    }
+    // Overlay grid lines for plaza/hazard/water
+    for (let y = minY; y < maxY; y += 1) for (let x = minX; x < maxX; x += 1) {
+      const tile = map.tiles[y * map.width + x];
+      const sx = x * DRAW_TILE - cameraX;
+      const sy = y * DRAW_TILE - cameraY;
+      if (tile.kind === "plaza") {
+        ctx.strokeStyle = "rgba(239,216,190,.12)"; ctx.lineWidth = 1; ctx.strokeRect(Math.floor(sx) + .5, Math.floor(sy) + .5, DRAW_TILE, DRAW_TILE);
+      } else if (tile.kind === "water" || tile.kind === "hazard") {
+        ctx.strokeStyle = palette.grid; ctx.lineWidth = 1; ctx.strokeRect(Math.floor(sx) + .5, Math.floor(sy) + .5, DRAW_TILE, DRAW_TILE);
+        ctx.fillStyle = "rgba(255,255,255,.11)"; ctx.fillRect(sx + ((x * 13 + y * 7) % 17), sy + 9, 12, 2);
+      } else {
+        ctx.strokeStyle = palette.grid; ctx.lineWidth = 1; ctx.strokeRect(Math.floor(sx) + .5, Math.floor(sy) + .5, DRAW_TILE, DRAW_TILE);
+        if ((x * 17 + y * 11) % 9 === 0) { ctx.fillStyle = "rgba(255,255,255,.09)"; ctx.fillRect(sx + 8, sy + 12, 3, 3); }
+      }
+    }
+  } else {
+    // Fallback to colored rectangles while tileset loads
+    for (let y = minY; y < maxY; y += 1) for (let x = minX; x < maxX; x += 1) {
+      const tile = map.tiles[y * map.width + x];
+      const sx = x * DRAW_TILE - cameraX;
+      const sy = y * DRAW_TILE - cameraY;
+      let color: string = (x + y) % 2 ? palette.ground : palette.ground2;
+      if (tile.kind === "path") color = palette.path;
+      if (tile.kind === "plaza") color = palette.plaza;
+      if (tile.kind === "water") color = palette.water;
+      if (tile.kind === "hazard") color = palette.hazard;
+      ctx.fillStyle = color; ctx.fillRect(Math.floor(sx), Math.floor(sy), DRAW_TILE + 1, DRAW_TILE + 1);
+      ctx.strokeStyle = tile.kind === "plaza" ? "rgba(239,216,190,.12)" : palette.grid; ctx.lineWidth = 1; ctx.strokeRect(Math.floor(sx) + .5, Math.floor(sy) + .5, DRAW_TILE, DRAW_TILE);
+      if (tile.kind === "water" || tile.kind === "hazard") { ctx.fillStyle = "rgba(255,255,255,.11)"; ctx.fillRect(sx + ((x * 13 + y * 7) % 17), sy + 9, 12, 2); }
+      else if ((x * 17 + y * 11) % 9 === 0) { ctx.fillStyle = "rgba(255,255,255,.09)"; ctx.fillRect(sx + 8, sy + 12, 3, 3); }
+    }
   }
 }
 
@@ -214,6 +247,7 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
   const modelRef = useRef<WorldModel | null>(null);
   const imagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const engagementRef = useRef(false);
+  const tilesetRef = useRef<TilesetData | null>(null);
   const animationRef = useRef<number>(0);
   const [mode, setMode] = useState<"auto" | "manual">("auto");
   const [position, setPosition] = useState<GridPoint>({ x: 0, y: 0 });
@@ -281,6 +315,8 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
     preloadZoneEnemySprites(controller.game.zoneId).then((imgs) => {
       for (const [path, img] of imgs) imagesRef.current.set(path, img);
     });
+    // Load tileset for current zone
+    loadTileset(controller.game.zoneId).then((ts) => { tilesetRef.current = ts; });
   }, [controller.game.creatures, controller.game.zoneId]);
 
   useEffect(() => {
@@ -365,7 +401,7 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
       const worldW = model.map.width * DRAW_TILE; const worldH = model.map.height * DRAW_TILE;
       const cameraX = Math.max(0, Math.min(worldW - width, player.drawX * DRAW_TILE + DRAW_TILE / 2 - width / 2));
       const cameraY = Math.max(0, Math.min(worldH - height, player.drawY * DRAW_TILE + DRAW_TILE / 2 - height / 2));
-      drawGround(ctx, model.map, cameraX, cameraY, width, height);
+      drawGround(ctx, model.map, cameraX, cameraY, width, height, tilesetRef.current);
       const palette = PALETTES[model.map.zoneId];
 
       type DrawItem = { y: number; draw: () => void };
@@ -413,13 +449,17 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
 
       const party = activeCreatures(game);
       party.slice(1).forEach((creature, index) => {
-        const trailPoint = model.trail[Math.min(model.trail.length - 1, 3 + index * 3)] ?? player;
-        const sx = trailPoint.x * DRAW_TILE + DRAW_TILE / 2 - cameraX + (index ? 8 : -8); const sy = trailPoint.y * DRAW_TILE + DRAW_TILE * .65 - cameraY;
-        const trailIdx = Math.min(model.trail.length - 1, 3 + index * 3);
+        const followerIndex = index + 1;
+        const trailOffset = 8 + followerIndex * 6;
+        const trailPoint = model.trail[Math.min(model.trail.length - 1, trailOffset)] ?? player;
+        const lateralOffset = (index % 2 === 0 ? -1 : 1) * (1.2 + index * 0.3) * DRAW_TILE;
+        const sx = trailPoint.x * DRAW_TILE + DRAW_TILE / 2 - cameraX + lateralOffset;
+        const sy = trailPoint.y * DRAW_TILE + DRAW_TILE * .65 - cameraY;
+        const trailIdx = Math.min(model.trail.length - 1, trailOffset);
         const nextPoint = model.trail[Math.max(0, trailIdx - 1)] ?? player;
         const dir = directionFromDelta(trailPoint.x - nextPoint.x, trailPoint.y - nextPoint.y);
         const image = imagesRef.current.get(worldIdleSpritePath(creature.species, creature.stage, dir));
-        items.push({ y: trailPoint.y - .05 + index * .01, draw: () => { if (image) ctx.drawImage(image, sx - 24, sy - 39, 48, 48); } });
+        items.push({ y: trailPoint.y + index * 0.1, draw: () => { if (image) ctx.drawImage(image, sx - 24, sy - 39, 48, 48); } });
       });
       const playerX = player.drawX * DRAW_TILE + DRAW_TILE / 2 - cameraX; const playerY = player.drawY * DRAW_TILE + DRAW_TILE * .62 - cameraY;
       items.push({ y: player.drawY, draw: () => {
