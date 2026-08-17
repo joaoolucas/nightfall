@@ -12,3 +12,6 @@ contracts/target/
 .claude/
 .pi/skills/
 .pi/strk20-llms-full.txt
+
+.vercel
+.env*
