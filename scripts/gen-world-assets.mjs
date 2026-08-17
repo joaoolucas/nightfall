@@ -25,6 +25,7 @@ const DIRECTIONS = ["south", "north", "east", "west", "south-east", "south-west"
 const CARDINAL = ["south", "north", "east", "west"];
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
+const estimate = args.includes("--estimate");
 const runAll = args.includes("--all") || !args.some((arg) => arg.startsWith("--group") || arg.startsWith("--only"));
 const option = (name) => {
   const index = args.indexOf(name);
@@ -35,7 +36,7 @@ const option = (name) => {
 const groups = new Set((option("--group") ?? "").split(",").filter(Boolean));
 const only = new Set((option("--only") ?? "").split(",").filter(Boolean));
 
-if (!dryRun && !KEY) {
+if (!dryRun && !estimate && !KEY) {
   console.error("PIXELLAB_API_KEY not set. Use: node --env-file=.env scripts/gen-world-assets.mjs ...");
   process.exit(1);
 }
@@ -77,6 +78,37 @@ const CREATURES = SPECIES.flatMap((species, speciesIndex) => STAGES.map((stage) 
   seed: 52000 + speciesIndex * 20 + stage.seed,
 })));
 const CHARACTERS = [...NPCS, ...CREATURES].map((entry) => ({ ...entry, group: "characters", description: `${entry.desc}, ${CHARACTER_STYLE}` }));
+
+/**
+ * What each character needs to animate for tile combat. Death plays facing the
+ * camera only: a four-direction death costs four times as much and is barely
+ * readable once the corpse replaces the sprite.
+ *
+ * Verified template ids (probed against the live API, 45 available in total):
+ * attack, attack-back/left/right, cross-punch, lead-jab, taking-punch,
+ * falling-back-death, breathing-idle, idle, walk-4-frames, walking-4-frames.
+ */
+const HUMANOID_TEMPLATES = new Set(["mannequin"]);
+
+/**
+ * State written before animations were generalised only recorded `walk_complete`.
+ * Honouring it keeps a resumed run from re-billing 16 frames per character.
+ */
+function isAnimationComplete(record, name) {
+  if (!record) return false;
+  if (record.animations?.[name]?.complete) return true;
+  return name === "walk" && record.walk_complete === true;
+}
+
+function animationPlan(asset) {
+  const humanoid = HUMANOID_TEMPLATES.has(asset.template);
+  return [
+    { name: "walk", seedOffset: 1, directions: CARDINAL, templates: humanoid ? ["walking-4-frames", "walk-4-frames"] : ["walk-4-frames", "walking-4-frames"] },
+    { name: "attack", seedOffset: 2, directions: CARDINAL, templates: humanoid ? ["cross-punch", "attack"] : ["attack", "cross-punch"] },
+    { name: "hurt", seedOffset: 3, directions: ["south"], templates: ["taking-punch"] },
+    { name: "death", seedOffset: 4, directions: ["south"], templates: ["falling-back-death"] },
+  ];
+}
 
 const BIOMES = [
   { id: "ember", terrain: "charcoal volcanic earth with burnt umber stones and faint orange ember flecks", path: "worn warm brown ash trail with small charcoal pebbles", plaza: "orderly burgundy stone pavers with subtle brass seams", liquid: "slow glowing red-orange lava surface with dark cooling crust", hazard: "black obsidian fissure with hot orange cracks", palette: "charcoal, burnt umber, burgundy, ember orange" },
@@ -226,30 +258,78 @@ async function syncCharacter({ asset, characterId }) {
   saveState();
 
   if (!asset.animate) return;
-  const walkTemplate = asset.template === "mannequin" ? "walking-4-frames" : "walk-4-frames";
-  let walk = detail.animations?.find((animation) => animation.animation_type === walkTemplate);
-  if (!walk) {
-    const animation = await api("/characters/animations", {
-      character_id: characterId,
-      animation_name: "walk",
-      template_animation_id: walkTemplate,
-      mode: "template",
-      directions: CARDINAL,
-      async_mode: true,
-      seed: asset.seed + 1,
-    });
-    state.characters[asset.id].walk_job_ids = animation.background_job_ids;
+  await syncAnimations(asset, characterId, detail, out);
+}
+
+/**
+ * Generate and download every animation in the character's plan.
+ *
+ * `templates` is a preference list because template availability depends on the
+ * character's skeleton — `cross-punch` exists for humanoids, `attack` for
+ * quadrupeds — and the API only rejects the mismatch at submit time.
+ */
+async function syncAnimations(asset, characterId, detail, out) {
+  const plan = animationPlan(asset);
+  const record = state.characters[asset.id];
+  record.animations = record.animations ?? {};
+  let current = detail;
+
+  for (const step of plan) {
+    if (isAnimationComplete(record, step.name)) continue;
+    let clip = current.animations?.find((animation) => step.templates.includes(animation.animation_type));
+    if (!clip) {
+      const template = await submitAnimation(asset, characterId, step);
+      if (!template) {
+        console.warn(`  ! ${asset.id}: no usable template for "${step.name}" (tried ${step.templates.join(", ")})`);
+        record.animations[step.name] = { complete: false, skipped: true };
+        saveState();
+        continue;
+      }
+      current = await api(`/characters/${characterId}`, null, "GET");
+      clip = current.animations?.find((animation) => animation.animation_type === template);
+    }
+    if (!clip) {
+      record.animations[step.name] = { complete: false, skipped: true };
+      saveState();
+      continue;
+    }
+    for (const direction of clip.directions) {
+      for (let index = 0; index < direction.frames.length; index += 1) {
+        await download(direction.frames[index], path.join(out, `${step.name}-${direction.direction}-${index}.png`));
+      }
+    }
+    record.animations[step.name] = {
+      complete: true,
+      template: clip.animation_type,
+      directions: clip.directions.map((direction) => direction.direction),
+      frames: clip.directions[0]?.frames.length ?? 0,
+    };
+    // The walk cycle keeps its historical flag so older state files stay valid.
+    if (step.name === "walk") record.walk_complete = true;
     saveState();
-    await pollJobs(animation.background_job_ids, `${asset.id} walk`, 20);
-    const refreshed = await api(`/characters/${characterId}`, null, "GET");
-    walk = refreshed.animations?.find((candidate) => candidate.animation_type === walkTemplate);
   }
-  if (!walk) throw new Error(`${asset.id}: walking animation missing after generation`);
-  for (const direction of walk.directions) {
-    for (let index = 0; index < direction.frames.length; index += 1) await download(direction.frames[index], path.join(out, `walk-${direction.direction}-${index}.png`));
+}
+
+async function submitAnimation(asset, characterId, step) {
+  for (const template of step.templates) {
+    try {
+      const animation = await api("/characters/animations", {
+        character_id: characterId,
+        animation_name: step.name,
+        template_animation_id: template,
+        mode: "template",
+        directions: step.directions,
+        async_mode: true,
+        seed: asset.seed + step.seedOffset,
+      });
+      await pollJobs(animation.background_job_ids, `${asset.id} ${step.name}`, 20);
+      return template;
+    } catch (error) {
+      // A skeleton mismatch is expected while walking the preference list.
+      if (!/template|skeleton|not supported|invalid/i.test(String(error.message))) throw error;
+    }
   }
-  state.characters[asset.id].walk_complete = true;
-  saveState();
+  return null;
 }
 
 async function createStatic(asset) {
@@ -282,6 +362,37 @@ async function mapLimit(items, limit, fn) {
 
 console.log(`PixelLab world pipeline: ${selected.length}/${CATALOG.length} assets selected${dryRun ? " (dry run)" : ""}.`);
 for (const asset of selected) console.log(`  ${asset.group.padEnd(11)} ${asset.id}`);
+
+if (estimate) {
+  // A generation is one produced image: eight rotation frames per new
+  // character, four frames per animation direction, one per static asset.
+  let rotations = 0;
+  let animations = 0;
+  let statics = 0;
+  for (const asset of selected) {
+    if (asset.group !== "characters") { statics += 1; continue; }
+    const known = state.characters[asset.id];
+    if (!known?.character_id && !asset.existingId) rotations += DIRECTIONS.length;
+    if (!asset.animate) continue;
+    for (const step of animationPlan(asset)) {
+      if (isAnimationComplete(known, step.name)) continue;
+      animations += step.directions.length * 4;
+    }
+  }
+  const total = rotations + animations + statics;
+  console.log(`\nEstimated generations`);
+  console.log(`  character rotations  ${rotations}`);
+  console.log(`  animation frames     ${animations}`);
+  console.log(`  static assets        ${statics}`);
+  console.log(`  TOTAL                ${total}`);
+  if (KEY) {
+    const balance = await api("/balance", null, "GET");
+    const left = balance.subscription?.generations ?? 0;
+    console.log(`  remaining on plan    ${left}`);
+    console.log(total > left ? `  ⚠ short by ${Math.ceil(total - left)} generations` : `  ✓ fits, ${Math.floor(left - total)} left over`);
+  }
+  process.exit(0);
+}
 if (dryRun) process.exit(0);
 
 const characterAssets = selected.filter((asset) => asset.group === "characters");
