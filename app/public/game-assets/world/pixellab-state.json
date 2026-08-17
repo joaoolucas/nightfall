@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-08-17T02:13:09.876Z",
+  "generated_at": "2026-08-17T19:15:45.144Z",
   "characters": {
     "wayfarer": {
       "character_id": "3ed4671b-ce5e-4b63-b4b7-af8b9e832bf1",
@@ -13,7 +13,36 @@
         "height": 48
       },
       "view": "high top-down",
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "cross-punch",
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west"
+          ],
+          "frames": 6
+        },
+        "hurt": {
+          "complete": true,
+          "template": "taking-punch",
+          "directions": [
+            "south"
+          ],
+          "frames": 6
+        },
+        "death": {
+          "complete": true,
+          "template": "falling-back-death",
+          "directions": [
+            "south"
+          ],
+          "frames": 7
+        }
+      }
     },
     "pathfinder-tavi": {
       "character_id": "f8d992de-51ed-422d-8222-9a022eac9138",
@@ -124,7 +153,21 @@
         "e54a35e8-e76f-4f1c-abf0-1cd73a849ee7",
         "9255d6eb-db66-4822-9a83-d097d446ab92"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": false,
+          "skipped": true
+        },
+        "hurt": {
+          "complete": false,
+          "skipped": true
+        },
+        "death": {
+          "complete": false,
+          "skipped": true
+        }
+      }
     },
     "cinderling-hatchling": {
       "character_id": "8610d7b9-8622-4457-9704-6b014f4ba66e",
@@ -204,7 +247,21 @@
         "38fe4bbc-ba50-4985-95b8-64196f8ee20d",
         "fb6b18e5-8a9a-4c16-9fb7-b3a132c197f8"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": false,
+          "skipped": true
+        },
+        "hurt": {
+          "complete": false,
+          "skipped": true
+        },
+        "death": {
+          "complete": false,
+          "skipped": true
+        }
+      }
     },
     "ripple-legend": {
       "character_id": "26a9a52c-c064-4fd6-9610-1e00179eaf0b",
@@ -264,7 +321,21 @@
         "cb71caee-b52e-489f-9e3a-fd29de8e2f5d",
         "3bb6303d-6e75-41ef-8258-351d8cd102d6"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": false,
+          "skipped": true
+        },
+        "hurt": {
+          "complete": false,
+          "skipped": true
+        },
+        "death": {
+          "complete": false,
+          "skipped": true
+        }
+      }
     },
     "bramble-legend": {
       "character_id": "857e202c-87c0-4959-85b9-ddc5582c416a",
@@ -324,7 +395,21 @@
         "83d9abd0-082d-4161-acdc-ef9c06fbe38e",
         "89e5a286-d3ed-4df4-a338-24d40f06a6c8"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": false,
+          "skipped": true
+        },
+        "hurt": {
+          "complete": false,
+          "skipped": true
+        },
+        "death": {
+          "complete": false,
+          "skipped": true
+        }
+      }
     },
     "shard-legend": {
       "character_id": "f1b2bd4d-9236-4932-b816-d225e42f8f4e",
@@ -424,7 +509,21 @@
         "d504929e-dd59-4984-bead-56de1f345f4d",
         "9b941987-f5f6-4c2f-9fe7-55fd5c48f2b0"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": false,
+          "skipped": true
+        },
+        "hurt": {
+          "complete": false,
+          "skipped": true
+        },
+        "death": {
+          "complete": false,
+          "skipped": true
+        }
+      }
     },
     "aurora-adult": {
       "character_id": "bb2a6a54-95e5-4853-a26f-852c4f90a95f",
@@ -444,7 +543,36 @@
         "298dd3f5-cb12-4b7d-8e68-be2a56622b53",
         "ef02ea70-3753-489b-b628-c2150551eed6"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "cross-punch",
+          "directions": [
+            "west",
+            "east",
+            "north",
+            "south"
+          ],
+          "frames": 6
+        },
+        "hurt": {
+          "complete": true,
+          "template": "taking-punch",
+          "directions": [
+            "south"
+          ],
+          "frames": 6
+        },
+        "death": {
+          "complete": true,
+          "template": "falling-back-death",
+          "directions": [
+            "south"
+          ],
+          "frames": 7
+        }
+      }
     },
     "aurora-legend": {
       "character_id": "204ddc4d-830a-47ca-8433-06fdad6507ba",

@@ -80,15 +80,26 @@ const CREATURES = SPECIES.flatMap((species, speciesIndex) => STAGES.map((stage) 
 const CHARACTERS = [...NPCS, ...CREATURES].map((entry) => ({ ...entry, group: "characters", description: `${entry.desc}, ${CHARACTER_STYLE}` }));
 
 /**
- * What each character needs to animate for tile combat. Death plays facing the
- * camera only: a four-direction death costs four times as much and is barely
- * readable once the corpse replaces the sprite.
+ * What each character needs to animate for tile combat.
  *
- * Verified template ids (probed against the live API, 45 available in total):
- * attack, attack-back/left/right, cross-punch, lead-jab, taking-punch,
- * falling-back-death, breathing-idle, idle, walk-4-frames, walking-4-frames.
+ * Animation templates are per skeleton, not global — probed against the live
+ * API, these are the sets actually on offer:
+ *
+ *   mannequin  cross-punch, taking-punch, falling-back-death, breathing-idle, walking-4-frames
+ *   dog        bark, idle, sneaking, fast-walk, walk-4-frames        (no attack, no death)
+ *   bear       attack-left, attack-right, jump-attack, angry, idle-long, walk-4-frames
+ *   cat        angry, jump, idle, licking, walk-4-frames             (no attack, no death)
+ *
+ * So beasts borrow a lunge — `bark` for dogs, `angry` for cats — as their
+ * attack. None of them get a death clip, which is authentic rather than a
+ * compromise: in this genre a slain creature is simply replaced by its corpse.
  */
-const HUMANOID_TEMPLATES = new Set(["mannequin"]);
+const SKELETON_ANIMATIONS = {
+  mannequin: { walk: ["walking-4-frames", "walk"], attack: ["cross-punch", "lead-jab"], hurt: ["taking-punch"], death: ["falling-back-death"] },
+  dog: { walk: ["walk-4-frames"], attack: ["bark"], hurt: [], death: [] },
+  bear: { walk: ["walk-4-frames"], attack: ["attack-left", "jump-attack"], hurt: ["angry"], death: [] },
+  cat: { walk: ["walk-4-frames"], attack: ["angry", "jump"], hurt: [], death: [] },
+};
 
 /**
  * State written before animations were generalised only recorded `walk_complete`.
@@ -101,13 +112,16 @@ function isAnimationComplete(record, name) {
 }
 
 function animationPlan(asset) {
-  const humanoid = HUMANOID_TEMPLATES.has(asset.template);
-  return [
-    { name: "walk", seedOffset: 1, directions: CARDINAL, templates: humanoid ? ["walking-4-frames", "walk-4-frames"] : ["walk-4-frames", "walking-4-frames"] },
-    { name: "attack", seedOffset: 2, directions: CARDINAL, templates: humanoid ? ["cross-punch", "attack"] : ["attack", "cross-punch"] },
-    { name: "hurt", seedOffset: 3, directions: ["south"], templates: ["taking-punch"] },
-    { name: "death", seedOffset: 4, directions: ["south"], templates: ["falling-back-death"] },
+  const set = SKELETON_ANIMATIONS[asset.template] ?? SKELETON_ANIMATIONS.mannequin;
+  // Hurt and death play facing the camera only: a four-direction clip costs
+  // four times as much and is barely readable at this sprite size.
+  const steps = [
+    { name: "walk", seedOffset: 1, directions: CARDINAL, templates: set.walk },
+    { name: "attack", seedOffset: 2, directions: CARDINAL, templates: set.attack },
+    { name: "hurt", seedOffset: 3, directions: ["south"], templates: set.hurt },
+    { name: "death", seedOffset: 4, directions: ["south"], templates: set.death },
   ];
+  return steps.filter((step) => step.templates.length > 0);
 }
 
 const BIOMES = [
@@ -307,7 +321,31 @@ async function syncAnimations(asset, characterId, detail, out) {
     // The walk cycle keeps its historical flag so older state files stay valid.
     if (step.name === "walk") record.walk_complete = true;
     saveState();
+    writeManifest(asset, out);
   }
+  writeManifest(asset, out);
+}
+
+/**
+ * Frame counts differ per template — `cross-punch` yields six frames where
+ * `walk-4-frames` yields four — so the client reads them from the character's
+ * own manifest instead of assuming a fixed length.
+ */
+function writeManifest(asset, out) {
+  const record = state.characters[asset.id] ?? {};
+  const metaPath = path.join(out, "pixellab.json");
+  let meta = {};
+  try { meta = JSON.parse(fs.readFileSync(metaPath, "utf8")); } catch { /* first write */ }
+  const animations = {};
+  for (const [name, entry] of Object.entries(record.animations ?? {})) {
+    if (!entry.complete) continue;
+    animations[name] = { directions: entry.directions, frames: entry.frames, template: entry.template };
+  }
+  if (record.walk_complete && !animations.walk) {
+    animations.walk = { directions: CARDINAL, frames: 4, template: "walk-4-frames" };
+  }
+  fs.mkdirSync(out, { recursive: true });
+  fs.writeFileSync(metaPath, `${JSON.stringify({ ...meta, animations }, null, 2)}\n`);
 }
 
 async function submitAnimation(asset, characterId, step) {
@@ -363,11 +401,26 @@ async function mapLimit(items, limit, fn) {
 console.log(`PixelLab world pipeline: ${selected.length}/${CATALOG.length} assets selected${dryRun ? " (dry run)" : ""}.`);
 for (const asset of selected) console.log(`  ${asset.group.padEnd(11)} ${asset.id}`);
 
+if (args.includes("--manifests")) {
+  // Rewrite pixellab.json from persisted state. Costs nothing and repairs
+  // manifests for characters generated before they were introduced.
+  let written = 0;
+  for (const asset of selected) {
+    if (asset.group !== "characters") continue;
+    if (!state.characters[asset.id]) continue;
+    writeManifest(asset, path.join(ROOT, "characters", asset.id));
+    written += 1;
+  }
+  console.log(`\nRewrote ${written} character manifests.`);
+  process.exit(0);
+}
+
 if (estimate) {
-  // A generation is one produced image: eight rotation frames per new
-  // character, four frames per animation direction, one per static asset.
+  // Measured against the live balance: generating the Wayfarer's attack
+  // (4 directions x 6 frames) plus hurt (1 x 6) produced 30 images and cost
+  // 5 generations. The plan bills per direction-clip, not per frame.
   let rotations = 0;
-  let animations = 0;
+  let clips = 0;
   let statics = 0;
   for (const asset of selected) {
     if (asset.group !== "characters") { statics += 1; continue; }
@@ -376,13 +429,13 @@ if (estimate) {
     if (!asset.animate) continue;
     for (const step of animationPlan(asset)) {
       if (isAnimationComplete(known, step.name)) continue;
-      animations += step.directions.length * 4;
+      clips += step.directions.length;
     }
   }
-  const total = rotations + animations + statics;
+  const total = rotations + clips + statics;
   console.log(`\nEstimated generations`);
   console.log(`  character rotations  ${rotations}`);
-  console.log(`  animation frames     ${animations}`);
+  console.log(`  animation clips      ${clips}`);
   console.log(`  static assets        ${statics}`);
   console.log(`  TOTAL                ${total}`);
   if (KEY) {

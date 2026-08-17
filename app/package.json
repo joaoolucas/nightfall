@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test:game": "tsx --test src/utils/idle-game.test.ts src/utils/world-engine.test.ts"
+    "test:game": "tsx --test src/utils/idle-game.test.ts src/utils/world-engine.test.ts src/game/sim/sim.test.ts"
   },
   "dependencies": {
     "@starknet-io/get-starknet-discovery": "6.0.3",
