@@ -14,12 +14,18 @@ export interface TilesetData {
   tileSize: { width: number; height: number };
 }
 
+/**
+ * A Wang set only carries two terrains, so it expresses the natural
+ * ground↔trail transition. Plaza, water and hazard get their own seamless
+ * textures overlaid on top (see OVERLAY_GROUND in world-art.ts) — mapping them
+ * to "upper" here is what made every biome read as one flat paved surface.
+ */
 const TERRAIN_MAP: Record<GroundKind, "lower" | "upper"> = {
   ground: "lower",
   path: "upper",
   plaza: "upper",
-  water: "upper",
-  hazard: "upper",
+  water: "lower",
+  hazard: "lower",
 };
 
 function cornerKey(corners: WangTile["corners"]): string {

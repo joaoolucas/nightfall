@@ -18,8 +18,8 @@
 
 .battlefield { position: relative; flex: 1; min-height: 480px; overflow: hidden; background-position: center; background-size: cover; isolation: isolate; }
 .battlefield::after { content: ''; position: absolute; inset: auto 0 0; z-index: -1; height: 30%; background: linear-gradient(transparent, rgba(9,8,22,.6)); }
-.worldStage { position: relative; flex: 1; min-height: 500px; overflow: hidden; background: #171226; }
-.worldCanvasWrap { position: absolute; inset: 0; overflow: hidden; background: #171226; }
+.worldStage { position: relative; flex: 1; min-height: 420px; overflow: hidden; background: #0d0b14; }
+.worldCanvasWrap { position: absolute; inset: 0; overflow: hidden; background: #0d0b14; }
 .worldCanvas { width: 100%; height: 100%; display: block; outline: none; cursor: crosshair; image-rendering: pixelated; }
 .worldCanvas:focus-visible { box-shadow: inset 0 0 0 3px #e3b45a; }
 .worldA11y { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }

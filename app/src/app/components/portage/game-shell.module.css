@@ -128,7 +128,7 @@
 .saveBadge b { font-family: var(--font-display), monospace; font-size: 8px; }
 .saveBadge small { color: #c5aeba; font-size: 8px; }
 
-.dashboard { display: grid; grid-template-columns: 278px minmax(520px, 1fr) 300px; gap: 10px; min-height: calc(100vh - 94px); margin-top: 8px; }
+.dashboard { display: grid; grid-template-columns: 278px minmax(520px, 1fr) 300px; gap: 10px; height: calc(100vh - 94px); min-height: 620px; margin-top: 8px; }
 .leftRail, .rightRail { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .frame, .centerStage { border: 3px solid var(--wine-dark); border-radius: 8px; background: var(--wine); box-shadow: inset 0 0 0 2px #9d5360, inset 0 0 0 5px #321b27; }
 .frame { padding: 15px; }
@@ -175,7 +175,7 @@
 .liveDot { background: #53d27e; box-shadow: 0 0 8px #53d27e; }
 .demoDot { background: #ecb746; box-shadow: 0 0 8px #ecb746; }
 .errorDot { background: #ef586c; box-shadow: 0 0 8px #ef586c; }
-.stageViewport { position: relative; min-height: 620px; max-height: calc(100vh - 175px); overflow: auto; border: 3px solid #241521; border-radius: 5px; color: #f7effd; background: linear-gradient(rgba(20,16,42,.2), rgba(20,16,42,.64)), url('/game-assets/backgrounds/portal-meadow.png') center/cover; box-shadow: inset 0 0 0 2px rgba(207, 151, 93, .55); }
+.stageViewport { position: relative; min-height: 0; max-height: none; overflow: auto; border: 3px solid #241521; border-radius: 5px; color: #f7effd; background: linear-gradient(rgba(20,16,42,.2), rgba(20,16,42,.64)), url('/game-assets/backgrounds/portal-meadow.png') center/cover; box-shadow: inset 0 0 0 2px rgba(207, 151, 93, .55); }
 .stageViewport > section { max-width: none; min-height: 100%; margin: 0; padding: 18px; background: rgba(18, 13, 31, .55); }
 .stageViewport > section > header { margin: 0 0 16px; text-align: left; }
 .stageViewport > section > header p { margin-left: 0; margin-right: 0; }

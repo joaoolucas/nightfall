@@ -1,9 +1,29 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { creatureSpritePath, type Stage } from "@/utils/portage";
-import { worldIdleSpritePath, worldWalkSpritePath, directionFromDelta, cardinalFromDelta, preloadWorldCharacterSprites, preloadZoneEnemySprites, type WorldDirection, type CardinalDirection } from "@/utils/world-sprites";
-import { loadTileset, selectWangTile, getTileImage, preloadAllTilesets, type TilesetData } from "@/utils/world-tilesets";
+import type { Species, Stage } from "@/utils/portage";
+import {
+  AMBIENT_CHARACTERS,
+  LIQUID_TINT,
+  NATIVE,
+  NPC_CHARACTER,
+  OVERLAY_GROUND,
+  PLAYER_CHARACTER,
+  characterIdlePath,
+  characterSources,
+  characterWalkPath,
+  creatureCharacterId,
+  getImage,
+  groundTexturePath,
+  hasWalkCycle,
+  impactPath,
+  loadAll,
+  propPath,
+  structurePath,
+  type CharacterId,
+} from "@/utils/world-art";
+import { cardinalFromDelta, directionFromDelta, type CardinalDirection, type WorldDirection } from "@/utils/world-sprites";
+import { loadTileset, selectWangTile, getTileImage, type TilesetData } from "@/utils/world-tilesets";
 import {
   createWorldMap,
   findPath,
@@ -18,13 +38,29 @@ import { activeCreatures } from "@/utils/idle-game";
 import type { IdleGameController } from "./useIdleGame";
 import styles from "./idle-game.module.css";
 
-const DRAW_TILE = 40;
-const STEP_MS = 145;
+/** Whole-number scale over the 32px native tile keeps every pixel square. */
+const SCALE = 2;
+const DRAW_TILE = NATIVE.tile * SCALE;
+const DRAW_CHARACTER = NATIVE.character * SCALE;
+const DRAW_EFFECT = NATIVE.effect * SCALE;
+
+/**
+ * Props are authored at 64px. Trees and ruins read as two-tile landmarks;
+ * rocks, crystals, shrubs and lanterns stay closer to a single tile so the
+ * Porter is never dwarfed by scenery.
+ */
+const PROP_DRAW_SIZE: Record<PropKind, number> = {
+  tree: NATIVE.prop * 2,
+  ruin: NATIVE.prop * 1.75,
+  rock: NATIVE.prop * 1.4,
+  crystal: NATIVE.prop * 1.4,
+  shrub: NATIVE.prop * 1.25,
+  lantern: NATIVE.prop * 1.5,
+};
+const STEP_MS = 180;
 const SAVE_KEY = "portage-world-position-v1";
 
 type Direction = "up" | "down" | "left" | "right";
-type WorldDir = WorldDirection;
-type CardinalDir = CardinalDirection;
 interface MovingActor extends GridPoint {
   drawX: number;
   drawY: number;
@@ -35,8 +71,8 @@ interface MovingActor extends GridPoint {
   moveStarted: number;
   moving: boolean;
   direction: Direction;
-  worldDir: WorldDir;
-  cardinalDir: CardinalDir;
+  worldDir: WorldDirection;
+  cardinalDir: CardinalDirection;
   walkFrame: number;
   path: GridPoint[];
 }
@@ -48,28 +84,27 @@ interface WorldModel {
   lastManualAt: number;
   lastAutoPathAt: number;
   trail: GridPoint[];
-  hitParticles: Array<{ x: number; y: number; born: number; color: string }>;
+  impacts: Array<{ x: number; y: number; born: number }>;
+  damage: Array<{ x: number; y: number; born: number; text: string; color: string }>;
   lastEnemyHp: number;
-  lastFrameAt: number;
 }
 
-const PALETTES = {
-  ember: { ground: "#553335", ground2: "#623a38", path: "#7a4b3c", plaza: "#79545a", water: "#321d34", hazard: "#b43b2e", grid: "#3b252e", glow: "#f08a42", foliage: "#6b4932" },
-  creek: { ground: "#315f56", ground2: "#386b60", path: "#6d7561", plaza: "#5d7180", water: "#27749a", hazard: "#31526f", grid: "#234840", glow: "#66d4e8", foliage: "#2d704f" },
-  grove: { ground: "#355d37", ground2: "#3e6d3e", path: "#7a6a43", plaza: "#62715a", water: "#285a63", hazard: "#49352f", grid: "#25452a", glow: "#8edd62", foliage: "#27703b" },
-  stone: { ground: "#565565", ground2: "#626172", path: "#77727a", plaza: "#68687b", water: "#324459", hazard: "#282635", grid: "#41404d", glow: "#bc8cff", foliage: "#4f6257" },
-  mist: { ground: "#3f4357", ground2: "#494d61", path: "#626176", plaza: "#615b76", water: "#354368", hazard: "#29283f", grid: "#303345", glow: "#a994ed", foliage: "#40525c" },
-  sky: { ground: "#536f7d", ground2: "#607f8d", path: "#a08e70", plaza: "#74899b", water: "#3c6e91", hazard: "#252b4b", grid: "#405c68", glow: "#f4d776", foliage: "#4d786b" },
-} as const;
-
-const PORTER_COLORS = [
-  ["#d5523f", "#f2c06b", "#30223b"], ["#4d8acb", "#e7c28d", "#26314a"],
-  ["#6bba64", "#efbd84", "#342c47"], ["#a85ab7", "#e2b17c", "#2b2940"],
-  ["#d99b3d", "#f0c28d", "#38283a"], ["#4db5ae", "#dcae78", "#272c46"],
-];
+/** Only glow and fallback fills remain palette-driven; terrain now comes from art. */
+const PALETTES: Record<Species, { base: string; glow: string }> = {
+  ember: { base: "#3a2226", glow: "#f08a42" },
+  creek: { base: "#1e3b39", glow: "#66d4e8" },
+  grove: { base: "#22381f", glow: "#8edd62" },
+  stone: { base: "#2f2f3c", glow: "#bc8cff" },
+  mist: { base: "#242637", glow: "#a994ed" },
+  sky: { base: "#2c3f4c", glow: "#f4d776" },
+};
 
 function actorAt(point: GridPoint): MovingActor {
-  return { ...point, drawX: point.x, drawY: point.y, fromX: point.x, fromY: point.y, toX: point.x, toY: point.y, moveStarted: 0, moving: false, direction: "down", worldDir: "south", cardinalDir: "south", walkFrame: 0, path: [] };
+  return {
+    ...point, drawX: point.x, drawY: point.y, fromX: point.x, fromY: point.y,
+    toX: point.x, toY: point.y, moveStarted: 0, moving: false,
+    direction: "down", worldDir: "south", cardinalDir: "south", walkFrame: 0, path: [],
+  };
 }
 
 function loadPosition(map: WorldMap): GridPoint {
@@ -95,132 +130,144 @@ function directionBetween(from: GridPoint, to: GridPoint): Direction {
   return "down";
 }
 
-function drawPorter(ctx: CanvasRenderingContext2D, x: number, y: number, direction: Direction, walking: boolean, paletteIndex = 0, scale = 1) {
-  const colors = PORTER_COLORS[paletteIndex % PORTER_COLORS.length];
-  const px = 2 * scale;
-  const frame = walking && Math.floor(performance.now() / 130) % 2 ? px * 2 : 0;
-  ctx.save();
-  ctx.translate(Math.round(x), Math.round(y));
-  ctx.fillStyle = "rgba(7,7,15,.32)"; ctx.beginPath(); ctx.ellipse(0, 7 * px, 7 * px, 3 * px, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = colors[2]; ctx.fillRect(-5 * px, -2 * px, 10 * px, 10 * px);
-  ctx.fillStyle = colors[0]; ctx.fillRect(-6 * px, -1 * px, 12 * px, 7 * px);
-  ctx.fillStyle = colors[1]; ctx.fillRect(-5 * px, -8 * px, 10 * px, 8 * px);
-  ctx.fillStyle = "#3a2533"; ctx.fillRect(-5 * px, -9 * px, 10 * px, 3 * px); ctx.fillRect(direction === "left" ? -6 * px : 3 * px, -6 * px, 3 * px, 3 * px);
-  ctx.fillStyle = "#171521";
-  if (direction !== "up") ctx.fillRect(direction === "left" ? -3 * px : direction === "right" ? 2 * px : -3 * px, -5 * px, px, px);
-  ctx.fillRect(-4 * px, 8 * px, 3 * px, 3 * px + frame); ctx.fillRect(1 * px, 8 * px + frame, 3 * px, 3 * px);
-  ctx.fillStyle = "#e7ad42"; ctx.fillRect(direction === "left" ? -8 * px : 6 * px, 1 * px, 2 * px, 5 * px);
-  ctx.restore();
-}
-
 function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, color = "#fff4d4", small = false) {
   ctx.save();
-  ctx.font = `${small ? 8 : 10}px monospace`;
+  // Canvas cannot resolve CSS custom properties, so the stack is spelled out.
+  ctx.font = `${small ? 9 : 11}px "Space Mono", ui-monospace, monospace`;
   ctx.textAlign = "center";
   ctx.lineWidth = 3;
-  ctx.strokeStyle = "rgba(18,12,25,.9)";
+  ctx.strokeStyle = "rgba(12,8,18,.92)";
   ctx.strokeText(text, x, y);
   ctx.fillStyle = color;
   ctx.fillText(text, x, y);
   ctx.restore();
 }
 
-function drawProp(ctx: CanvasRenderingContext2D, kind: PropKind, x: number, y: number, variant: number, palette: (typeof PALETTES)[keyof typeof PALETTES]) {
-  ctx.save(); ctx.translate(x, y);
-  if (kind === "tree") {
-    ctx.fillStyle = "rgba(8,8,14,.3)"; ctx.beginPath(); ctx.ellipse(0, 8, 18, 7, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#563728"; ctx.fillRect(-5, -4, 10, 28);
-    ctx.fillStyle = palette.foliage; ctx.beginPath(); ctx.arc(-9, -11, 16 + variant, 0, Math.PI * 2); ctx.arc(9, -13, 15, 0, Math.PI * 2); ctx.arc(0, -24, 17, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "rgba(151,212,113,.22)"; ctx.fillRect(-12, -29, 12, 5);
-  } else if (kind === "rock") {
-    ctx.fillStyle = "rgba(7,7,13,.28)"; ctx.beginPath(); ctx.ellipse(0, 8, 16, 6, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = variant % 2 ? "#777181" : "#655e70"; ctx.beginPath(); ctx.moveTo(-15, 7); ctx.lineTo(-9, -10); ctx.lineTo(5, -15); ctx.lineTo(15, 3); ctx.lineTo(9, 10); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#9c94a5"; ctx.fillRect(-7, -9, 8, 3);
-  } else if (kind === "crystal") {
-    ctx.shadowColor = palette.glow; ctx.shadowBlur = 12; ctx.fillStyle = palette.glow;
-    ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(10, -5); ctx.lineTo(4, 14); ctx.lineTo(-8, 8); ctx.lineTo(-10, -6); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,.5)"; ctx.beginPath(); ctx.moveTo(0, -19); ctx.lineTo(2, 4); ctx.lineTo(-5, 7); ctx.closePath(); ctx.fill();
-  } else if (kind === "shrub") {
-    ctx.fillStyle = palette.foliage; ctx.beginPath(); ctx.arc(-8, 2, 10, 0, Math.PI * 2); ctx.arc(5, -2, 12, 0, Math.PI * 2); ctx.arc(12, 5, 8, 0, Math.PI * 2); ctx.fill();
-  } else if (kind === "lantern") {
-    ctx.fillStyle = "#30222d"; ctx.fillRect(-2, -19, 4, 28); ctx.shadowColor = "#ffd06a"; ctx.shadowBlur = 14; ctx.fillStyle = "#ffd06a"; ctx.fillRect(-6, -20, 12, 11);
-  } else {
-    ctx.fillStyle = "#554858"; ctx.fillRect(-14, -13, 28, 24); ctx.fillStyle = "#756879"; ctx.fillRect(-11, -18, 7, 21); ctx.fillRect(4, -8, 7, 19);
-  }
-  ctx.restore();
-}
+/**
+ * Characters are drawn from their generated sprite, anchored so the feet sit on
+ * the tile's bottom edge. `anchorX`/`anchorY` are the tile's ground point.
+ */
+function drawCharacter(
+  ctx: CanvasRenderingContext2D,
+  id: CharacterId,
+  anchorX: number,
+  anchorY: number,
+  direction: WorldDirection,
+  options: { walking?: boolean; frame?: number; bob?: number; alpha?: number } = {},
+) {
+  const { walking = false, frame = 0, bob = 0, alpha = 1 } = options;
+  const cardinal = cardinalFromDelta(
+    direction.includes("east") ? 1 : direction.includes("west") ? -1 : 0,
+    direction.includes("south") ? 1 : direction.includes("north") ? -1 : 0,
+  );
+  const source = walking && hasWalkCycle(id)
+    ? characterWalkPath(id, cardinal, frame)
+    : characterIdlePath(id, direction);
+  const image = getImage(source) ?? getImage(characterIdlePath(id, "south"));
 
-function drawStructure(ctx: CanvasRenderingContext2D, structure: WorldMap["structures"][number], cameraX: number, cameraY: number, palette: (typeof PALETTES)[keyof typeof PALETTES]) {
-  const x = structure.x * DRAW_TILE - cameraX;
-  const y = structure.y * DRAW_TILE - cameraY;
-  const w = structure.width * DRAW_TILE;
-  const h = structure.height * DRAW_TILE;
   ctx.save();
-  ctx.fillStyle = "rgba(8,7,15,.4)"; ctx.fillRect(x + 8, y + h - 4, w, 14);
-  if (structure.kind === "lodge") {
-    ctx.fillStyle = "#503441"; ctx.fillRect(x, y + 18, w, h - 18);
-    ctx.fillStyle = "#8e4d45"; ctx.beginPath(); ctx.moveTo(x - 10, y + 24); ctx.lineTo(x + w / 2, y - 20); ctx.lineTo(x + w + 10, y + 24); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#d78c57"; ctx.fillRect(x + 10, y + 22, w - 20, 6);
-    ctx.fillStyle = "#271c2a"; ctx.fillRect(x + w / 2 - 14, y + h - 34, 28, 34);
-    ctx.shadowColor = palette.glow; ctx.shadowBlur = 12; ctx.fillStyle = palette.glow; ctx.fillRect(x + 25, y + 43, 20, 17); ctx.fillRect(x + w - 45, y + 43, 20, 17);
-    drawLabel(ctx, "PORTAGE LODGE", x + w / 2, y + 42, "#fff0ae", true);
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = "rgba(6,5,12,.36)";
+  ctx.beginPath();
+  ctx.ellipse(anchorX, anchorY - 3, DRAW_TILE * 0.28, DRAW_TILE * 0.11, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (image) {
+    ctx.drawImage(image, Math.round(anchorX - DRAW_CHARACTER / 2), Math.round(anchorY - DRAW_CHARACTER + 10 + bob), DRAW_CHARACTER, DRAW_CHARACTER);
   } else {
-    ctx.fillStyle = "#71434d"; ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x + w / 2, y); ctx.lineTo(x + w, y + h); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#d18a59"; ctx.fillRect(x + w / 2 - 3, y + 5, 6, h - 5);
+    ctx.fillStyle = "#6d4b72";
+    ctx.fillRect(anchorX - 14, anchorY - 44 + bob, 28, 44);
   }
   ctx.restore();
 }
 
-function drawGround(ctx: CanvasRenderingContext2D, map: WorldMap, cameraX: number, cameraY: number, width: number, height: number, tileset: TilesetData | null) {
+function drawGround(
+  ctx: CanvasRenderingContext2D,
+  map: WorldMap,
+  cameraX: number,
+  cameraY: number,
+  width: number,
+  height: number,
+  tileset: TilesetData | null,
+  now: number,
+) {
   const palette = PALETTES[map.zoneId];
   const minX = Math.max(0, Math.floor(cameraX / DRAW_TILE) - 1);
   const minY = Math.max(0, Math.floor(cameraY / DRAW_TILE) - 1);
   const maxX = Math.min(map.width, Math.ceil((cameraX + width) / DRAW_TILE) + 1);
   const maxY = Math.min(map.height, Math.ceil((cameraY + height) / DRAW_TILE) + 1);
-  
+
+  ctx.fillStyle = palette.base;
+  ctx.fillRect(0, 0, width, height);
+
+  // Base layer: the Wang set carries the ground↔trail transition.
   if (tileset) {
-    // Render using Wang tileset
-    for (let y = minY; y < maxY; y += 1) for (let x = minX; x < maxX; x += 1) {
-      const wangTile = selectWangTile(tileset, map, x, y);
-      if (wangTile) {
-        const img = getTileImage(wangTile.imagePath);
-        if (img) {
-          const sx = x * DRAW_TILE - cameraX;
-          const sy = y * DRAW_TILE - cameraY;
-          ctx.drawImage(img, Math.floor(sx), Math.floor(sy), DRAW_TILE, DRAW_TILE);
+    for (let y = minY; y < maxY; y += 1) {
+      for (let x = minX; x < maxX; x += 1) {
+        const wangTile = selectWangTile(tileset, map, x, y);
+        const image = wangTile ? getTileImage(wangTile.imagePath) : null;
+        if (!image) continue;
+        ctx.drawImage(image, Math.round(x * DRAW_TILE - cameraX), Math.round(y * DRAW_TILE - cameraY), DRAW_TILE, DRAW_TILE);
+      }
+    }
+  }
+
+  // Overlay layer. Plaza has a seamless texture; water and hazard are tinted
+  // until phase 1 regenerates them as proper Wang overlay sets.
+  const tint = LIQUID_TINT[map.zoneId];
+  const plaza = getImage(groundTexturePath(map.zoneId, "plaza"));
+  const kindAt = (x: number, y: number) =>
+    x < 0 || y < 0 || x >= map.width || y >= map.height ? "ground" : map.tiles[y * map.width + x].kind;
+  for (let y = minY; y < maxY; y += 1) {
+    for (let x = minX; x < maxX; x += 1) {
+      const tile = map.tiles[y * map.width + x];
+      const sx = Math.round(x * DRAW_TILE - cameraX);
+      const sy = Math.round(y * DRAW_TILE - cameraY);
+      if (tile.kind === "plaza" && OVERLAY_GROUND.includes("plaza") && plaza) {
+        // The paver texture is high contrast at 2× and would otherwise read as
+        // a rug; it sits back so the buildings and characters stay dominant.
+        ctx.save();
+        ctx.globalAlpha = .42;
+        ctx.drawImage(plaza, sx, sy, DRAW_TILE, DRAW_TILE);
+        ctx.fillStyle = "rgba(12,10,20,.3)";
+        ctx.fillRect(sx, sy, DRAW_TILE, DRAW_TILE);
+        ctx.restore();
+      } else if (tile.kind === "water" || tile.kind === "hazard") {
+        // Flat body plus a lit rim only where it meets walkable ground. Edge
+        // treatment reads as a shoreline or a chasm lip and, unlike a per-tile
+        // pattern, never repeats visibly across a large body.
+        const liquid = tile.kind === "water";
+        ctx.fillStyle = liquid ? tint.water : tint.hazard;
+        ctx.fillRect(sx, sy, DRAW_TILE, DRAW_TILE);
+        const accent = liquid ? tint.waterLight : tint.hazardCrack;
+        // A dark inner edge where the body meets ground: it reads as depth
+        // instead of the hard bright border a full-tile rim produces.
+        ctx.save();
+        ctx.globalAlpha = .55;
+        ctx.fillStyle = "rgba(0,0,0,.8)";
+        const rim = 6;
+        if (kindAt(x, y - 1) !== tile.kind) ctx.fillRect(sx, sy, DRAW_TILE, rim);
+        if (kindAt(x, y + 1) !== tile.kind) ctx.fillRect(sx, sy + DRAW_TILE - rim, DRAW_TILE, rim);
+        if (kindAt(x - 1, y) !== tile.kind) ctx.fillRect(sx, sy, rim, DRAW_TILE);
+        if (kindAt(x + 1, y) !== tile.kind) ctx.fillRect(sx + DRAW_TILE - rim, sy, rim, DRAW_TILE);
+        ctx.restore();
+
+        // Irregular highlights keyed off the tile coordinates, so neither a
+        // shoreline nor a lava field shows an aligned repeat.
+        const noise = ((x * 73856093) ^ (y * 19349663)) >>> 0;
+        if (noise % 3 !== 0) {
+          const ox = 8 + (noise % 5) * 8;
+          const oy = 10 + ((noise >>> 5) % 5) * 8;
+          const span = 10 + ((noise >>> 9) % 4) * 6;
+          ctx.save();
+          ctx.globalAlpha = liquid
+            ? .22 + Math.sin(now / 1600 + noise % 7) * .07
+            : .3 + Math.sin(now / 700 + (noise % 11)) * .16;
+          ctx.fillStyle = accent;
+          ctx.fillRect(sx + ox, sy + oy, span, 3);
+          if (!liquid) ctx.fillRect(sx + ox + 4, sy + oy - span, 3, span);
+          ctx.restore();
         }
       }
-    }
-    // Overlay grid lines for plaza/hazard/water
-    for (let y = minY; y < maxY; y += 1) for (let x = minX; x < maxX; x += 1) {
-      const tile = map.tiles[y * map.width + x];
-      const sx = x * DRAW_TILE - cameraX;
-      const sy = y * DRAW_TILE - cameraY;
-      if (tile.kind === "plaza") {
-        ctx.strokeStyle = "rgba(239,216,190,.12)"; ctx.lineWidth = 1; ctx.strokeRect(Math.floor(sx) + .5, Math.floor(sy) + .5, DRAW_TILE, DRAW_TILE);
-      } else if (tile.kind === "water" || tile.kind === "hazard") {
-        ctx.strokeStyle = palette.grid; ctx.lineWidth = 1; ctx.strokeRect(Math.floor(sx) + .5, Math.floor(sy) + .5, DRAW_TILE, DRAW_TILE);
-        ctx.fillStyle = "rgba(255,255,255,.11)"; ctx.fillRect(sx + ((x * 13 + y * 7) % 17), sy + 9, 12, 2);
-      } else {
-        ctx.strokeStyle = palette.grid; ctx.lineWidth = 1; ctx.strokeRect(Math.floor(sx) + .5, Math.floor(sy) + .5, DRAW_TILE, DRAW_TILE);
-        if ((x * 17 + y * 11) % 9 === 0) { ctx.fillStyle = "rgba(255,255,255,.09)"; ctx.fillRect(sx + 8, sy + 12, 3, 3); }
-      }
-    }
-  } else {
-    // Fallback to colored rectangles while tileset loads
-    for (let y = minY; y < maxY; y += 1) for (let x = minX; x < maxX; x += 1) {
-      const tile = map.tiles[y * map.width + x];
-      const sx = x * DRAW_TILE - cameraX;
-      const sy = y * DRAW_TILE - cameraY;
-      let color: string = (x + y) % 2 ? palette.ground : palette.ground2;
-      if (tile.kind === "path") color = palette.path;
-      if (tile.kind === "plaza") color = palette.plaza;
-      if (tile.kind === "water") color = palette.water;
-      if (tile.kind === "hazard") color = palette.hazard;
-      ctx.fillStyle = color; ctx.fillRect(Math.floor(sx), Math.floor(sy), DRAW_TILE + 1, DRAW_TILE + 1);
-      ctx.strokeStyle = tile.kind === "plaza" ? "rgba(239,216,190,.12)" : palette.grid; ctx.lineWidth = 1; ctx.strokeRect(Math.floor(sx) + .5, Math.floor(sy) + .5, DRAW_TILE, DRAW_TILE);
-      if (tile.kind === "water" || tile.kind === "hazard") { ctx.fillStyle = "rgba(255,255,255,.11)"; ctx.fillRect(sx + ((x * 13 + y * 7) % 17), sy + 9, 12, 2); }
-      else if ((x * 17 + y * 11) % 9 === 0) { ctx.fillStyle = "rgba(255,255,255,.09)"; ctx.fillRect(sx + 8, sy + 12, 3, 3); }
     }
   }
 }
@@ -231,21 +278,28 @@ function drawMinimap(ctx: CanvasRenderingContext2D, model: WorldModel, width: nu
   const mapH = model.map.height * scale;
   const ox = width - mapW - 18;
   const oy = 18;
-  ctx.save(); ctx.globalAlpha = .92; ctx.fillStyle = "#171322"; ctx.fillRect(ox - 5, oy - 5, mapW + 10, mapH + 10);
+  ctx.save();
+  ctx.globalAlpha = .92;
+  ctx.fillStyle = "#12101c";
+  ctx.fillRect(ox - 5, oy - 5, mapW + 10, mapH + 10);
   for (const tile of model.map.tiles) {
-    ctx.fillStyle = tile.kind === "water" || tile.kind === "hazard" ? "#29304f" : tile.kind === "plaza" ? "#a07772" : tile.kind === "path" ? "#84674f" : "#416249";
+    ctx.fillStyle = tile.kind === "water" ? "#274766" : tile.kind === "hazard" ? "#5c2130"
+      : tile.kind === "plaza" ? "#8f7566" : tile.kind === "path" ? "#6f5642" : "#33503a";
     ctx.fillRect(ox + tile.x * scale, oy + tile.y * scale, scale, scale);
   }
-  ctx.fillStyle = "#f05f5f"; for (const spawn of model.map.spawns) ctx.fillRect(ox + spawn.x * scale - 1, oy + spawn.y * scale - 1, 3, 3);
-  ctx.fillStyle = "#66e3ff"; ctx.fillRect(ox + model.player.drawX * scale - 2, oy + model.player.drawY * scale - 2, 5, 5);
-  ctx.strokeStyle = "#d3a65b"; ctx.strokeRect(ox - 5.5, oy - 5.5, mapW + 11, mapH + 11); ctx.restore();
+  ctx.fillStyle = "#f05f5f";
+  for (const spawn of model.map.spawns) ctx.fillRect(ox + spawn.x * scale - 1, oy + spawn.y * scale - 1, 3, 3);
+  ctx.fillStyle = "#66e3ff";
+  ctx.fillRect(ox + model.player.drawX * scale - 2, oy + model.player.drawY * scale - 2, 5, 5);
+  ctx.strokeStyle = "#8a6b4a";
+  ctx.strokeRect(ox - 5.5, oy - 5.5, mapW + 11, mapH + 11);
+  ctx.restore();
 }
 
 export default function IdleWorld({ controller }: { controller: IdleGameController }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controllerRef = useRef(controller);
   const modelRef = useRef<WorldModel | null>(null);
-  const imagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const engagementRef = useRef(false);
   const tilesetRef = useRef<TilesetData | null>(null);
   const animationRef = useRef<number>(0);
@@ -287,9 +341,9 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
       lastManualAt: 0,
       lastAutoPathAt: 0,
       trail: Array.from({ length: 14 }, (_, index) => ({ x: start.x - Math.min(3, Math.ceil(index / 3)), y: start.y })),
-      hitParticles: [],
+      impacts: [],
+      damage: [],
       lastEnemyHp: controllerRef.current.game.enemy.hp,
-      lastFrameAt: performance.now(),
     };
     setPosition(start);
     engagementRef.current = false;
@@ -298,25 +352,26 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
     return () => controllerRef.current.setWorldMounted(false);
   }, [map]);
 
+  // Every sprite the current biome can draw, loaded once per zone.
   useEffect(() => {
+    const zone = controller.game.zoneId;
     const sources = new Set<string>();
-    for (const creature of controller.game.creatures) sources.add(creatureSpritePath(creature.species, creature.stage));
-    sources.add(creatureSpritePath(controller.game.zoneId, "adult"));
-    sources.add(creatureSpritePath(controller.game.zoneId, "legend"));
-    for (const source of sources) {
-      if (imagesRef.current.has(source)) continue;
-      const image = new Image(); image.src = source; image.onload = () => { imagesRef.current.set(source, image); };
+    for (const source of characterSources(PLAYER_CHARACTER)) sources.add(source);
+    for (const id of Object.values(NPC_CHARACTER)) for (const source of characterSources(id)) sources.add(source);
+    for (const id of AMBIENT_CHARACTERS) for (const source of characterSources(id)) sources.add(source);
+    for (const stage of ["adult", "legend"] as Stage[]) {
+      for (const source of characterSources(creatureCharacterId(zone, stage))) sources.add(source);
     }
-    // Preload world sprites for player (adult of current zone)
-    preloadWorldCharacterSprites(controller.game.zoneId, "adult").then((imgs) => {
-      for (const [path, img] of imgs) imagesRef.current.set(path, img);
-    });
-    // Preload enemy sprites (adult + legend of current zone)
-    preloadZoneEnemySprites(controller.game.zoneId).then((imgs) => {
-      for (const [path, img] of imgs) imagesRef.current.set(path, img);
-    });
-    // Load tileset for current zone
-    loadTileset(controller.game.zoneId).then((ts) => { tilesetRef.current = ts; });
+    for (const creature of controller.game.creatures) {
+      for (const source of characterSources(creatureCharacterId(creature.species, creature.stage))) sources.add(source);
+    }
+    for (const kind of ["tree", "rock", "crystal", "shrub", "lantern", "ruin"] as const) sources.add(propPath(zone, kind));
+    sources.add(structurePath(zone, "lodge"));
+    sources.add(structurePath(zone, "tent"));
+    for (const kind of OVERLAY_GROUND) sources.add(groundTexturePath(zone, kind));
+    sources.add(impactPath(zone));
+    void loadAll(sources);
+    loadTileset(zone).then((tileset) => { tilesetRef.current = tileset; }).catch(() => { tilesetRef.current = null; });
   }, [controller.game.creatures, controller.game.zoneId]);
 
   useEffect(() => {
@@ -329,7 +384,8 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
       canvas.height = Math.max(1, Math.round(rect.height * dpr));
     };
     resize();
-    const observer = new ResizeObserver(resize); observer.observe(canvas);
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
     return () => observer.disconnect();
   }, []);
 
@@ -339,10 +395,10 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
       const model = modelRef.current;
       if (!canvas || !model) { animationRef.current = requestAnimationFrame(frame); return; }
       const game = controllerRef.current.game;
-      model.lastFrameAt = now;
+      const zone = game.zoneId;
 
       if (game.enemy.serial !== model.lastEnemySerial) {
-        model.hitParticles.push({ x: model.target.x, y: model.target.y, born: now, color: game.enemy.isBoss ? "#ffd361" : "#f3a45d" });
+        model.impacts.push({ x: model.target.x, y: model.target.y, born: now });
         model.lastEnemySerial = game.enemy.serial;
         model.target.spawnIndex = game.enemy.serial % model.map.spawns.length;
         const spawn = model.map.spawns[model.target.spawnIndex];
@@ -352,20 +408,27 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
         engagementRef.current = false;
         controllerRef.current.setCombatEngaged(false);
       }
-      if (game.enemy.hp < model.lastEnemyHp - 1) model.hitParticles.push({ x: model.target.x, y: model.target.y, born: now, color: "#ff7c71" });
+      if (game.enemy.hp < model.lastEnemyHp - 1) {
+        const hit = Math.round(model.lastEnemyHp - game.enemy.hp);
+        model.impacts.push({ x: model.target.x, y: model.target.y, born: now });
+        model.damage.push({ x: model.target.x, y: model.target.y, born: now, text: `${hit}`, color: "#ff8d72" });
+      }
       model.lastEnemyHp = game.enemy.hp;
 
       const player = model.player;
       if (player.moving) {
         const progress = Math.min(1, (now - player.moveStarted) / STEP_MS);
-        const eased = progress < .5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-        player.drawX = player.fromX + (player.toX - player.fromX) * eased;
-        player.drawY = player.fromY + (player.toY - player.fromY) * eased;
+        player.drawX = player.fromX + (player.toX - player.fromX) * progress;
+        player.drawY = player.fromY + (player.toY - player.fromY) * progress;
         player.walkFrame = Math.floor(progress * 4) % 4;
         if (progress >= 1) {
-          player.x = player.toX; player.y = player.toY; player.drawX = player.x; player.drawY = player.y; player.moving = false;
-          model.trail.unshift({ x: player.x, y: player.y }); model.trail = model.trail.slice(0, 14);
-          savePosition(model.map, player); setPosition({ x: player.x, y: player.y });
+          player.x = player.toX; player.y = player.toY;
+          player.drawX = player.x; player.drawY = player.y;
+          player.moving = false;
+          model.trail.unshift({ x: player.x, y: player.y });
+          model.trail = model.trail.slice(0, 14);
+          savePosition(model.map, player);
+          setPosition({ x: player.x, y: player.y });
         }
       }
 
@@ -383,67 +446,129 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
       if (!player.moving && player.path.length) {
         const next = player.path.shift()!;
         if (isWalkable(model.map, next) && worldDistance(player, next) === 1) {
-          player.fromX = player.x; player.fromY = player.y; player.toX = next.x; player.toY = next.y;
-          const dir = directionBetween(player, next);
-          player.direction = dir;
+          player.fromX = player.x; player.fromY = player.y;
+          player.toX = next.x; player.toY = next.y;
+          player.direction = directionBetween(player, next);
           player.worldDir = directionFromDelta(next.x - player.x, next.y - player.y);
           player.cardinalDir = cardinalFromDelta(next.x - player.x, next.y - player.y);
           player.walkFrame = 0;
-          player.moveStarted = now; player.moving = true;
+          player.moveStarted = now;
+          player.moving = true;
         }
       }
 
       const dpr = canvas.width / Math.max(1, canvas.getBoundingClientRect().width);
-      const width = canvas.width / dpr; const height = canvas.height / dpr;
+      const width = canvas.width / dpr;
+      const height = canvas.height / dpr;
       const ctx = canvas.getContext("2d");
       if (!ctx) { animationRef.current = requestAnimationFrame(frame); return; }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = false;
-      const worldW = model.map.width * DRAW_TILE; const worldH = model.map.height * DRAW_TILE;
-      const cameraX = Math.max(0, Math.min(worldW - width, player.drawX * DRAW_TILE + DRAW_TILE / 2 - width / 2));
-      const cameraY = Math.max(0, Math.min(worldH - height, player.drawY * DRAW_TILE + DRAW_TILE / 2 - height / 2));
-      drawGround(ctx, model.map, cameraX, cameraY, width, height, tilesetRef.current);
-      const palette = PALETTES[model.map.zoneId];
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+
+      const worldW = model.map.width * DRAW_TILE;
+      const worldH = model.map.height * DRAW_TILE;
+      const cameraX = Math.round(Math.max(0, Math.min(worldW - width, player.drawX * DRAW_TILE + DRAW_TILE / 2 - width / 2)));
+      const cameraY = Math.round(Math.max(0, Math.min(worldH - height, player.drawY * DRAW_TILE + DRAW_TILE / 2 - height / 2)));
+      drawGround(ctx, model.map, cameraX, cameraY, width, height, tilesetRef.current, now);
+      const palette = PALETTES[zone];
+
+      /** Ground anchor for a tile: centre horizontally, bottom edge vertically. */
+      const anchor = (tx: number, ty: number) => ({
+        x: tx * DRAW_TILE + DRAW_TILE / 2 - cameraX,
+        y: (ty + 1) * DRAW_TILE - cameraY,
+      });
 
       type DrawItem = { y: number; draw: () => void };
       const items: DrawItem[] = [];
+
       for (const structure of model.map.structures) {
-        items.push({ y: structure.y + structure.height - .2, draw: () => drawStructure(ctx, structure, cameraX, cameraY, palette) });
+        const image = getImage(structurePath(zone, structure.kind));
+        const bottom = (structure.y + structure.height) * DRAW_TILE - cameraY;
+        const centre = (structure.x + structure.width / 2) * DRAW_TILE - cameraX;
+        const native = structure.kind === "lodge" ? NATIVE.lodge : NATIVE.tent;
+        const w = native.width * SCALE;
+        const h = native.height * SCALE;
+        items.push({ y: structure.y + structure.height - 0.2, draw: () => {
+          ctx.save();
+          ctx.fillStyle = "rgba(6,5,12,.34)";
+          ctx.beginPath();
+          ctx.ellipse(centre, bottom - 6, w * 0.42, DRAW_TILE * 0.22, 0, 0, Math.PI * 2);
+          ctx.fill();
+          if (image) ctx.drawImage(image, Math.round(centre - w / 2), Math.round(bottom - h + 8), w, h);
+          else { ctx.fillStyle = "#4b3040"; ctx.fillRect(centre - w / 2, bottom - h, w, h); }
+          ctx.restore();
+        } });
       }
+
       for (const prop of model.map.props) {
-        const sx = prop.x * DRAW_TILE + DRAW_TILE / 2 - cameraX; const sy = prop.y * DRAW_TILE + DRAW_TILE * .74 - cameraY;
-        if (sx < -60 || sy < -80 || sx > width + 60 || sy > height + 80) continue;
-        items.push({ y: prop.y, draw: () => drawProp(ctx, prop.kind, sx, sy, prop.variant, palette) });
+        const point = anchor(prop.x, prop.y);
+        const size = PROP_DRAW_SIZE[prop.kind];
+        if (point.x < -size || point.y < -size || point.x > width + size || point.y > height + size) continue;
+        const image = getImage(propPath(zone, prop.kind));
+        const glowing = prop.kind === "crystal" || prop.kind === "lantern";
+        items.push({ y: prop.y, draw: () => {
+          ctx.save();
+          ctx.fillStyle = "rgba(6,5,12,.32)";
+          ctx.beginPath();
+          ctx.ellipse(point.x, point.y - 4, size * 0.22, size * 0.075, 0, 0, Math.PI * 2);
+          ctx.fill();
+          if (glowing) { ctx.shadowColor = palette.glow; ctx.shadowBlur = 16; }
+          if (image) ctx.drawImage(image, Math.round(point.x - size / 2), Math.round(point.y - size + size * 0.12), size, size);
+          ctx.restore();
+        } });
       }
+
       for (const npc of model.map.npcs) {
-        const sx = npc.x * DRAW_TILE + DRAW_TILE / 2 - cameraX; const sy = npc.y * DRAW_TILE + DRAW_TILE * .62 - cameraY;
-        const npcImg = imagesRef.current.get(worldIdleSpritePath(controller.game.zoneId, "adult", "south"));
-        items.push({ y: npc.y, draw: () => { if (npcImg) ctx.drawImage(npcImg, sx - 24, sy - 39, 48, 48); else drawPorter(ctx, sx, sy, "down", false, npc.palette, .72); drawLabel(ctx, npc.name, sx, sy - 34, "#ffe09a", true); drawLabel(ctx, npc.role, sx, sy - 24, "#c8b9cc", true); } });
+        const point = anchor(npc.x, npc.y);
+        const id = NPC_CHARACTER[npc.id] ?? PLAYER_CHARACTER;
+        items.push({ y: npc.y, draw: () => {
+          drawCharacter(ctx, id, point.x, point.y, "south", { bob: Math.sin(now / 900 + npc.palette) * 1.5 });
+          drawLabel(ctx, npc.name, point.x, point.y - DRAW_CHARACTER + 2, "#ffe09a", true);
+          drawLabel(ctx, npc.role, point.x, point.y - DRAW_CHARACTER + 13, "#c3b2c9", true);
+        } });
       }
-      // Ambient Porters make the outpost read as a social spawn without pretending to be online players.
-      const crowd = [[-5,3],[-3,3],[-1,3],[1,3],[3,3],[5,3],[-5,5],[-2,5],[2,5],[5,5]];
-      const porterStages: Stage[] = ["adult", "adult", "hatchling", "adult", "legend", "adult", "hatchling", "adult", "legend", "adult"];
+
+      // Ambient Porters make the outpost read as inhabited without pretending
+      // to be online players. Positions are irregular so they read as people
+      // milling about rather than a formation.
+      const crowd = [[-5, 3], [-2, 4], [2, 3], [5, 4], [-4, 6], [3, 6]];
       crowd.forEach(([dx, dy], index) => {
-        const tx = model.map.hub.x + 6 + dx; const ty = model.map.hub.y + dy;
-        const sx = tx * DRAW_TILE + DRAW_TILE / 2 - cameraX; const sy = ty * DRAW_TILE + DRAW_TILE * .62 - cameraY;
-        const porterImg = imagesRef.current.get(worldIdleSpritePath(controller.game.zoneId, porterStages[index], index % 2 ? "west" : "east"));
-        items.push({ y: ty, draw: () => { if (porterImg) ctx.drawImage(porterImg, sx - 24, sy - 39, 48, 48); else drawPorter(ctx, sx, sy, index % 2 ? "left" : "right", (Math.floor(now / 500) + index) % 3 === 0, index + 1, .62); drawLabel(ctx, `Wayfarer ${index + 2}`, sx, sy - 27, "#d9c3df", true); } });
+        const tx = model.map.hub.x + 6 + dx;
+        const ty = model.map.hub.y + dy;
+        const point = anchor(tx, ty);
+        const id = AMBIENT_CHARACTERS[index % AMBIENT_CHARACTERS.length];
+        const facing: WorldDirection = index % 2 ? "west" : "east";
+        items.push({ y: ty, draw: () => {
+          drawCharacter(ctx, id, point.x, point.y, facing, { bob: Math.sin(now / 700 + index) * 1.5, alpha: .96 });
+        } });
       });
 
-      const enemyStage = game.enemy.isBoss ? "legend" : "adult";
-      const enemyImg = imagesRef.current.get(worldIdleSpritePath(game.zoneId, enemyStage, "south"));
+      const enemyStage: Stage = game.enemy.isBoss ? "legend" : "adult";
+      const enemyId = creatureCharacterId(zone, enemyStage);
       model.map.spawns.forEach((spawn, index) => {
-        const sx = spawn.x * DRAW_TILE + DRAW_TILE / 2 - cameraX; const sy = spawn.y * DRAW_TILE + DRAW_TILE * .58 - cameraY;
+        const point = anchor(spawn.x, spawn.y);
         const active = index === model.target.spawnIndex;
         items.push({ y: spawn.y, draw: () => {
-          ctx.save(); ctx.globalAlpha = active ? 1 : .68;
-          if (active) { ctx.strokeStyle = game.enemy.isBoss ? "#ffd25e" : "#ef786f"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(sx, sy + 12, 24, 10, 0, 0, Math.PI * 2); ctx.stroke(); }
-          if (enemyImg) ctx.drawImage(enemyImg, sx - 24, sy - 39 + Math.sin(now / 350 + index) * 2, 48, 48);
-          else { ctx.fillStyle = active ? "#d7625f" : "#8a5963"; ctx.beginPath(); ctx.arc(sx, sy - 8, active ? 17 : 12, 0, Math.PI * 2); ctx.fill(); }
           if (active) {
-            drawLabel(ctx, game.enemy.name, sx, sy - 52, game.enemy.isBoss ? "#ffe087" : "#fff0d2");
-            ctx.fillStyle = "#1a111b"; ctx.fillRect(sx - 31, sy - 45, 62, 6); ctx.fillStyle = "#e6525f"; ctx.fillRect(sx - 29, sy - 43, 58 * Math.max(0, game.enemy.hp / game.enemy.maxHp), 2);
+            ctx.save();
+            ctx.strokeStyle = game.enemy.isBoss ? "#ffd25e" : "#ef786f";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(point.x, point.y - 4, DRAW_TILE * 0.42, DRAW_TILE * 0.17, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
           }
-          ctx.restore();
+          drawCharacter(ctx, enemyId, point.x, point.y, "south", {
+            bob: Math.sin(now / 380 + index) * 2,
+            alpha: active ? 1 : .66,
+          });
+          if (!active) return;
+          const top = point.y - DRAW_CHARACTER - 4;
+          drawLabel(ctx, game.enemy.name, point.x, top - 12, game.enemy.isBoss ? "#ffe087" : "#fff0d2");
+          ctx.fillStyle = "#140f18";
+          ctx.fillRect(point.x - 32, top - 8, 64, 7);
+          ctx.fillStyle = game.enemy.isBoss ? "#ffcf5c" : "#e6525f";
+          ctx.fillRect(point.x - 30, top - 6, 60 * Math.max(0, game.enemy.hp / game.enemy.maxHp), 3);
         } });
       });
 
@@ -451,37 +576,56 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
       party.slice(1).forEach((creature, index) => {
         const followerIndex = index + 1;
         const trailOffset = 8 + followerIndex * 6;
-        const trailPoint = model.trail[Math.min(model.trail.length - 1, trailOffset)] ?? player;
-        const lateralOffset = (index % 2 === 0 ? -1 : 1) * (1.2 + index * 0.3) * DRAW_TILE;
-        const sx = trailPoint.x * DRAW_TILE + DRAW_TILE / 2 - cameraX + lateralOffset;
-        const sy = trailPoint.y * DRAW_TILE + DRAW_TILE * .65 - cameraY;
-        const trailIdx = Math.min(model.trail.length - 1, trailOffset);
-        const nextPoint = model.trail[Math.max(0, trailIdx - 1)] ?? player;
-        const dir = directionFromDelta(trailPoint.x - nextPoint.x, trailPoint.y - nextPoint.y);
-        const image = imagesRef.current.get(worldIdleSpritePath(creature.species, creature.stage, dir));
-        items.push({ y: trailPoint.y + index * 0.1, draw: () => { if (image) ctx.drawImage(image, sx - 24, sy - 39, 48, 48); } });
+        const trailIndex = Math.min(model.trail.length - 1, trailOffset);
+        const trailPoint = model.trail[trailIndex] ?? player;
+        const nextPoint = model.trail[Math.max(0, trailIndex - 1)] ?? player;
+        const lateral = (index % 2 === 0 ? -1 : 1) * (0.9 + index * 0.25);
+        const point = anchor(trailPoint.x + lateral, trailPoint.y);
+        const direction = directionFromDelta(trailPoint.x - nextPoint.x, trailPoint.y - nextPoint.y);
+        const id = creatureCharacterId(creature.species, creature.stage);
+        items.push({ y: trailPoint.y + index * 0.1, draw: () => {
+          drawCharacter(ctx, id, point.x, point.y, direction, { bob: Math.sin(now / 500 + index * 2) * 1.5 });
+        } });
       });
-      const playerX = player.drawX * DRAW_TILE + DRAW_TILE / 2 - cameraX; const playerY = player.drawY * DRAW_TILE + DRAW_TILE * .62 - cameraY;
-      items.push({ y: player.drawY, draw: () => {
-        const playerImg = imagesRef.current.get(
-          player.moving
-            ? worldWalkSpritePath(controller.game.zoneId, "adult", player.cardinalDir, player.walkFrame)
-            : worldIdleSpritePath(controller.game.zoneId, "adult", player.worldDir)
-        );
-        if (playerImg) {
-          ctx.drawImage(playerImg, playerX - 24, playerY - 39, 48, 48);
-        } else {
-          drawPorter(ctx, playerX, playerY, player.direction, player.moving, 0, .9);
-        }
-        drawLabel(ctx, "Wayfarer_01", playerX, playerY - 43, "#71e4f2");
-      } });
-      items.sort((a, b) => a.y - b.y); for (const item of items) item.draw();
 
-      model.hitParticles = model.hitParticles.filter((particle) => now - particle.born < 650);
-      for (const particle of model.hitParticles) {
-        const age = (now - particle.born) / 650; const sx = particle.x * DRAW_TILE + DRAW_TILE / 2 - cameraX; const sy = particle.y * DRAW_TILE - cameraY - age * 28;
-        ctx.globalAlpha = 1 - age; ctx.fillStyle = particle.color; ctx.font = "bold 14px monospace"; ctx.fillText("✦", sx + Math.sin(age * 15) * 12, sy); ctx.globalAlpha = 1;
+      const playerPoint = {
+        x: player.drawX * DRAW_TILE + DRAW_TILE / 2 - cameraX,
+        y: (player.drawY + 1) * DRAW_TILE - cameraY,
+      };
+      items.push({ y: player.drawY, draw: () => {
+        drawCharacter(ctx, PLAYER_CHARACTER, playerPoint.x, playerPoint.y, player.worldDir, {
+          walking: player.moving,
+          frame: player.walkFrame,
+        });
+        drawLabel(ctx, "Wayfarer_01", playerPoint.x, playerPoint.y - DRAW_CHARACTER + 2, "#7ee9f5");
+      } });
+
+      items.sort((a, b) => a.y - b.y);
+      for (const item of items) item.draw();
+
+      // Impact bursts use the biome's generated effect sprite.
+      const impact = getImage(impactPath(zone));
+      model.impacts = model.impacts.filter((entry) => now - entry.born < 420);
+      for (const entry of model.impacts) {
+        const age = (now - entry.born) / 420;
+        const point = anchor(entry.x, entry.y);
+        ctx.save();
+        ctx.globalAlpha = 1 - age;
+        const size = DRAW_EFFECT * (0.7 + age * 0.5);
+        if (impact) ctx.drawImage(impact, Math.round(point.x - size / 2), Math.round(point.y - size / 2 - 20), size, size);
+        ctx.restore();
       }
+
+      model.damage = model.damage.filter((entry) => now - entry.born < 900);
+      for (const entry of model.damage) {
+        const age = (now - entry.born) / 900;
+        const point = anchor(entry.x, entry.y);
+        ctx.save();
+        ctx.globalAlpha = 1 - age * age;
+        drawLabel(ctx, entry.text, point.x + Math.sin(age * 6) * 6, point.y - DRAW_CHARACTER - 18 - age * 34, entry.color);
+        ctx.restore();
+      }
+
       drawMinimap(ctx, model, width);
       animationRef.current = requestAnimationFrame(frame);
     };
@@ -490,15 +634,23 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
   }, []);
 
   const onCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current; const model = modelRef.current; if (!canvas || !model) return;
+    const canvas = canvasRef.current;
+    const model = modelRef.current;
+    if (!canvas || !model) return;
     const rect = canvas.getBoundingClientRect();
-    const worldW = model.map.width * DRAW_TILE; const worldH = model.map.height * DRAW_TILE;
+    const worldW = model.map.width * DRAW_TILE;
+    const worldH = model.map.height * DRAW_TILE;
     const cameraX = Math.max(0, Math.min(worldW - rect.width, model.player.drawX * DRAW_TILE + DRAW_TILE / 2 - rect.width / 2));
     const cameraY = Math.max(0, Math.min(worldH - rect.height, model.player.drawY * DRAW_TILE + DRAW_TILE / 2 - rect.height / 2));
-    const goal = { x: Math.floor((event.clientX - rect.left + cameraX) / DRAW_TILE), y: Math.floor((event.clientY - rect.top + cameraY) / DRAW_TILE) };
+    const goal = {
+      x: Math.floor((event.clientX - rect.left + cameraX) / DRAW_TILE),
+      y: Math.floor((event.clientY - rect.top + cameraY) / DRAW_TILE),
+    };
     const pathStart = model.player.moving ? { x: model.player.toX, y: model.player.toY } : { x: model.player.x, y: model.player.y };
     model.player.path = findPath(model.map, pathStart, goal);
-    model.lastManualAt = performance.now(); setMode("manual"); canvas.focus();
+    model.lastManualAt = performance.now();
+    setMode("manual");
+    canvas.focus();
   };
 
   return (
