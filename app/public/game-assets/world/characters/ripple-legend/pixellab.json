@@ -6,5 +6,34 @@
     "width": 48,
     "height": 48
   },
-  "view": "high top-down"
+  "view": "high top-down",
+  "animations": {
+    "attack": {
+      "directions": [
+        "south",
+        "west",
+        "east",
+        "north"
+      ],
+      "frames": 7,
+      "template": "attack-left"
+    },
+    "hurt": {
+      "directions": [
+        "south"
+      ],
+      "frames": 9,
+      "template": "angry"
+    },
+    "walk": {
+      "directions": [
+        "south",
+        "north",
+        "east",
+        "west"
+      ],
+      "frames": 4,
+      "template": "walk-4-frames"
+    }
+  }
 }

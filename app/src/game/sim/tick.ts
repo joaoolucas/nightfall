@@ -1,6 +1,7 @@
 import { directionTowards, distance, samePoint } from "../core/grid";
 import { nextFloat } from "../core/rng";
 import { TICK_MS, type CombatEvent, type Entity, type GameState, type ItemStack, type SkillId } from "../core/types";
+import { nearestWalkable } from "../core/pathfind";
 import { isFree, type WorldMap } from "../world/map";
 import { addToStacks, findStack, itemDef, removeFromStacks } from "../world/items";
 import { monsterTemplate } from "../world/monsters";
@@ -167,6 +168,53 @@ function respawnMonsters(state: GameState, map: WorldMap): CombatEvent[] {
   return events;
 }
 
+/**
+ * Turn this tick's events into console lines, in the plain second-person voice
+ * the genre uses — "You lose 12 hitpoints due to an attack by a rat" — rather
+ * than the marketing copy the old hunt log carried.
+ */
+function narrate(state: GameState, events: CombatEvent[]): void {
+  const fresh = events.filter((event) => event.tick === state.tick);
+  if (!fresh.length) return;
+  const lines: Array<{ text: string; tone: "combat" | "loot" | "level" | "system" | "damage" }> = [];
+  let takenThisTick = 0;
+  let lootedGold = 0;
+  let attacker = "";
+
+  for (const event of fresh) {
+    if (event.type === "hit" && event.targetId === PLAYER_ID) {
+      takenThisTick += event.amount ?? 0;
+      attacker = state.entities.find((entity) => entity.id === event.sourceId)?.name ?? attacker;
+    } else if (event.type === "loot") {
+      if (event.text === "gold coin") lootedGold += event.amount ?? 0;
+      else lines.push({ text: `You found ${event.amount} ${event.text}.`, tone: "loot" });
+    } else if (event.type === "levelUp") {
+      lines.push({ text: `You advanced to level ${event.amount}.`, tone: "level" });
+    } else if (event.type === "skillUp") {
+      lines.push({ text: `You advanced to ${event.text} level ${event.amount}.`, tone: "level" });
+    } else if (event.type === "say" && event.text) {
+      lines.push({ text: event.text, tone: event.text.startsWith("You are dead") ? "damage" : "combat" });
+    }
+  }
+  if (takenThisTick > 0) {
+    const unit = takenThisTick === 1 ? "hitpoint" : "hitpoints";
+    const by = attacker ? ` due to an attack by ${attacker}` : "";
+    lines.push({ text: `You lose ${takenThisTick} ${unit}${by}.`, tone: "damage" });
+  }
+  if (lootedGold > 0) {
+    lines.push({ text: `You found ${lootedGold} gold ${lootedGold === 1 ? "coin" : "coins"}.`, tone: "loot" });
+  }
+  if (!lines.length) return;
+
+  const entries = lines.map((line, index) => ({
+    id: state.nextLogId + index,
+    tone: line.tone,
+    text: line.text,
+  }));
+  state.nextLogId += entries.length;
+  state.log = [...entries.reverse(), ...state.log].slice(0, 60);
+}
+
 /** Advance exactly one tick. Mutates `state` in place for speed; callers clone. */
 function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, events: CombatEvent[]): void {
   state.tick += 1;
@@ -191,6 +239,21 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
     if (entity.stateTicks <= 0 && entity.state !== "dead" && entity.state !== "idle" && entity.state !== "walking") {
       entity.state = "idle";
     }
+  }
+
+  // A fallen companion recovers beside the Porter rather than being lost for
+  // good: they are the collection, not consumables.
+  for (const entity of state.entities) {
+    if (entity.kind !== "companion" || entity.state !== "dead" || entity.stateTicks > 0) continue;
+    const spot = nearestWalkable({ x: player.x, y: player.y }, (point) => isFree(map, state.entities, point, entity.id), 4);
+    if (!spot) continue;
+    entity.hp = Math.max(1, Math.round(entity.maxHp * 0.5));
+    entity.state = "idle";
+    entity.targetId = null;
+    entity.path = [];
+    entity.x = spot.x;
+    entity.y = spot.y;
+    events.push({ type: "say", tick: state.tick, text: `${entity.name} recovers and rejoins you.`, targetId: entity.id });
   }
 
   // Bodies become corpses once the death clip has played.
@@ -335,6 +398,7 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
   }
 
   state.playSeconds += TICK_MS / 1000;
+  narrate(state, events);
 }
 
 /**

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-08-17T19:15:45.144Z",
+  "generated_at": "2026-08-17T19:30:25.800Z",
   "characters": {
     "wayfarer": {
       "character_id": "3ed4671b-ce5e-4b63-b4b7-af8b9e832bf1",
@@ -156,8 +156,15 @@
       "walk_complete": true,
       "animations": {
         "attack": {
-          "complete": false,
-          "skipped": true
+          "complete": true,
+          "template": "bark",
+          "directions": [
+            "south",
+            "north",
+            "west",
+            "east"
+          ],
+          "frames": 6
         },
         "hurt": {
           "complete": false,
@@ -187,7 +194,20 @@
         "90d86182-37f3-49c8-8890-0755efa407c1",
         "cde4da2f-90a8-4939-8811-82edf55e7380"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "bark",
+          "directions": [
+            "east",
+            "north",
+            "south",
+            "west"
+          ],
+          "frames": 6
+        }
+      }
     },
     "cinderling-legend": {
       "character_id": "ef8047f5-d17c-4a37-ac3e-07ffe02aa840",
@@ -207,7 +227,20 @@
         "bc4709a7-a985-4f88-83b0-d451bfd24974",
         "2e6c6ac4-e517-4ccf-bc0e-7e9ff94b83aa"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "bark",
+          "directions": [
+            "east",
+            "north",
+            "west",
+            "south"
+          ],
+          "frames": 6
+        }
+      }
     },
     "ripple-hatchling": {
       "character_id": "62990fb6-285c-4183-b3ff-0808698d645d",
@@ -227,7 +260,28 @@
         "d9da4dbe-2994-4c57-b2a2-9ace23004069",
         "4109d3b8-00d9-4f34-baa8-fb093b395c9f"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "attack-left",
+          "directions": [
+            "east",
+            "west",
+            "south",
+            "north"
+          ],
+          "frames": 7
+        },
+        "hurt": {
+          "complete": true,
+          "template": "angry",
+          "directions": [
+            "south"
+          ],
+          "frames": 9
+        }
+      }
     },
     "ripple-adult": {
       "character_id": "c57ca774-053c-41fd-8003-c83ea08f381c",
@@ -250,12 +304,23 @@
       "walk_complete": true,
       "animations": {
         "attack": {
-          "complete": false,
-          "skipped": true
+          "complete": true,
+          "template": "attack-left",
+          "directions": [
+            "south",
+            "west",
+            "north",
+            "east"
+          ],
+          "frames": 7
         },
         "hurt": {
-          "complete": false,
-          "skipped": true
+          "complete": true,
+          "template": "angry",
+          "directions": [
+            "south"
+          ],
+          "frames": 9
         },
         "death": {
           "complete": false,
@@ -281,7 +346,28 @@
         "d24d11eb-d5c8-416e-9bf7-e61d64d5a00a",
         "0adfcf1d-b806-4b85-b725-74095865586d"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "attack-left",
+          "directions": [
+            "south",
+            "west",
+            "east",
+            "north"
+          ],
+          "frames": 7
+        },
+        "hurt": {
+          "complete": true,
+          "template": "angry",
+          "directions": [
+            "south"
+          ],
+          "frames": 9
+        }
+      }
     },
     "bramble-hatchling": {
       "character_id": "9f846aab-ee92-436d-ac7d-3df8b4e90ffe",
@@ -301,7 +387,20 @@
         "8dc10ddf-9537-4d6a-bada-d3bf6795e009",
         "ae1649a4-1f84-48d9-a25b-d822507e18b7"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "bark",
+          "directions": [
+            "west",
+            "north",
+            "south",
+            "east"
+          ],
+          "frames": 6
+        }
+      }
     },
     "bramble-adult": {
       "character_id": "e7ce578a-50d8-47b7-9d0e-218589a62caa",
@@ -324,8 +423,15 @@
       "walk_complete": true,
       "animations": {
         "attack": {
-          "complete": false,
-          "skipped": true
+          "complete": true,
+          "template": "bark",
+          "directions": [
+            "east",
+            "west",
+            "north",
+            "south"
+          ],
+          "frames": 6
         },
         "hurt": {
           "complete": false,
@@ -355,7 +461,20 @@
         "4fbd0738-62b3-4f83-98bd-1fb74b2e915c",
         "318de3a8-3daf-48dd-9e52-edab87e364c1"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "bark",
+          "directions": [
+            "north",
+            "south",
+            "west",
+            "east"
+          ],
+          "frames": 6
+        }
+      }
     },
     "shard-hatchling": {
       "character_id": "5c789589-083e-4fa7-9d64-e1f78f52f1f3",
@@ -375,7 +494,28 @@
         "e38b5062-64db-4ab0-903b-a21ddb7a173c",
         "8734c8cb-5620-45b2-b3c3-8cc8b66e3273"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "attack-left",
+          "directions": [
+            "east",
+            "south",
+            "west",
+            "north"
+          ],
+          "frames": 7
+        },
+        "hurt": {
+          "complete": true,
+          "template": "angry",
+          "directions": [
+            "south"
+          ],
+          "frames": 9
+        }
+      }
     },
     "shard-adult": {
       "character_id": "34123e64-a8ed-41e5-b0c5-7464eb7cc760",
@@ -398,12 +538,23 @@
       "walk_complete": true,
       "animations": {
         "attack": {
-          "complete": false,
-          "skipped": true
+          "complete": true,
+          "template": "attack-left",
+          "directions": [
+            "east",
+            "south",
+            "west",
+            "north"
+          ],
+          "frames": 7
         },
         "hurt": {
-          "complete": false,
-          "skipped": true
+          "complete": true,
+          "template": "angry",
+          "directions": [
+            "south"
+          ],
+          "frames": 9
         },
         "death": {
           "complete": false,
@@ -429,7 +580,8 @@
         "e27eca80-830b-41cb-a6eb-5a53f0617e6d",
         "889eaf12-7be4-48c9-8cd7-906275e8211f"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {}
     },
     "wisp-hatchling": {
       "character_id": "f8a2c1ba-8f3b-43c0-b852-8863f3bde539",

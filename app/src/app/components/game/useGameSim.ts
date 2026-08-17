@@ -1,0 +1,228 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Species } from "@/utils/portage";
+import { distance, type GridPoint } from "@/game/core/grid";
+import { findPath } from "@/game/core/pathfind";
+import { TICK_MS, type CombatEvent, type GameState } from "@/game/core/types";
+import { createWorldMap, walkableFor, type WorldMap } from "@/game/world/map";
+import { advance } from "@/game/sim/tick";
+import { PLAYER_ID, createInitialState, playerOf } from "@/game/sim/state";
+import { hydrate, persist } from "@/game/sim/save";
+
+/**
+ * Bridges the headless simulation to React.
+ *
+ * The hook owns the clock and the manual-control flag; everything else is the
+ * simulation's business. Manual steering suppresses auto-hunt for a few seconds
+ * so taking control never fights the idle AI for the same character.
+ */
+
+const MANUAL_HOLD_MS = 5_000;
+/** Never simulate more than this in one visible frame, to avoid a stall. */
+const MAX_CATCHUP_TICKS = 40;
+
+export interface GameSim {
+  state: GameState;
+  map: WorldMap;
+  events: CombatEvent[];
+  hydrated: boolean;
+  manual: boolean;
+  saveFailed: boolean;
+  offlineTicks: number;
+  dismissOffline: () => void;
+  walkTo: (goal: GridPoint) => void;
+  step: (delta: GridPoint) => void;
+  setTarget: (entityId: string | null) => void;
+  toggleSetting: (key: keyof GameState["settings"]) => void;
+  changeZone: (zone: Species) => void;
+  reset: () => void;
+}
+
+export function useGameSim(): GameSim {
+  const [state, setState] = useState<GameState>(() => createInitialState("ember", 0));
+  const [hydrated, setHydrated] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [offlineTicks, setOfflineTicks] = useState(0);
+  const [events, setEvents] = useState<CombatEvent[]>([]);
+  const [manual, setManual] = useState(false);
+
+  const stateRef = useRef(state);
+  const manualUntilRef = useRef(0);
+  const lastFrameRef = useRef(0);
+  const carryRef = useRef(0);
+
+  const map = useMemo(() => createWorldMap(state.zoneId), [state.zoneId]);
+  const mapRef = useRef(map);
+  useEffect(() => { mapRef.current = map; }, [map]);
+  useEffect(() => { stateRef.current = state; }, [state]);
+
+  // Load the save and run the offline catch-up through the real rules.
+  useEffect(() => {
+    const now = Date.now();
+    const result = hydrate(now);
+    stateRef.current = result.state;
+    setState(result.state);
+    setOfflineTicks(result.offlineTicks);
+    setSaveFailed(result.failed);
+    setHydrated(true);
+    lastFrameRef.current = performance.now();
+  }, []);
+
+  // The clock. One interval drives the simulation at a fixed timestep; the
+  // renderer interpolates between ticks on its own animation frame.
+  useEffect(() => {
+    if (!hydrated) return;
+    const timer = window.setInterval(() => {
+      const now = performance.now();
+      const elapsed = now - lastFrameRef.current;
+      lastFrameRef.current = now;
+      carryRef.current += elapsed;
+      const ticks = Math.min(MAX_CATCHUP_TICKS, Math.floor(carryRef.current / TICK_MS));
+      if (ticks <= 0) return;
+      carryRef.current -= ticks * TICK_MS;
+
+      const isManual = Date.now() < manualUntilRef.current;
+      const result = advance(stateRef.current, mapRef.current, ticks, { manualControl: isManual });
+      result.state.lastUpdatedAt = Date.now();
+      stateRef.current = result.state;
+      setState(result.state);
+      if (result.events.length) setEvents(result.events);
+      setManual(isManual);
+    }, TICK_MS);
+    return () => window.clearInterval(timer);
+  }, [hydrated]);
+
+  // Persist periodically and whenever the tab is hidden.
+  useEffect(() => {
+    if (!hydrated) return;
+    const save = () => setSaveFailed(!persist(stateRef.current));
+    const timer = window.setInterval(save, 4000);
+    const onVisibility = () => { if (document.visibilityState === "hidden") save(); };
+    window.addEventListener("beforeunload", save);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      save();
+      window.clearInterval(timer);
+      window.removeEventListener("beforeunload", save);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [hydrated]);
+
+  const takeControl = useCallback(() => {
+    manualUntilRef.current = Date.now() + MANUAL_HOLD_MS;
+    setManual(true);
+  }, []);
+
+  const walkTo = useCallback((goal: GridPoint) => {
+    takeControl();
+    const current = stateRef.current;
+    const player = playerOf(current);
+    const path = findPath(player, goal, {
+      walkable: walkableFor(mapRef.current, current.entities, PLAYER_ID),
+      maxNodes: 3000,
+    });
+    if (!path.length) return;
+    const next = {
+      ...current,
+      entities: current.entities.map((entity) => (entity.id === PLAYER_ID ? { ...entity, path, targetId: null } : entity)),
+    };
+    stateRef.current = next;
+    setState(next);
+  }, [takeControl]);
+
+  const step = useCallback((delta: GridPoint) => {
+    takeControl();
+    const current = stateRef.current;
+    const player = playerOf(current);
+    const goal = { x: player.x + delta.x, y: player.y + delta.y };
+    if (!walkableFor(mapRef.current, current.entities, PLAYER_ID)(goal)) return;
+    const next = {
+      ...current,
+      entities: current.entities.map((entity) => (entity.id === PLAYER_ID ? { ...entity, path: [goal] } : entity)),
+    };
+    stateRef.current = next;
+    setState(next);
+  }, [takeControl]);
+
+  const setTarget = useCallback((entityId: string | null) => {
+    takeControl();
+    const current = stateRef.current;
+    const player = playerOf(current);
+    // Clicking a distant creature also walks to it, as the genre expects.
+    const target = current.entities.find((entity) => entity.id === entityId);
+    const path = target && distance(player, target) > 1
+      ? findPath(player, target, {
+          walkable: walkableFor(mapRef.current, current.entities, PLAYER_ID),
+          maxNodes: 3000,
+          stopAdjacent: true,
+        })
+      : [];
+    const next = {
+      ...current,
+      entities: current.entities.map((entity) => (entity.id === PLAYER_ID ? { ...entity, targetId: entityId, path } : entity)),
+    };
+    stateRef.current = next;
+    setState(next);
+  }, [takeControl]);
+
+  const toggleSetting = useCallback((key: keyof GameState["settings"]) => {
+    setState((current) => {
+      const next = { ...current, settings: { ...current.settings, [key]: !current.settings[key] } };
+      stateRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const changeZone = useCallback((zone: Species) => {
+    setState((current) => {
+      if (current.zoneId === zone) return current;
+      // A fresh world for the new biome, carrying progression and inventory.
+      const seeded = createInitialState(zone, Date.now());
+      const next: GameState = {
+        ...seeded,
+        seed: current.seed,
+        killSerial: current.killSerial,
+        progress: current.progress,
+        companions: current.companions,
+        activeCompanionIds: current.activeCompanionIds,
+        inventory: current.inventory,
+        settings: current.settings,
+        kills: current.kills,
+        deaths: current.deaths,
+        playSeconds: current.playSeconds,
+        log: current.log,
+        nextLogId: current.nextLogId,
+        nextEntitySerial: current.nextEntitySerial,
+        chain: current.chain,
+      };
+      stateRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const reset = useCallback(() => {
+    const next = createInitialState("ember", Date.now());
+    stateRef.current = next;
+    setState(next);
+    setOfflineTicks(0);
+    persist(next);
+  }, []);
+
+  return {
+    state,
+    map,
+    events,
+    hydrated,
+    manual,
+    saveFailed,
+    offlineTicks,
+    dismissOffline: () => setOfflineTicks(0),
+    walkTo,
+    step,
+    setTarget,
+    toggleSetting,
+    changeZone,
+    reset,
+  };
+}

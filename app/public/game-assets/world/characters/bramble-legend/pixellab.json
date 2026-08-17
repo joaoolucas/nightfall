@@ -6,5 +6,27 @@
     "width": 48,
     "height": 48
   },
-  "view": "high top-down"
+  "view": "high top-down",
+  "animations": {
+    "attack": {
+      "directions": [
+        "north",
+        "south",
+        "west",
+        "east"
+      ],
+      "frames": 6,
+      "template": "bark"
+    },
+    "walk": {
+      "directions": [
+        "south",
+        "north",
+        "east",
+        "west"
+      ],
+      "frames": 4,
+      "template": "walk-4-frames"
+    }
+  }
 }

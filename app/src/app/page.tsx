@@ -1,5 +1,5 @@
-import PortageGame from "./components/portage/PortageGame";
+import GameClient from "./components/game/GameClient";
 
 export default function Page() {
-  return <PortageGame />;
+  return <GameClient />;
 }

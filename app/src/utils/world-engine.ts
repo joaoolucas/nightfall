@@ -76,15 +76,79 @@ function spawnPoints(): WorldSpawn[] {
   ];
 }
 
-function specialGround(zoneId: Species, x: number, y: number): GroundKind | null {
+/** Smooth value noise in [0, 1), bilinearly interpolated between lattice points. */
+function valueNoise(x: number, y: number, seed: number, scale: number): number {
+  const fx = x / scale;
+  const fy = y / scale;
+  const x0 = Math.floor(fx);
+  const y0 = Math.floor(fy);
+  const tx = fx - x0;
+  const ty = fy - y0;
+  // Smoothstep the interpolant so cell boundaries do not show as creases.
+  const sx = tx * tx * (3 - 2 * tx);
+  const sy = ty * ty * (3 - 2 * ty);
+  const a = hash2(x0, y0, seed);
+  const b = hash2(x0 + 1, y0, seed);
+  const c = hash2(x0, y0 + 1, seed);
+  const d = hash2(x0 + 1, y0 + 1, seed);
+  return (a * (1 - sx) + b * sx) * (1 - sy) + (c * (1 - sx) + d * sx) * sy;
+}
+
+/** Two octaves: broad landmasses with a ragged edge rather than a clean blob. */
+function fieldNoise(x: number, y: number, seed: number): number {
+  return valueNoise(x, y, seed, 11) * 0.68 + valueNoise(x, y, seed ^ 0x5bf03635, 4.5) * 0.32;
+}
+
+/**
+ * Grove is deliberately dry: not every biome needs an impassable body, and one
+ * clear forest makes the hazards elsewhere read as hazards rather than decor.
+ */
+const HAZARD_KIND: Partial<Record<Species, GroundKind>> = {
+  ember: "hazard",
+  stone: "hazard",
+  sky: "hazard",
+  creek: "water",
+  mist: "water",
+};
+
+/** Share of the map a biome's impassable body may cover. */
+const HAZARD_COVERAGE = 0.12;
+
+/**
+ * Where a biome's water or hazard lies.
+ *
+ * These used to be axis-aligned rectangles, which rendered as flat slabs that
+ * looked like UI panels laid over the map. A noise field gives organic
+ * coastlines instead — but thresholding that field at a fixed value produced
+ * wildly different coverage per biome (0.5% in one, 47% in another), because
+ * each zone seeds a different distribution. So the cut is taken at a
+ * *percentile* of the field's own values, which pins coverage to
+ * HAZARD_COVERAGE everywhere while keeping each biome's shapes distinct.
+ */
+function hazardTiles(zoneId: Species, seed: number): Set<string> {
+  const kind = HAZARD_KIND[zoneId];
+  const chosen = new Set<string>();
+  if (!kind) return chosen;
+
   const cx = Math.floor(WORLD_WIDTH / 2);
   const cy = Math.floor(WORLD_HEIGHT / 2);
-  if (zoneId === "creek" && Math.abs(x - 13) <= 1 && Math.abs(y - cy) > 2) return "water";
-  if (zoneId === "ember" && ((x < 8 && y > 10 && y < 29) || (x > 44 && y > 7 && y < 27))) return "hazard";
-  if (zoneId === "stone" && y > 27 && x > 15 && x < 23) return "hazard";
-  if (zoneId === "mist" && ((x - 41) ** 2 + (y - 28) ** 2 < 34 || (x - 8) ** 2 + (y - 9) ** 2 < 22)) return "water";
-  if (zoneId === "sky" && ((x < 7 && y < 14) || (x > 45 && y > 24))) return "hazard";
-  return null;
+  const scored: Array<{ key: string; value: number }> = [];
+
+  for (let y = 1; y < WORLD_HEIGHT - 1; y += 1) {
+    for (let x = 1; x < WORLD_WIDTH - 1; x += 1) {
+      // Nothing encroaches near the hub, so the outpost stays usable.
+      const fromHub = Math.max(Math.abs(x - cx) / (WORLD_WIDTH / 2), Math.abs(y - cy) / (WORLD_HEIGHT / 2));
+      if (fromHub < 0.4) continue;
+      // Weight toward the rim so bodies gather at the edges of the map.
+      const value = fieldNoise(x, y, seed ^ 0x27d4eb2d) + (fromHub - 0.4) * 0.35;
+      scored.push({ key: `${x},${y}`, value });
+    }
+  }
+
+  scored.sort((a, b) => b.value - a.value);
+  const take = Math.floor(WORLD_WIDTH * WORLD_HEIGHT * HAZARD_COVERAGE);
+  for (const entry of scored.slice(0, take)) chosen.add(entry.key);
+  return chosen;
 }
 
 export function createWorldMap(zoneId: Species): WorldMap {
@@ -95,16 +159,36 @@ export function createWorldMap(zoneId: Species): WorldMap {
   const spawns = spawnPoints();
   const tiles: WorldTile[] = [];
 
+  // Roads from the outpost to every spawn. Carving them before terrain is
+  // decided guarantees each hunting ground stays reachable no matter how the
+  // noise field falls, and reads as tracks radiating out of the camp.
+  const road = new Set<string>();
+  for (const spawn of spawns) {
+    const steps = Math.max(Math.abs(spawn.x - cx), Math.abs(spawn.y - cy));
+    for (let step = 0; step <= steps; step += 1) {
+      const t = steps === 0 ? 0 : step / steps;
+      const rx = Math.round(cx + (spawn.x - cx) * t);
+      const ry = Math.round(cy + (spawn.y - cy) * t);
+      // Two tiles wide so a road never becomes a single-file choke point.
+      road.add(`${rx},${ry}`);
+      road.add(`${rx + 1},${ry}`);
+      road.add(`${rx},${ry + 1}`);
+    }
+  }
+
+  const hazard = hazardTiles(zoneId, seed);
+  const hazardKind = HAZARD_KIND[zoneId];
+
   for (let y = 0; y < WORLD_HEIGHT; y += 1) {
     for (let x = 0; x < WORLD_WIDTH; x += 1) {
       const edge = x === 0 || y === 0 || x === WORLD_WIDTH - 1 || y === WORLD_HEIGHT - 1;
       const inHub = x >= hub.x && x < hub.x + hub.width && y >= hub.y && y < hub.y + hub.height;
-      const crossRoad = Math.abs(x - cx) <= 1 || Math.abs(y - cy) <= 1;
+      const onRoad = road.has(`${x},${y}`);
       const nearSpawn = spawns.some((spawn) => distance(spawn, { x, y }) <= 2);
       let kind: GroundKind = "ground";
       if (inHub) kind = "plaza";
-      else if (crossRoad || nearSpawn) kind = "path";
-      else kind = specialGround(zoneId, x, y) ?? "ground";
+      else if (onRoad || nearSpawn) kind = "path";
+      else if (hazardKind && hazard.has(`${x},${y}`)) kind = hazardKind;
       tiles.push({ x, y, kind, walkable: !edge && kind !== "water" && kind !== "hazard" });
     }
   }

@@ -156,7 +156,43 @@ for (const [biomeIndex, biome] of BIOMES.entries()) {
   ENVIRONMENT.push({ id: `${biome.id}-impact`, group: "environment", kind: "pixen", out: `effects/${biome.id}-impact.png`, size: [64, 64], noBackground: true, seed: 56000 + biomeIndex, description: `single elemental combat impact burst for ${biome.id} biome, four-frame feeling condensed into one effect sprite, transparent background, palette ${biome.palette}, ${STYLE}` });
 }
 
-const CATALOG = [...CHARACTERS, ...ENVIRONMENT];
+// Carryable items, drawn from directly overhead so they read on a floor tile
+// and in an inventory slot alike. Ids mirror the `sprite` field in
+// app/src/game/world/items.ts.
+const ITEM_STYLE = `${STYLE}, single small object seen from directly above, centered, transparent background, inventory icon, no shadow on the ground, no scene`;
+const ITEM_DESCRIPTIONS = [
+  ["gold", "a small heap of gold coins"],
+  ["shard", "a glowing violet portal shard crystal"],
+  ["tonic", "a small round flask of warm amber healing tonic with a cork"],
+  ["greater-tonic", "a large ornate flask of bright rose healing tonic with a gold collar"],
+  ["worn-blade", "a short chipped iron shortsword with a leather-wrapped grip"],
+  ["caravan-sabre", "a curved steel sabre with a brass guard and violet cord"],
+  ["warden-glaive", "an ornate glaive with a long dark haft and a glowing amber blade"],
+  ["travel-cloak", "a folded deep violet hooded travel cloak"],
+  ["porter-mail", "a folded set of riveted steel chain mail"],
+  ["warden-plate", "a polished ornate breastplate with amber trim"],
+  ["ember-charm", "a small amber amulet on a dark cord, faintly glowing"],
+  ["evolution-crystal", "a bright faceted evolution crystal, radiant violet"],
+  ["warden-relic", "an ancient carved stone relic disc with glowing runes"],
+  ["ash-carapace", "a charred insect carapace plate, dark grey with ember cracks"],
+  ["creek-pearl", "a smooth iridescent river pearl"],
+  ["root-heart", "a knotted green root bulb with a faint golden glow"],
+  ["geode-core", "a split grey geode with violet crystal inside"],
+  ["veil-dust", "a tiny stoppered vial of glowing lavender dust"],
+  ["aurora-quill", "a long iridescent feather quill with aurora colours"],
+];
+const ITEMS = ITEM_DESCRIPTIONS.map(([id, description], index) => ({
+  id: `item-${id}`,
+  group: "items",
+  kind: "pixen",
+  out: `items/${id}.png`,
+  size: [32, 32],
+  noBackground: true,
+  seed: 57000 + index,
+  description: `${description}, ${ITEM_STYLE}`,
+}));
+
+const CATALOG = [...CHARACTERS, ...ENVIRONMENT, ...ITEMS];
 const selected = CATALOG.filter((asset) => {
   if (only.size) return only.has(asset.id);
   if (runAll) return true;
@@ -449,7 +485,7 @@ if (estimate) {
 if (dryRun) process.exit(0);
 
 const characterAssets = selected.filter((asset) => asset.group === "characters");
-const environmentAssets = selected.filter((asset) => asset.group === "environment");
+const environmentAssets = selected.filter((asset) => asset.group === "environment" || asset.group === "items");
 if (characterAssets.length) {
   console.log(`\nCreating/resuming ${characterAssets.length} directional characters...`);
   // Tier 1 allows eight background jobs. Clear jobs left by an interrupted run,
