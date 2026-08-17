@@ -37,10 +37,13 @@ creature-collector. Organized by impact → effort. All English.
 
 ## Wave 8 — Mechanics that make it a game
 
-- [ ] **Portal energy** — hatch costs energy; energy regenerates over time (idle loop).
+- [x] **Playable hunt loop** — deterministic auto-combat, vitality, defeats, recovery and camp/resume.
+- [x] **Idle progression** — local autosave plus bounded eight-hour offline rewards.
+- [x] **World routes** — six level-gated biomes with escalating loot and every-tenth-kill Wardens.
+- [x] **Caravan progression** — three-member party, shared EXP, evolution and permanent training.
+- [x] **Kickoff + game dashboard** — cinematic entry and dense pixel RPG HUD.
+- [ ] **Interactive walkthrough** — guided first hunt, training purchase and route unlock.
 - [ ] **Leaderboard** — top collectors / strongest creatures.
-- [x] **Kickoff + game dashboard** — cinematic entry, dense pixel HUD, portal/caravan/market/privacy navigation.
-- [ ] **Interactive walkthrough** — guided first portal, hatch and expedition.
 - [ ] (stretch) **Guilds / weekly raids**.
 
 ## Wave 9 — STRK20 privacy (the moat)

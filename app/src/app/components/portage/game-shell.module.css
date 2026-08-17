@@ -123,6 +123,10 @@
 .mainNav button span { color: #ffe17d; font-size: 16px; }
 .mainNav button:hover, .mainNav .navActive { filter: brightness(1.15); transform: translateY(-1px); }
 .mainNav .navActive { background: linear-gradient(#c16bd7, #7c378e); box-shadow: inset 0 0 0 2px #f0adf5, 0 3px 0 #28152f, 0 0 16px rgba(192, 100, 223, .45); }
+.saveBadge { justify-self: stretch; min-height: 48px; display: grid; grid-template-columns: auto 1fr; align-content: center; gap: 2px 7px; padding: 8px 12px; border: 2px solid #321927; border-radius: 999px; color: white; background: #291922; }
+.saveBadge > span { grid-row: 1/3; align-self: center; }
+.saveBadge b { font-family: var(--font-display), monospace; font-size: 8px; }
+.saveBadge small { color: #c5aeba; font-size: 8px; }
 
 .dashboard { display: grid; grid-template-columns: 278px minmax(520px, 1fr) 300px; gap: 10px; min-height: calc(100vh - 94px); margin-top: 8px; }
 .leftRail, .rightRail { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
@@ -151,6 +155,11 @@
 .squadList small { color: #b59cae; font-size: 9px; text-transform: capitalize; }
 .squadList i { height: 5px; overflow: hidden; background: #171017; border-radius: 2px; }
 .squadList em { display: block; height: 100%; background: #52c477; }
+.partyVitality { display: grid; grid-template-columns: 1fr auto; gap: 5px 8px; margin-top: 10px; padding-top: 9px; border-top: 2px solid #2b1722; }
+.partyVitality > span { color: #c9aebc; font-size: 8px; font-weight: 900; }
+.partyVitality > b { color: white; font-size: 8px; }
+.partyVitality > i { grid-column: 1/-1; height: 7px; padding: 2px; overflow: hidden; border-radius: 2px; background: #171017; }
+.partyVitality em { display: block; height: 100%; background: linear-gradient(90deg, #2da95c, #65dc84); transition: width .3s linear; }
 .inventory { margin-top: auto; }
 .inventoryGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
 .inventoryGrid button { position: relative; aspect-ratio: 1.2; border: 2px solid #291621; border-radius: 5px; color: #f1c766; background: #2b1925; font-size: 19px; }
@@ -162,9 +171,10 @@
 .stageHeader span { color: #d5ae63; font-family: var(--font-mono-ui), monospace; font-size: 9px; letter-spacing: .12em; }
 .stageHeader b { font-family: var(--font-display), monospace; font-size: 15px; }
 .worldStatus { display: flex; align-items: center; gap: 6px; color: #d2bec9; font-size: 9px; font-weight: 900; }
-.liveDot, .demoDot { width: 7px; height: 7px; border-radius: 50%; }
+.liveDot, .demoDot, .errorDot { width: 7px; height: 7px; border-radius: 50%; }
 .liveDot { background: #53d27e; box-shadow: 0 0 8px #53d27e; }
 .demoDot { background: #ecb746; box-shadow: 0 0 8px #ecb746; }
+.errorDot { background: #ef586c; box-shadow: 0 0 8px #ef586c; }
 .stageViewport { position: relative; min-height: 620px; max-height: calc(100vh - 175px); overflow: auto; border: 3px solid #241521; border-radius: 5px; color: #f7effd; background: linear-gradient(rgba(20,16,42,.2), rgba(20,16,42,.64)), url('/game-assets/backgrounds/portal-meadow.png') center/cover; box-shadow: inset 0 0 0 2px rgba(207, 151, 93, .55); }
 .stageViewport > section { max-width: none; min-height: 100%; margin: 0; padding: 18px; background: rgba(18, 13, 31, .55); }
 .stageViewport > section > header { margin: 0 0 16px; text-align: left; }
@@ -195,6 +205,10 @@
 .activityFeed p { display: grid; grid-template-columns: 39px 1fr; gap: 7px; color: #e9d8bc; font-size: 10px; line-height: 1.45; }
 .activityFeed time { color: #65b9c7; font-family: var(--font-mono-ui), monospace; font-size: 8px; }
 .activityFeed b { color: #f1ca4e; }
+.activityFeed .log_loot { color: #ffe28b; }
+.activityFeed .log_level { color: #96e9a8; }
+.activityFeed .log_system { color: #cbb8dc; }
+.activityFeed .log_combat { color: #e9d8bc; }
 .activityCta { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; padding: 10px 12px; border: 2px solid #281520; border-radius: 5px; color: #e6d2df; background: #2c1824; font-size: 10px; cursor: pointer; }
 .activityCta span { color: #ffcf6b; }
 

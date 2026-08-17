@@ -6,11 +6,15 @@
 
 ![Portage game dashboard](docs/screenshots/dashboard.png)
 
-A cozy idle creature-collecting game on Starknet. Portage combines ownable creatures,
-idle expeditions and a marketplace prototype with STRK20 shielded STRK actions.
+A cozy idle creature-collecting RPG. The current browser build prioritizes a playable,
+local-first hunt loop; the Starknet contracts remain in the repository for later integration.
 
 ## Current status
 
+- **Playable idle mode:** real-time deterministic combat, six routes, Wardens, shared EXP,
+  loot, party management, evolution, permanent training and up to eight hours of offline progress.
+- Progress autosaves locally and unsafe offline fights make camp instead of fabricating rewards.
+- See [`docs/IDLE_GAME.md`](docs/IDLE_GAME.md) for mechanics, balance rules and architecture.
 - Creature minting, stats, evolution, expeditions and listing logic are implemented in Cairo.
 - The Next.js app supports mock mode and a configured Portage contract.
 - Ready-compatible wallets can shield, privately transfer, unshield and explicitly share
@@ -33,7 +37,7 @@ a public deposit with a private action. See [What is STRK20](https://strk20-by-e
 ## Repository
 
 - `contracts/` — Cairo Portage core and 24 Starknet Foundry tests
-- `app/` — Next.js 16 game client and Portage privacy economy panel
+- `app/` — Next.js 16 idle game client, deterministic local engine and privacy integration code
 - `scripts/` — ABI export, guarded deployment and submission validation
 - `docs/` — specification, deployment runbook, demo script and sprint checklist
 
