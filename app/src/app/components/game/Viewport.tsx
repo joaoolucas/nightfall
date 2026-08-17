@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { GridPoint } from "@/game/core/grid";
 import {
   advanceVisuals,
@@ -19,7 +19,6 @@ import {
   loadAll,
   zoneEnvironmentSources,
 } from "@/utils/world-art";
-import { SPECIES_LIST, STAGE_LIST } from "@/utils/portage";
 import { loadTileset, type TilesetData } from "@/utils/world-tilesets";
 import { MONSTERS } from "@/game/world/monsters";
 import { ITEMS, itemSpritePath } from "@/game/world/items";
@@ -46,30 +45,38 @@ export default function Viewport({ sim }: { sim: GameSim }) {
   useEffect(() => { simRef.current = sim; }, [sim]);
 
   /**
-   * Load every sprite the biome can show, keyed on the zone alone.
+   * The characters this biome can actually show: the Porter, the party, and the
+   * monsters that spawn here. Twelve or so folders rather than all twenty-six.
    *
-   * This must not depend on `state.entities`: that array is rebuilt every tick,
-   * so the effect re-ran ten times a second and restarted the tileset load each
-   * time. Locally the cache hid it; over real network latency the requests
-   * stampeded and the ground never appeared. The set of characters a zone can
-   * show is static, so it is derived from the catalogues instead.
+   * Two things matter here. The list must not depend on `state.entities`, which
+   * the reducer rebuilds every tick — keying on that re-ran the effect at the
+   * tick rate and restarted the tileset load each time. And it must not simply
+   * load every character in the catalogue either: that is roughly twelve hundred
+   * frames, instant from a local cache and slow enough over a real network that
+   * monsters render as placeholder blocks for the first stretch of play.
    */
+  const characterKey = useMemo(() => {
+    const ids = new Set<string>([PLAYER_CHARACTER]);
+    for (const template of MONSTERS) if (template.species === sim.state.zoneId) ids.add(template.charId);
+    for (const id of sim.state.activeCompanionIds) {
+      const companion = sim.state.companions.find((candidate) => candidate.id === id);
+      if (companion) ids.add(creatureCharacterId(companion.species, companion.stage));
+    }
+    return [...ids].sort().join(",");
+  }, [sim.state.zoneId, sim.state.activeCompanionIds, sim.state.companions]);
+
   useEffect(() => {
     const zone = sim.state.zoneId;
-    const ids = new Set<string>([PLAYER_CHARACTER]);
-    for (const id of Object.values(NPC_CHARACTER)) ids.add(id);
-    for (const id of AMBIENT_CHARACTERS) ids.add(id);
-    for (const template of MONSTERS) if (template.species === zone) ids.add(template.charId);
-    for (const species of SPECIES_LIST) {
-      for (const stage of STAGE_LIST) ids.add(creatureCharacterId(species, stage));
-    }
-    for (const id of ids) void loadCharacter(id);
-    void loadAll(zoneEnvironmentSources(zone));
-    void loadAll(ITEMS.map((item) => itemSpritePath(item.id)));
+    // Combatants first: they are what the player looks at while the rest streams in.
+    for (const id of characterKey.split(",")) void loadCharacter(id);
     loadTileset(zone)
       .then((tileset) => { tilesetRef.current = tileset; })
       .catch(() => { tilesetRef.current = null; });
-  }, [sim.state.zoneId]);
+    void loadAll(zoneEnvironmentSources(zone));
+    void loadAll(ITEMS.map((item) => itemSpritePath(item.id)));
+    // Outpost residents are only visible at the hub, so they come last.
+    for (const id of [...Object.values(NPC_CHARACTER), ...AMBIENT_CHARACTERS]) void loadCharacter(id);
+  }, [sim.state.zoneId, characterKey]);
 
   // Feed newly produced simulation events into the transient visuals.
   useEffect(() => {

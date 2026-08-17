@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-08-17T19:35:22.559Z",
+  "generated_at": "2026-08-17T19:38:19.490Z",
   "characters": {
     "wayfarer": {
       "character_id": "3ed4671b-ce5e-4b63-b4b7-af8b9e832bf1",
@@ -660,6 +660,9 @@
           "complete": true,
           "template": "angry",
           "directions": [
+            "east",
+            "south",
+            "west",
             "north"
           ],
           "frames": 7
@@ -685,7 +688,27 @@
         "e2fb7dd2-310a-45f9-b31d-189fc1ad6aa7"
       ],
       "walk_complete": true,
-      "animations": {}
+      "animations": {
+        "attack": {
+          "complete": true,
+          "template": "cross-punch",
+          "directions": [
+            "south",
+            "east",
+            "west",
+            "north"
+          ],
+          "frames": 6
+        },
+        "hurt": {
+          "complete": true,
+          "template": "taking-punch",
+          "directions": [
+            "south"
+          ],
+          "frames": 6
+        }
+      }
     },
     "wisp-adult": {
       "character_id": "bb4fe071-cb6d-4d17-b8f8-dce2b29b6b24",
@@ -711,10 +734,10 @@
           "complete": true,
           "template": "angry",
           "directions": [
-            "north",
+            "west",
             "east",
-            "south",
-            "west"
+            "north",
+            "south"
           ],
           "frames": 7
         },
@@ -795,7 +818,8 @@
         "6c286f70-0d77-4e93-bd4f-ded2798491cc",
         "f0c36160-29fb-44a4-bd33-ede999ea9004"
       ],
-      "walk_complete": true
+      "walk_complete": true,
+      "animations": {}
     }
   },
   "assets": {
