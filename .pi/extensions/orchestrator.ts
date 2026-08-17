@@ -7,7 +7,7 @@
  *   Worker      -> hcnsec/DeepSeek-V4-Flash (fast implementation)
  *   Reviewer    -> hcnsec/Kimi-K2.6       (code review + vision)
  *   Merger      -> hcnsec/DeepSeek-V4-Pro (merge/conflict resolution)
- *   Architect   -> claude-bridge/claude-opus-5 (final architecture gate)
+ *   Architect   -> openai-codex/gpt-5.6-sol (isolated final architecture gate)
  *
  * Each subagent runs in a separate `pi` process (isolated context), with its
  * own model, thinking level, and tool set.
@@ -91,11 +91,11 @@ const ROLES: Record<Role, RoleSpec> = {
     label: "Merger (DeepSeek V4 Pro)",
   },
   architect: {
-    model: "claude-bridge/claude-opus-5",
+    model: "openai-codex/gpt-5.6-sol",
     thinking: "high",
     tools: ["read", "grep", "find", "ls", "bash"],
     systemPrompt: [
-      "You are the final architecture and quality gate (Claude Opus 5). Review without editing anything.",
+      "You are the final architecture and quality gate (GPT-5.6 Sol in an isolated session). Review without editing anything.",
       "Bash is read-only: use git diff, git log, and tests only when needed. Do not modify files.",
       "Analyze module boundaries, state machines, persistence/migrations, game economy and balance, accessibility, security, performance, and scalability.",
       "Distinguish release blockers from follow-up improvements and cite file:line for every finding.",
@@ -106,7 +106,7 @@ const ROLES: Record<Role, RoleSpec> = {
       "## Recommendations",
       "## Verdict - APPROVE or REQUEST CHANGES",
     ].join("\n"),
-    label: "Architect (Claude Opus 5 · high · final gate)",
+    label: "Architect (GPT-5.6 Sol · high · isolated final gate)",
   },
 };
 
