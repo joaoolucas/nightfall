@@ -1,0 +1,314 @@
+// PixelLab v2 world-art pipeline for Portage.fun.
+//
+// Generates game-ready high top-down assets directly into app/public:
+//   - 8-direction Porter, NPC and creature characters
+//   - cardinal walking animations where gameplay needs them
+//   - seamless biome terrain tiles
+//   - biome-specific props, structures and combat effects
+//
+// Usage:
+//   node --env-file=.env scripts/gen-world-assets.mjs --dry-run
+//   node --env-file=.env scripts/gen-world-assets.mjs --group characters
+//   node --env-file=.env scripts/gen-world-assets.mjs --group environment
+//   node --env-file=.env scripts/gen-world-assets.mjs --all
+//   node --env-file=.env scripts/gen-world-assets.mjs --only wayfarer,cinderling-adult
+//
+// The script is resumable. IDs and prompts are persisted in pixellab-state.json.
+import fs from "node:fs";
+import path from "node:path";
+
+const API = "https://api.pixellab.ai/v2";
+const KEY = process.env.PIXELLAB_API_KEY;
+const ROOT = path.resolve("app/public/game-assets/world");
+const STATE_PATH = path.join(ROOT, "pixellab-state.json");
+const DIRECTIONS = ["south", "north", "east", "west", "south-east", "south-west", "north-east", "north-west"];
+const CARDINAL = ["south", "north", "east", "west"];
+const args = process.argv.slice(2);
+const dryRun = args.includes("--dry-run");
+const runAll = args.includes("--all") || !args.some((arg) => arg.startsWith("--group") || arg.startsWith("--only"));
+const option = (name) => {
+  const index = args.indexOf(name);
+  if (index >= 0) return args[index + 1];
+  const inline = args.find((arg) => arg.startsWith(`${name}=`));
+  return inline?.slice(name.length + 1);
+};
+const groups = new Set((option("--group") ?? "").split(",").filter(Boolean));
+const only = new Set((option("--only") ?? "").split(",").filter(Boolean));
+
+if (!dryRun && !KEY) {
+  console.error("PIXELLAB_API_KEY not set. Use: node --env-file=.env scripts/gen-world-assets.mjs ...");
+  process.exit(1);
+}
+
+const STYLE = "original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character";
+const CHARACTER_STYLE = `${STYLE}, centered full-body sprite, transparent background, game-ready directional character`;
+const TILE_STYLE = `${STYLE}, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border`;
+
+const NPCS = [
+  { id: "wayfarer", name: "Portage Wayfarer", desc: "young caravan explorer wearing a deep violet hooded travel cloak, warm amber scarf, leather satchel, sturdy boots, small glowing portal compass at belt, no weapon", template: "mannequin", animate: true, seed: 51021, existingId: "3ed4671b-ce5e-4b63-b4b7-af8b9e832bf1" },
+  { id: "healer-mira", name: "Mira", desc: "kind caravan healer wearing cream and rose travel robes, small medicine satchel, silver hair, gentle teal healing charm", template: "mannequin", seed: 51031 },
+  { id: "quartermaster-orin", name: "Orin", desc: "sturdy caravan quartermaster in brown leather apron and violet tunic, supply ledger at belt, short copper hair", template: "mannequin", seed: 51032 },
+  { id: "pathfinder-tavi", name: "Tavi", desc: "agile caravan pathfinder in moss green hood and layered travel leathers, rolled route map, amber compass", template: "mannequin", seed: 51033 },
+  { id: "scout-sable", name: "Sable", desc: "watchful Warden scout in charcoal cloak with violet trim, crystal spyglass, pale braided hair", template: "mannequin", seed: 51034 },
+  { id: "wayfarer-blue", name: "Blue Wayfarer", desc: "caravan traveler in indigo blue hooded cloak, pale scarf and compact travel pack", template: "mannequin", seed: 51035 },
+  { id: "wayfarer-green", name: "Green Wayfarer", desc: "caravan traveler in forest green hooded cloak, gold scarf and bedroll", template: "mannequin", seed: 51036 },
+  { id: "wayfarer-red", name: "Red Wayfarer", desc: "caravan traveler in brick red hooded cloak, cream scarf and small satchel", template: "mannequin", seed: 51037 },
+];
+
+const SPECIES = [
+  { id: "cinderling", template: "dog", desc: "smoldering salamander companion, glowing ember scales, broad lizard head, little flames along its back, on all fours" },
+  { id: "ripple", template: "bear", desc: "round water frog companion, translucent blue body, huge kind eyes, rippling water collar, squat on all fours" },
+  { id: "bramble", template: "dog", desc: "leafy fox companion, green leaf fur, cream face, curling living vine tail, on all fours" },
+  { id: "shard", template: "bear", desc: "round geode bear companion, stone plates and violet crystal growths, on all fours" },
+  { id: "wisp", template: "cat", desc: "small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground" },
+  { id: "aurora", template: "mannequin", desc: "mystical feathered kite companion, pearly body, wide iridescent aurora wings, floating above ground" },
+];
+const STAGES = [
+  { id: "hatchling", detail: "tiny cute baby form with simple rounded proportions", seed: 1 },
+  { id: "adult", detail: "confident mature form with clear readable features", seed: 2 },
+  { id: "legend", detail: "majestic evolved form with radiant elemental crown and larger silhouette", seed: 3 },
+];
+const CREATURES = SPECIES.flatMap((species, speciesIndex) => STAGES.map((stage) => ({
+  id: `${species.id}-${stage.id}`,
+  name: `${species.id} ${stage.id}`,
+  desc: `${stage.detail}, ${species.desc}`,
+  template: species.template,
+  animate: true,
+  seed: 52000 + speciesIndex * 20 + stage.seed,
+})));
+const CHARACTERS = [...NPCS, ...CREATURES].map((entry) => ({ ...entry, group: "characters", description: `${entry.desc}, ${CHARACTER_STYLE}` }));
+
+const BIOMES = [
+  { id: "ember", terrain: "charcoal volcanic earth with burnt umber stones and faint orange ember flecks", path: "worn warm brown ash trail with small charcoal pebbles", plaza: "orderly burgundy stone pavers with subtle brass seams", liquid: "slow glowing red-orange lava surface with dark cooling crust", hazard: "black obsidian fissure with hot orange cracks", palette: "charcoal, burnt umber, burgundy, ember orange" },
+  { id: "creek", terrain: "lush teal riverbank grass with tiny wet leaves", path: "smooth mossy stepping stones and packed river silt", plaza: "pale blue-gray ferry-station pavers with water-worn edges", liquid: "clear flowing blue creek water with soft white ripples", hazard: "deep navy fast current with pale foam", palette: "teal, river blue, moss green, pale stone" },
+  { id: "grove", terrain: "dense emerald forest floor with clover and scattered leaves", path: "warm ochre woodland dirt with roots and leaf litter", plaza: "living root-woven wooden pavers with green moss seams", liquid: "dark green woodland pond water with small lily reflections", hazard: "thorny root tangle covering dark soil", palette: "emerald, moss, bark brown, firefly gold" },
+  { id: "stone", terrain: "cool gray cave floor with tiny violet mineral specks", path: "flattened slate trail with pale worn edges", plaza: "precise geode-cut stone pavers with violet crystal seams", liquid: "deep underground cobalt pool with mineral shimmer", hazard: "bottomless dark chasm edged by fractured slate", palette: "slate gray, violet crystal, cobalt, silver" },
+  { id: "mist", terrain: "dusky blue-gray marsh grass under thin lavender fog", path: "raised weathered timber and muted gray mud trail", plaza: "moonlit violet stone pavers with fog-softened seams", liquid: "inky indigo marsh water with pale ghostly wisps", hazard: "dense magical violet fog vortex over black marsh", palette: "indigo, lavender, blue gray, ghostlight" },
+  { id: "sky", terrain: "soft turquoise floating-island grass with tiny golden flowers", path: "pale sunlit sandstone trail with wind-swept edges", plaza: "ivory and blue celestial pavers with gold seams", liquid: "bright reflective sky pool with aurora colors", hazard: "deep starry blue open sky void with drifting cloud edges", palette: "turquoise, ivory, aurora violet, sunlight gold" },
+];
+const TILE_DESCRIPTIONS = [
+  ["ground", "terrain"], ["path", "path"], ["plaza", "plaza"], ["water", "liquid"], ["hazard", "hazard"],
+];
+const PROP_DESCRIPTIONS = {
+  tree: "biome tree with trunk and broad canopy, readable from high top-down, transparent background",
+  rock: "cluster of natural biome rocks, readable from high top-down, transparent background",
+  crystal: "glowing elemental waypoint crystal on a small stone base, transparent background",
+  shrub: "small biome shrub and ground foliage cluster, transparent background",
+  lantern: "caravan trail lantern on a short dark metal post, warm amber glow, transparent background",
+  ruin: "small broken ancient portal-stone ruin, weathered and mossy, transparent background",
+};
+const STRUCTURE_DESCRIPTIONS = {
+  lodge: "complete Portage caravan lodge building seen from high top-down, violet timber walls, warm windows, amber roof trim, central dark doorway, transparent background, isolated building",
+  tent: "small caravan supply tent seen from high top-down, burgundy canvas, amber support pole, travel crates, transparent background, isolated structure",
+};
+
+const ENVIRONMENT = [];
+for (const [biomeIndex, biome] of BIOMES.entries()) {
+  for (const [id, field] of TILE_DESCRIPTIONS) ENVIRONMENT.push({ id: `${biome.id}-tile-${id}`, group: "environment", kind: "pixen", out: `tiles/${biome.id}/${id}.png`, size: [32, 32], noBackground: false, seed: 53000 + biomeIndex * 100 + TILE_DESCRIPTIONS.findIndex(([key]) => key === id), description: `${biome[field]}, palette ${biome.palette}, ${TILE_STYLE}` });
+  Object.entries(PROP_DESCRIPTIONS).forEach(([id, description], index) => ENVIRONMENT.push({ id: `${biome.id}-prop-${id}`, group: "environment", kind: "pixen", out: `props/${biome.id}/${id}.png`, size: [64, 64], noBackground: true, seed: 54000 + biomeIndex * 100 + index, description: `${description}, adapted to ${biome.id} biome, palette ${biome.palette}, ${STYLE}` }));
+  Object.entries(STRUCTURE_DESCRIPTIONS).forEach(([id, description], index) => ENVIRONMENT.push({ id: `${biome.id}-structure-${id}`, group: "environment", kind: "pixen", out: `structures/${biome.id}/${id}.png`, size: id === "lodge" ? [224, 128] : [96, 96], noBackground: true, seed: 55000 + biomeIndex * 100 + index, description: `${description}, adapted to ${biome.id} biome, palette ${biome.palette}, ${STYLE}` }));
+  ENVIRONMENT.push({ id: `${biome.id}-impact`, group: "environment", kind: "pixen", out: `effects/${biome.id}-impact.png`, size: [64, 64], noBackground: true, seed: 56000 + biomeIndex, description: `single elemental combat impact burst for ${biome.id} biome, four-frame feeling condensed into one effect sprite, transparent background, palette ${biome.palette}, ${STYLE}` });
+}
+
+const CATALOG = [...CHARACTERS, ...ENVIRONMENT];
+const selected = CATALOG.filter((asset) => {
+  if (only.size) return only.has(asset.id);
+  if (runAll) return true;
+  return groups.has(asset.group);
+});
+
+function loadState() {
+  fs.mkdirSync(ROOT, { recursive: true });
+  try { return JSON.parse(fs.readFileSync(STATE_PATH, "utf8")); } catch { return { version: 1, generated_at: null, characters: {}, assets: {} }; }
+}
+const state = loadState();
+function saveState() {
+  state.generated_at = new Date().toISOString();
+  fs.writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`);
+}
+
+async function api(endpoint, body, method = "POST") {
+  let lastError;
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
+    try {
+      const response = await fetch(`${API}${endpoint}`, {
+        method,
+        headers: { Authorization: `Bearer ${KEY}`, ...(body ? { "Content-Type": "application/json" } : {}) },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      const text = await response.text();
+      let data;
+      try { data = JSON.parse(text); } catch { throw new Error(`${endpoint} HTTP ${response.status}: ${text.slice(0, 300)}`); }
+      if (response.ok) return data;
+      const retryable = response.status === 429 || response.status >= 500;
+      if (!retryable || attempt === 6) throw new Error(`${endpoint} HTTP ${response.status}: ${JSON.stringify(data).slice(0, 600)}`);
+      lastError = new Error(`${endpoint} HTTP ${response.status}`);
+    } catch (error) {
+      lastError = error;
+      if (attempt === 6) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, Math.min(20_000, 2_000 * attempt)));
+  }
+  throw lastError;
+}
+
+async function pollJobs(jobIds, label, maxMinutes = 25) {
+  const pending = new Set(jobIds.filter(Boolean));
+  const failed = [];
+  const started = Date.now();
+  while (pending.size && Date.now() - started < maxMinutes * 60_000) {
+    await new Promise((resolve) => setTimeout(resolve, 4_000));
+    for (const id of [...pending]) {
+      const job = await api(`/background-jobs/${id}`, null, "GET");
+      if (job.status === "completed") pending.delete(id);
+      if (job.status === "failed") { pending.delete(id); failed.push({ id, error: job.error ?? job.last_response }); }
+    }
+    process.stdout.write(`\r  ${label}: ${jobIds.length - pending.size}/${jobIds.length} complete`);
+  }
+  process.stdout.write("\n");
+  if (pending.size) throw new Error(`${label}: timed out with ${pending.size} jobs pending`);
+  if (failed.length) throw new Error(`${label}: ${failed.length} failed: ${JSON.stringify(failed).slice(0, 800)}`);
+}
+
+async function download(url, destination) {
+  let lastError;
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`download ${response.status}: ${url}`);
+      fs.mkdirSync(path.dirname(destination), { recursive: true });
+      fs.writeFileSync(destination, Buffer.from(await response.arrayBuffer()));
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, attempt * 1_500));
+    }
+  }
+  throw lastError;
+}
+
+async function createCharacter(asset) {
+  const previous = state.characters[asset.id];
+  const localMeta = path.join(ROOT, "characters", asset.id, "pixellab.json");
+  let characterId = previous?.character_id ?? asset.existingId;
+  if (!characterId && fs.existsSync(localMeta)) characterId = JSON.parse(fs.readFileSync(localMeta, "utf8")).character_id;
+  if (!characterId) {
+    const result = await api("/create-character-v3", {
+      description: asset.description,
+      image_size: { width: 48, height: 48 },
+      view: "high top-down",
+      template_id: asset.template,
+      name: asset.name,
+      seed: asset.seed,
+      no_background: true,
+      outline: "single color dark plum outline",
+      detail: "medium detail",
+      enhance_prompt: false,
+    });
+    characterId = result.character_id;
+    state.characters[asset.id] = { character_id: characterId, create_job_id: result.background_job_id, prompt: asset.description, template: asset.template, seed: asset.seed, status: "pending" };
+    saveState();
+    return { asset, characterId, jobId: result.background_job_id, created: true };
+  }
+  state.characters[asset.id] = { ...previous, character_id: characterId, prompt: asset.description, template: asset.template, seed: asset.seed };
+  saveState();
+  return { asset, characterId, jobId: previous?.status === "pending" ? previous.create_job_id : null, created: false };
+}
+
+async function syncCharacter({ asset, characterId }) {
+  const detail = await api(`/characters/${characterId}`, null, "GET");
+  if (detail.status !== "completed" || !detail.rotation_urls) throw new Error(`${asset.id}: character not complete (${detail.status})`);
+  const out = path.join(ROOT, "characters", asset.id);
+  for (const direction of DIRECTIONS) if (detail.rotation_urls[direction]) await download(detail.rotation_urls[direction], path.join(out, `idle-${direction}.png`));
+  state.characters[asset.id] = { ...state.characters[asset.id], character_id: characterId, status: "completed", size: detail.size, view: detail.view };
+  fs.mkdirSync(out, { recursive: true });
+  fs.writeFileSync(path.join(out, "pixellab.json"), `${JSON.stringify({ character_id: characterId, name: detail.name, prompt: detail.prompt, size: detail.size, view: detail.view }, null, 2)}\n`);
+  saveState();
+
+  if (!asset.animate) return;
+  const walkTemplate = asset.template === "mannequin" ? "walking-4-frames" : "walk-4-frames";
+  let walk = detail.animations?.find((animation) => animation.animation_type === walkTemplate);
+  if (!walk) {
+    const animation = await api("/characters/animations", {
+      character_id: characterId,
+      animation_name: "walk",
+      template_animation_id: walkTemplate,
+      mode: "template",
+      directions: CARDINAL,
+      async_mode: true,
+      seed: asset.seed + 1,
+    });
+    state.characters[asset.id].walk_job_ids = animation.background_job_ids;
+    saveState();
+    await pollJobs(animation.background_job_ids, `${asset.id} walk`, 20);
+    const refreshed = await api(`/characters/${characterId}`, null, "GET");
+    walk = refreshed.animations?.find((candidate) => candidate.animation_type === walkTemplate);
+  }
+  if (!walk) throw new Error(`${asset.id}: walking animation missing after generation`);
+  for (const direction of walk.directions) {
+    for (let index = 0; index < direction.frames.length; index += 1) await download(direction.frames[index], path.join(out, `walk-${direction.direction}-${index}.png`));
+  }
+  state.characters[asset.id].walk_complete = true;
+  saveState();
+}
+
+async function createStatic(asset) {
+  const destination = path.join(ROOT, asset.out);
+  if (fs.existsSync(destination) && state.assets[asset.id]?.status === "completed") return console.log(`  skip ${asset.id}`);
+  const result = await api("/create-image-pixen", {
+    description: asset.description,
+    image_size: { width: asset.size[0], height: asset.size[1] },
+    no_background: asset.noBackground,
+    seed: asset.seed,
+  });
+  const raw = String(result.image?.base64 ?? "").replace(/^data:image\/\w+;base64,/, "");
+  if (!raw) throw new Error(`${asset.id}: PixelLab returned no image`);
+  fs.mkdirSync(path.dirname(destination), { recursive: true });
+  fs.writeFileSync(destination, Buffer.from(raw, "base64"));
+  state.assets[asset.id] = { status: "completed", prompt: asset.description, seed: asset.seed, size: asset.size, output: asset.out };
+  saveState();
+  console.log(`  saved ${asset.out}`);
+}
+
+async function mapLimit(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) { const index = next++; results[index] = await fn(items[index], index); }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+console.log(`PixelLab world pipeline: ${selected.length}/${CATALOG.length} assets selected${dryRun ? " (dry run)" : ""}.`);
+for (const asset of selected) console.log(`  ${asset.group.padEnd(11)} ${asset.id}`);
+if (dryRun) process.exit(0);
+
+const characterAssets = selected.filter((asset) => asset.group === "characters");
+const environmentAssets = selected.filter((asset) => asset.group === "environment");
+if (characterAssets.length) {
+  console.log(`\nCreating/resuming ${characterAssets.length} directional characters...`);
+  // Tier 1 allows eight background jobs. Clear jobs left by an interrupted run,
+  // then submit rotation batches below that ceiling.
+  const resumedJobs = characterAssets.map((asset) => state.characters[asset.id]?.status === "pending" ? state.characters[asset.id]?.create_job_id : null).filter(Boolean);
+  if (resumedJobs.length) await pollJobs(resumedJobs, "resumed character rotations", 30);
+  const characters = [];
+  for (let offset = 0; offset < characterAssets.length; offset += 6) {
+    const batch = await mapLimit(characterAssets.slice(offset, offset + 6), 3, createCharacter);
+    const createJobs = batch.map((entry) => entry.jobId).filter(Boolean);
+    if (createJobs.length) await pollJobs(createJobs, `character rotations ${offset + 1}-${offset + batch.length}`, 30);
+    characters.push(...batch);
+  }
+  console.log("Downloading rotations and generating cardinal walk cycles...");
+  // Two characters × four cardinal animation jobs = the eight-job plan cap.
+  await mapLimit(characters, 2, async (entry) => {
+    console.log(`  sync ${entry.asset.id}`);
+    await syncCharacter(entry);
+  });
+}
+if (environmentAssets.length) {
+  console.log(`\nGenerating ${environmentAssets.length} environment assets...`);
+  await mapLimit(environmentAssets, 3, createStatic);
+}
+const balance = await api("/balance", null, "GET");
+console.log(`\nDone. Remaining PixelLab balance: ${JSON.stringify(balance)}`);

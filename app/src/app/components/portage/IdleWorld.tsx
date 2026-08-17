@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { creatureSpritePath } from "@/utils/portage";
+import { creatureSpritePath, type Stage } from "@/utils/portage";
+import { worldIdleSpritePath, worldWalkSpritePath, directionFromDelta, cardinalFromDelta, preloadWorldCharacterSprites, preloadZoneEnemySprites, type WorldDirection, type CardinalDirection } from "@/utils/world-sprites";
 import {
   createWorldMap,
   findPath,
@@ -21,6 +22,8 @@ const STEP_MS = 145;
 const SAVE_KEY = "portage-world-position-v1";
 
 type Direction = "up" | "down" | "left" | "right";
+type WorldDir = WorldDirection;
+type CardinalDir = CardinalDirection;
 interface MovingActor extends GridPoint {
   drawX: number;
   drawY: number;
@@ -31,6 +34,9 @@ interface MovingActor extends GridPoint {
   moveStarted: number;
   moving: boolean;
   direction: Direction;
+  worldDir: WorldDir;
+  cardinalDir: CardinalDir;
+  walkFrame: number;
   path: GridPoint[];
 }
 interface WorldModel {
@@ -62,7 +68,7 @@ const PORTER_COLORS = [
 ];
 
 function actorAt(point: GridPoint): MovingActor {
-  return { ...point, drawX: point.x, drawY: point.y, fromX: point.x, fromY: point.y, toX: point.x, toY: point.y, moveStarted: 0, moving: false, direction: "down", path: [] };
+  return { ...point, drawX: point.x, drawY: point.y, fromX: point.x, fromY: point.y, toX: point.x, toY: point.y, moveStarted: 0, moving: false, direction: "down", worldDir: "south", cardinalDir: "south", walkFrame: 0, path: [] };
 }
 
 function loadPosition(map: WorldMap): GridPoint {
@@ -267,6 +273,14 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
       if (imagesRef.current.has(source)) continue;
       const image = new Image(); image.src = source; image.onload = () => { imagesRef.current.set(source, image); };
     }
+    // Preload world sprites for player (adult of current zone)
+    preloadWorldCharacterSprites(controller.game.zoneId, "adult").then((imgs) => {
+      for (const [path, img] of imgs) imagesRef.current.set(path, img);
+    });
+    // Preload enemy sprites (adult + legend of current zone)
+    preloadZoneEnemySprites(controller.game.zoneId).then((imgs) => {
+      for (const [path, img] of imgs) imagesRef.current.set(path, img);
+    });
   }, [controller.game.creatures, controller.game.zoneId]);
 
   useEffect(() => {
@@ -311,6 +325,7 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
         const eased = progress < .5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
         player.drawX = player.fromX + (player.toX - player.fromX) * eased;
         player.drawY = player.fromY + (player.toY - player.fromY) * eased;
+        player.walkFrame = Math.floor(progress * 4) % 4;
         if (progress >= 1) {
           player.x = player.toX; player.y = player.toY; player.drawX = player.x; player.drawY = player.y; player.moving = false;
           model.trail.unshift({ x: player.x, y: player.y }); model.trail = model.trail.slice(0, 14);
@@ -333,7 +348,12 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
         const next = player.path.shift()!;
         if (isWalkable(model.map, next) && worldDistance(player, next) === 1) {
           player.fromX = player.x; player.fromY = player.y; player.toX = next.x; player.toY = next.y;
-          player.direction = directionBetween(player, next); player.moveStarted = now; player.moving = true;
+          const dir = directionBetween(player, next);
+          player.direction = dir;
+          player.worldDir = directionFromDelta(next.x - player.x, next.y - player.y);
+          player.cardinalDir = cardinalFromDelta(next.x - player.x, next.y - player.y);
+          player.walkFrame = 0;
+          player.moveStarted = now; player.moving = true;
         }
       }
 
@@ -360,24 +380,28 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
       }
       for (const npc of model.map.npcs) {
         const sx = npc.x * DRAW_TILE + DRAW_TILE / 2 - cameraX; const sy = npc.y * DRAW_TILE + DRAW_TILE * .62 - cameraY;
-        items.push({ y: npc.y, draw: () => { drawPorter(ctx, sx, sy, "down", false, npc.palette, .72); drawLabel(ctx, npc.name, sx, sy - 34, "#ffe09a", true); drawLabel(ctx, npc.role, sx, sy - 24, "#c8b9cc", true); } });
+        const npcImg = imagesRef.current.get(worldIdleSpritePath(controller.game.zoneId, "adult", "south"));
+        items.push({ y: npc.y, draw: () => { if (npcImg) ctx.drawImage(npcImg, sx - 24, sy - 39, 48, 48); else drawPorter(ctx, sx, sy, "down", false, npc.palette, .72); drawLabel(ctx, npc.name, sx, sy - 34, "#ffe09a", true); drawLabel(ctx, npc.role, sx, sy - 24, "#c8b9cc", true); } });
       }
       // Ambient Porters make the outpost read as a social spawn without pretending to be online players.
       const crowd = [[-5,3],[-3,3],[-1,3],[1,3],[3,3],[5,3],[-5,5],[-2,5],[2,5],[5,5]];
+      const porterStages: Stage[] = ["adult", "adult", "hatchling", "adult", "legend", "adult", "hatchling", "adult", "legend", "adult"];
       crowd.forEach(([dx, dy], index) => {
         const tx = model.map.hub.x + 6 + dx; const ty = model.map.hub.y + dy;
         const sx = tx * DRAW_TILE + DRAW_TILE / 2 - cameraX; const sy = ty * DRAW_TILE + DRAW_TILE * .62 - cameraY;
-        items.push({ y: ty, draw: () => { drawPorter(ctx, sx, sy, index % 2 ? "left" : "right", (Math.floor(now / 500) + index) % 3 === 0, index + 1, .62); drawLabel(ctx, `Wayfarer ${index + 2}`, sx, sy - 27, "#d9c3df", true); } });
+        const porterImg = imagesRef.current.get(worldIdleSpritePath(controller.game.zoneId, porterStages[index], index % 2 ? "west" : "east"));
+        items.push({ y: ty, draw: () => { if (porterImg) ctx.drawImage(porterImg, sx - 24, sy - 39, 48, 48); else drawPorter(ctx, sx, sy, index % 2 ? "left" : "right", (Math.floor(now / 500) + index) % 3 === 0, index + 1, .62); drawLabel(ctx, `Wayfarer ${index + 2}`, sx, sy - 27, "#d9c3df", true); } });
       });
 
-      const enemyImage = imagesRef.current.get(creatureSpritePath(game.zoneId, game.enemy.isBoss ? "legend" : "adult"));
+      const enemyStage = game.enemy.isBoss ? "legend" : "adult";
+      const enemyImg = imagesRef.current.get(worldIdleSpritePath(game.zoneId, enemyStage, "south"));
       model.map.spawns.forEach((spawn, index) => {
         const sx = spawn.x * DRAW_TILE + DRAW_TILE / 2 - cameraX; const sy = spawn.y * DRAW_TILE + DRAW_TILE * .58 - cameraY;
         const active = index === model.target.spawnIndex;
         items.push({ y: spawn.y, draw: () => {
           ctx.save(); ctx.globalAlpha = active ? 1 : .68;
           if (active) { ctx.strokeStyle = game.enemy.isBoss ? "#ffd25e" : "#ef786f"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(sx, sy + 12, 24, 10, 0, 0, Math.PI * 2); ctx.stroke(); }
-          if (enemyImage) ctx.drawImage(enemyImage, sx - (active ? 38 : 27), sy - (active ? 54 : 39) + Math.sin(now / 350 + index) * 2, active ? 76 : 54, active ? 76 : 54);
+          if (enemyImg) ctx.drawImage(enemyImg, sx - 24, sy - 39 + Math.sin(now / 350 + index) * 2, 48, 48);
           else { ctx.fillStyle = active ? "#d7625f" : "#8a5963"; ctx.beginPath(); ctx.arc(sx, sy - 8, active ? 17 : 12, 0, Math.PI * 2); ctx.fill(); }
           if (active) {
             drawLabel(ctx, game.enemy.name, sx, sy - 52, game.enemy.isBoss ? "#ffe087" : "#fff0d2");
@@ -391,11 +415,26 @@ export default function IdleWorld({ controller }: { controller: IdleGameControll
       party.slice(1).forEach((creature, index) => {
         const trailPoint = model.trail[Math.min(model.trail.length - 1, 3 + index * 3)] ?? player;
         const sx = trailPoint.x * DRAW_TILE + DRAW_TILE / 2 - cameraX + (index ? 8 : -8); const sy = trailPoint.y * DRAW_TILE + DRAW_TILE * .65 - cameraY;
-        const image = imagesRef.current.get(creatureSpritePath(creature.species, creature.stage));
+        const trailIdx = Math.min(model.trail.length - 1, 3 + index * 3);
+        const nextPoint = model.trail[Math.max(0, trailIdx - 1)] ?? player;
+        const dir = directionFromDelta(trailPoint.x - nextPoint.x, trailPoint.y - nextPoint.y);
+        const image = imagesRef.current.get(worldIdleSpritePath(creature.species, creature.stage, dir));
         items.push({ y: trailPoint.y - .05 + index * .01, draw: () => { if (image) ctx.drawImage(image, sx - 24, sy - 39, 48, 48); } });
       });
       const playerX = player.drawX * DRAW_TILE + DRAW_TILE / 2 - cameraX; const playerY = player.drawY * DRAW_TILE + DRAW_TILE * .62 - cameraY;
-      items.push({ y: player.drawY, draw: () => { drawPorter(ctx, playerX, playerY, player.direction, player.moving, 0, .9); drawLabel(ctx, "Wayfarer_01", playerX, playerY - 43, "#71e4f2"); } });
+      items.push({ y: player.drawY, draw: () => {
+        const playerImg = imagesRef.current.get(
+          player.moving
+            ? worldWalkSpritePath(controller.game.zoneId, "adult", player.cardinalDir, player.walkFrame)
+            : worldIdleSpritePath(controller.game.zoneId, "adult", player.worldDir)
+        );
+        if (playerImg) {
+          ctx.drawImage(playerImg, playerX - 24, playerY - 39, 48, 48);
+        } else {
+          drawPorter(ctx, playerX, playerY, player.direction, player.moving, 0, .9);
+        }
+        drawLabel(ctx, "Wayfarer_01", playerX, playerY - 43, "#71e4f2");
+      } });
       items.sort((a, b) => a.y - b.y); for (const item of items) item.draw();
 
       model.hitParticles = model.hitParticles.filter((particle) => now - particle.born < 650);

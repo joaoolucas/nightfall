@@ -1,0 +1,1312 @@
+{
+  "version": 1,
+  "generated_at": "2026-08-17T02:13:09.876Z",
+  "characters": {
+    "wayfarer": {
+      "character_id": "3ed4671b-ce5e-4b63-b4b7-af8b9e832bf1",
+      "prompt": "young caravan explorer wearing a deep violet hooded travel cloak, warm amber scarf, leather satchel, sturdy boots, small glowing portal compass at belt, no weapon, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "mannequin",
+      "seed": 51021,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_complete": true
+    },
+    "pathfinder-tavi": {
+      "character_id": "f8d992de-51ed-422d-8222-9a022eac9138",
+      "create_job_id": "f83bc95a-2651-4194-9f02-8d2d0125be3e",
+      "prompt": "agile caravan pathfinder in moss green hood and layered travel leathers, rolled route map, amber compass, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "mannequin",
+      "seed": 51033,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down"
+    },
+    "healer-mira": {
+      "character_id": "2664895f-9504-4f11-b75f-e251f6217c5b",
+      "create_job_id": "52aab313-40f9-41b5-8127-c2cb296937cc",
+      "prompt": "kind caravan healer wearing cream and rose travel robes, small medicine satchel, silver hair, gentle teal healing charm, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "mannequin",
+      "seed": 51031,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down"
+    },
+    "quartermaster-orin": {
+      "character_id": "4b3a687a-f4c2-44bf-a400-ca3c113c65eb",
+      "create_job_id": "f2e2fc34-f0b5-43f0-938a-f1faedd4813f",
+      "prompt": "sturdy caravan quartermaster in brown leather apron and violet tunic, supply ledger at belt, short copper hair, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "mannequin",
+      "seed": 51032,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down"
+    },
+    "wayfarer-blue": {
+      "character_id": "4bee3b86-b5fe-45c8-a6c0-0cd03d898ecd",
+      "create_job_id": "484b3dff-3462-4981-8e46-ea97bdf7fc39",
+      "prompt": "caravan traveler in indigo blue hooded cloak, pale scarf and compact travel pack, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "mannequin",
+      "seed": 51035,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down"
+    },
+    "wayfarer-green": {
+      "character_id": "87f6b299-d7e1-4e96-b845-9679dd81cd49",
+      "create_job_id": "101a4939-faf5-471c-ba41-0feb5ff3f260",
+      "prompt": "caravan traveler in forest green hooded cloak, gold scarf and bedroll, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "mannequin",
+      "seed": 51036,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down"
+    },
+    "wayfarer-red": {
+      "character_id": "871332fc-1fde-4328-b618-c121b878ab15",
+      "create_job_id": "816a6627-eda7-447e-9568-2ced32b8e4f2",
+      "prompt": "caravan traveler in brick red hooded cloak, cream scarf and small satchel, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "mannequin",
+      "seed": 51037,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down"
+    },
+    "scout-sable": {
+      "character_id": "2a2469a1-2636-41c4-b3d0-dd68381fc125",
+      "create_job_id": "6f3a89cc-5480-4c7e-9ba8-f6bd131f5dcb",
+      "prompt": "watchful Warden scout in charcoal cloak with violet trim, crystal spyglass, pale braided hair, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "mannequin",
+      "seed": 51034,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down"
+    },
+    "cinderling-adult": {
+      "character_id": "8fe817f2-a1c0-45d1-abf3-5f4ce2a3d2df",
+      "create_job_id": "f05e8cba-0ce1-4fb2-a543-1ddf5c27caba",
+      "prompt": "confident mature form with clear readable features, smoldering salamander companion, glowing ember scales, broad lizard head, little flames along its back, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "dog",
+      "seed": 52002,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "1c61d629-3704-4572-821a-34900bf62ea3",
+        "d1f04f3a-cd50-4ca5-92e9-cd7e739e52d2",
+        "e54a35e8-e76f-4f1c-abf0-1cd73a849ee7",
+        "9255d6eb-db66-4822-9a83-d097d446ab92"
+      ],
+      "walk_complete": true
+    },
+    "cinderling-hatchling": {
+      "character_id": "8610d7b9-8622-4457-9704-6b014f4ba66e",
+      "create_job_id": "39bb7771-87b4-4577-b3e0-0201af6ca25b",
+      "prompt": "tiny cute baby form with simple rounded proportions, smoldering salamander companion, glowing ember scales, broad lizard head, little flames along its back, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "dog",
+      "seed": 52001,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "976537ed-4014-485c-aa6b-70442b137a09",
+        "94bb8332-7ab6-40e1-a06a-2ae9b0d2806e",
+        "90d86182-37f3-49c8-8890-0755efa407c1",
+        "cde4da2f-90a8-4939-8811-82edf55e7380"
+      ],
+      "walk_complete": true
+    },
+    "cinderling-legend": {
+      "character_id": "ef8047f5-d17c-4a37-ac3e-07ffe02aa840",
+      "create_job_id": "51f62a35-d6f4-40c0-a347-0d93d522b888",
+      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, smoldering salamander companion, glowing ember scales, broad lizard head, little flames along its back, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "dog",
+      "seed": 52003,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "003cb219-19e3-4dcb-af77-b8b4be507d9c",
+        "f61f975a-3411-4c96-b0b7-ef4d32867978",
+        "bc4709a7-a985-4f88-83b0-d451bfd24974",
+        "2e6c6ac4-e517-4ccf-bc0e-7e9ff94b83aa"
+      ],
+      "walk_complete": true
+    },
+    "ripple-hatchling": {
+      "character_id": "62990fb6-285c-4183-b3ff-0808698d645d",
+      "create_job_id": "96f285ec-2303-4d6d-a348-2ce7e45e9c3f",
+      "prompt": "tiny cute baby form with simple rounded proportions, round water frog companion, translucent blue body, huge kind eyes, rippling water collar, squat on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "bear",
+      "seed": 52021,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "4aab832e-410e-46e4-8d90-c127823b1006",
+        "d9adee13-75a6-42fa-8753-ba52eb59b7fa",
+        "d9da4dbe-2994-4c57-b2a2-9ace23004069",
+        "4109d3b8-00d9-4f34-baa8-fb093b395c9f"
+      ],
+      "walk_complete": true
+    },
+    "ripple-adult": {
+      "character_id": "c57ca774-053c-41fd-8003-c83ea08f381c",
+      "create_job_id": "7407aeaa-339b-44b1-a45c-b591ec8ae1fc",
+      "prompt": "confident mature form with clear readable features, round water frog companion, translucent blue body, huge kind eyes, rippling water collar, squat on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "bear",
+      "seed": 52022,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "60de109d-c588-4cae-97e6-140035318bab",
+        "8170fe59-1b17-4741-b507-823ee8a971f0",
+        "38fe4bbc-ba50-4985-95b8-64196f8ee20d",
+        "fb6b18e5-8a9a-4c16-9fb7-b3a132c197f8"
+      ],
+      "walk_complete": true
+    },
+    "ripple-legend": {
+      "character_id": "26a9a52c-c064-4fd6-9610-1e00179eaf0b",
+      "create_job_id": "32bc79a5-d97c-40c2-b4c0-55aacda52c09",
+      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, round water frog companion, translucent blue body, huge kind eyes, rippling water collar, squat on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "bear",
+      "seed": 52023,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "39f465b3-c67c-4b71-a558-eae17c7079f5",
+        "0f49d5c1-03b7-4015-91ff-c400abcd09c1",
+        "d24d11eb-d5c8-416e-9bf7-e61d64d5a00a",
+        "0adfcf1d-b806-4b85-b725-74095865586d"
+      ],
+      "walk_complete": true
+    },
+    "bramble-hatchling": {
+      "character_id": "9f846aab-ee92-436d-ac7d-3df8b4e90ffe",
+      "create_job_id": "ee287bda-c478-4234-94a3-aae960c01471",
+      "prompt": "tiny cute baby form with simple rounded proportions, leafy fox companion, green leaf fur, cream face, curling living vine tail, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "dog",
+      "seed": 52041,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "ebfe46ad-d6d8-487c-8ae9-8e50fa2c4d5e",
+        "d0653b31-2ebb-4cd0-93b0-ab47704f9871",
+        "8dc10ddf-9537-4d6a-bada-d3bf6795e009",
+        "ae1649a4-1f84-48d9-a25b-d822507e18b7"
+      ],
+      "walk_complete": true
+    },
+    "bramble-adult": {
+      "character_id": "e7ce578a-50d8-47b7-9d0e-218589a62caa",
+      "create_job_id": "1c9bc2eb-3807-4365-885f-5206486cc685",
+      "prompt": "confident mature form with clear readable features, leafy fox companion, green leaf fur, cream face, curling living vine tail, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "dog",
+      "seed": 52042,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "d90fe1c6-22bb-411b-ba95-7368c3c6a7ac",
+        "cf4064e7-f528-432c-80c4-94786a362807",
+        "cb71caee-b52e-489f-9e3a-fd29de8e2f5d",
+        "3bb6303d-6e75-41ef-8258-351d8cd102d6"
+      ],
+      "walk_complete": true
+    },
+    "bramble-legend": {
+      "character_id": "857e202c-87c0-4959-85b9-ddc5582c416a",
+      "create_job_id": "369dcd0a-8dcf-4ea7-a7ec-8b849eb62485",
+      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, leafy fox companion, green leaf fur, cream face, curling living vine tail, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "dog",
+      "seed": 52043,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "9a721ab6-f4af-49e2-a6da-165308b49902",
+        "f20c6cea-73e1-4ffc-bc6e-d9e4c94423ba",
+        "4fbd0738-62b3-4f83-98bd-1fb74b2e915c",
+        "318de3a8-3daf-48dd-9e52-edab87e364c1"
+      ],
+      "walk_complete": true
+    },
+    "shard-hatchling": {
+      "character_id": "5c789589-083e-4fa7-9d64-e1f78f52f1f3",
+      "create_job_id": "5ff99a9a-737f-4fcc-9ac2-18991a71e440",
+      "prompt": "tiny cute baby form with simple rounded proportions, round geode bear companion, stone plates and violet crystal growths, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "bear",
+      "seed": 52061,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "8423cd15-7a91-416b-88e1-a626dac8476b",
+        "ad02c459-0b79-4caf-aad0-475886786ed5",
+        "e38b5062-64db-4ab0-903b-a21ddb7a173c",
+        "8734c8cb-5620-45b2-b3c3-8cc8b66e3273"
+      ],
+      "walk_complete": true
+    },
+    "shard-adult": {
+      "character_id": "34123e64-a8ed-41e5-b0c5-7464eb7cc760",
+      "create_job_id": "9240f3a1-01e7-4459-80c4-4888bb445d21",
+      "prompt": "confident mature form with clear readable features, round geode bear companion, stone plates and violet crystal growths, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "bear",
+      "seed": 52062,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "046e4a3b-0e85-4f58-9df8-93605c89a0b4",
+        "44ade662-a44e-4c0e-829e-700ce6497d79",
+        "83d9abd0-082d-4161-acdc-ef9c06fbe38e",
+        "89e5a286-d3ed-4df4-a338-24d40f06a6c8"
+      ],
+      "walk_complete": true
+    },
+    "shard-legend": {
+      "character_id": "f1b2bd4d-9236-4932-b816-d225e42f8f4e",
+      "create_job_id": "c34b229b-b290-46de-9426-db0cb3d74c91",
+      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, round geode bear companion, stone plates and violet crystal growths, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "bear",
+      "seed": 52063,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "d70ab916-f742-4021-a25d-af045243fa96",
+        "a0d4da13-cc94-4360-83c8-02752ee8abe9",
+        "e27eca80-830b-41cb-a6eb-5a53f0617e6d",
+        "889eaf12-7be4-48c9-8cd7-906275e8211f"
+      ],
+      "walk_complete": true
+    },
+    "wisp-hatchling": {
+      "character_id": "f8a2c1ba-8f3b-43c0-b852-8863f3bde539",
+      "create_job_id": "7b6e1ec3-933c-4ecd-9898-48a80e91bb96",
+      "prompt": "tiny cute baby form with simple rounded proportions, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "cat",
+      "seed": 52081,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "6423b584-98a0-41b9-b3a2-63f00dd8498d",
+        "e14174b6-5fc9-4ee0-bd44-e0769adf71c4",
+        "354ba37f-2353-4f67-96d9-426c1a3e6980",
+        "4d2277cc-70dc-48eb-9ce1-380b13430bf6"
+      ],
+      "walk_complete": true
+    },
+    "wisp-legend": {
+      "character_id": "db909e5b-d05d-42d3-a5b0-bdd81e895405",
+      "create_job_id": "40f81070-1f92-40e4-886f-db6573b5f421",
+      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "cat",
+      "seed": 52083,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "1921c41e-c7ae-478c-8412-61be194a6d42",
+        "38e93986-4696-4f1d-b0d5-853d15e4b9bd",
+        "7d97e815-0e8a-453a-99b5-eb30d5924eff",
+        "64adddf0-cb50-4ac9-9e83-a3fde9f85ce7"
+      ],
+      "walk_complete": true
+    },
+    "aurora-hatchling": {
+      "character_id": "4fb834de-a97a-40b8-9c8f-93a2544823db",
+      "create_job_id": "6937487e-271e-49d2-b9de-0692316e4600",
+      "prompt": "tiny cute baby form with simple rounded proportions, mystical feathered kite companion, pearly body, wide iridescent aurora wings, floating above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "mannequin",
+      "seed": 52101,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "ddbd02d7-d807-4547-a6a1-848085079077",
+        "09dd627a-ea54-4b79-92d5-acef067ba70a",
+        "3a44b9fa-98cd-4193-88b8-6068a6d74601",
+        "e2fb7dd2-310a-45f9-b31d-189fc1ad6aa7"
+      ],
+      "walk_complete": true
+    },
+    "wisp-adult": {
+      "character_id": "bb4fe071-cb6d-4d17-b8f8-dce2b29b6b24",
+      "create_job_id": "a423d9b9-4db0-49bd-bfda-f1b932a81cfe",
+      "prompt": "confident mature form with clear readable features, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "cat",
+      "seed": 52082,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "dc008f25-cae0-42a9-9aa4-2e19c9fb9f25",
+        "4045082a-166e-4046-b0f6-2d77caf12f0c",
+        "d504929e-dd59-4984-bead-56de1f345f4d",
+        "9b941987-f5f6-4c2f-9fe7-55fd5c48f2b0"
+      ],
+      "walk_complete": true
+    },
+    "aurora-adult": {
+      "character_id": "bb2a6a54-95e5-4853-a26f-852c4f90a95f",
+      "create_job_id": "60baf520-a407-438e-b84d-9516002572c1",
+      "prompt": "confident mature form with clear readable features, mystical feathered kite companion, pearly body, wide iridescent aurora wings, floating above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "mannequin",
+      "seed": 52102,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "f20f16fe-43c5-4555-b3cc-7458541e53dc",
+        "8a722310-b40c-4b30-a6cb-fbd3e4d9a613",
+        "298dd3f5-cb12-4b7d-8e68-be2a56622b53",
+        "ef02ea70-3753-489b-b628-c2150551eed6"
+      ],
+      "walk_complete": true
+    },
+    "aurora-legend": {
+      "character_id": "204ddc4d-830a-47ca-8433-06fdad6507ba",
+      "create_job_id": "444b40f2-e326-4fcc-b52a-8bf82e4a9f5f",
+      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, mystical feathered kite companion, pearly body, wide iridescent aurora wings, floating above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "mannequin",
+      "seed": 52103,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "walk_job_ids": [
+        "ad623d68-264a-41d0-9e61-159dc6391329",
+        "fdaf204c-45bf-433f-9892-d31a5acf1015",
+        "6c286f70-0d77-4e93-bd4f-ded2798491cc",
+        "f0c36160-29fb-44a4-bd33-ede999ea9004"
+      ],
+      "walk_complete": true
+    }
+  },
+  "assets": {
+    "ember-tile-path": {
+      "status": "completed",
+      "prompt": "worn warm brown ash trail with small charcoal pebbles, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53001,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/ember/path.png"
+    },
+    "ember-tile-ground": {
+      "status": "completed",
+      "prompt": "charcoal volcanic earth with burnt umber stones and faint orange ember flecks, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53000,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/ember/ground.png"
+    },
+    "ember-tile-plaza": {
+      "status": "completed",
+      "prompt": "orderly burgundy stone pavers with subtle brass seams, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53002,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/ember/plaza.png"
+    },
+    "ember-tile-hazard": {
+      "status": "completed",
+      "prompt": "black obsidian fissure with hot orange cracks, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53004,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/ember/hazard.png"
+    },
+    "ember-tile-water": {
+      "status": "completed",
+      "prompt": "slow glowing red-orange lava surface with dark cooling crust, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53003,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/ember/water.png"
+    },
+    "ember-prop-tree": {
+      "status": "completed",
+      "prompt": "biome tree with trunk and broad canopy, readable from high top-down, transparent background, adapted to ember biome, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54000,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/ember/tree.png"
+    },
+    "ember-prop-rock": {
+      "status": "completed",
+      "prompt": "cluster of natural biome rocks, readable from high top-down, transparent background, adapted to ember biome, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54001,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/ember/rock.png"
+    },
+    "ember-prop-shrub": {
+      "status": "completed",
+      "prompt": "small biome shrub and ground foliage cluster, transparent background, adapted to ember biome, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54003,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/ember/shrub.png"
+    },
+    "ember-prop-crystal": {
+      "status": "completed",
+      "prompt": "glowing elemental waypoint crystal on a small stone base, transparent background, adapted to ember biome, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54002,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/ember/crystal.png"
+    },
+    "ember-prop-lantern": {
+      "status": "completed",
+      "prompt": "caravan trail lantern on a short dark metal post, warm amber glow, transparent background, adapted to ember biome, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54004,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/ember/lantern.png"
+    },
+    "ember-prop-ruin": {
+      "status": "completed",
+      "prompt": "small broken ancient portal-stone ruin, weathered and mossy, transparent background, adapted to ember biome, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54005,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/ember/ruin.png"
+    },
+    "ember-structure-tent": {
+      "status": "completed",
+      "prompt": "small caravan supply tent seen from high top-down, burgundy canvas, amber support pole, travel crates, transparent background, isolated structure, adapted to ember biome, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55001,
+      "size": [
+        96,
+        96
+      ],
+      "output": "structures/ember/tent.png"
+    },
+    "ember-structure-lodge": {
+      "status": "completed",
+      "prompt": "complete Portage caravan lodge building seen from high top-down, violet timber walls, warm windows, amber roof trim, central dark doorway, transparent background, isolated building, adapted to ember biome, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55000,
+      "size": [
+        224,
+        128
+      ],
+      "output": "structures/ember/lodge.png"
+    },
+    "creek-tile-ground": {
+      "status": "completed",
+      "prompt": "lush teal riverbank grass with tiny wet leaves, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53100,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/creek/ground.png"
+    },
+    "ember-impact": {
+      "status": "completed",
+      "prompt": "single elemental combat impact burst for ember biome, four-frame feeling condensed into one effect sprite, transparent background, palette charcoal, burnt umber, burgundy, ember orange, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 56000,
+      "size": [
+        64,
+        64
+      ],
+      "output": "effects/ember-impact.png"
+    },
+    "creek-tile-water": {
+      "status": "completed",
+      "prompt": "clear flowing blue creek water with soft white ripples, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53103,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/creek/water.png"
+    },
+    "creek-tile-plaza": {
+      "status": "completed",
+      "prompt": "pale blue-gray ferry-station pavers with water-worn edges, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53102,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/creek/plaza.png"
+    },
+    "creek-tile-path": {
+      "status": "completed",
+      "prompt": "smooth mossy stepping stones and packed river silt, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53101,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/creek/path.png"
+    },
+    "creek-tile-hazard": {
+      "status": "completed",
+      "prompt": "deep navy fast current with pale foam, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53104,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/creek/hazard.png"
+    },
+    "creek-prop-tree": {
+      "status": "completed",
+      "prompt": "biome tree with trunk and broad canopy, readable from high top-down, transparent background, adapted to creek biome, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54100,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/creek/tree.png"
+    },
+    "creek-prop-rock": {
+      "status": "completed",
+      "prompt": "cluster of natural biome rocks, readable from high top-down, transparent background, adapted to creek biome, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54101,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/creek/rock.png"
+    },
+    "creek-prop-shrub": {
+      "status": "completed",
+      "prompt": "small biome shrub and ground foliage cluster, transparent background, adapted to creek biome, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54103,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/creek/shrub.png"
+    },
+    "creek-prop-crystal": {
+      "status": "completed",
+      "prompt": "glowing elemental waypoint crystal on a small stone base, transparent background, adapted to creek biome, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54102,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/creek/crystal.png"
+    },
+    "creek-prop-lantern": {
+      "status": "completed",
+      "prompt": "caravan trail lantern on a short dark metal post, warm amber glow, transparent background, adapted to creek biome, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54104,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/creek/lantern.png"
+    },
+    "creek-prop-ruin": {
+      "status": "completed",
+      "prompt": "small broken ancient portal-stone ruin, weathered and mossy, transparent background, adapted to creek biome, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54105,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/creek/ruin.png"
+    },
+    "creek-structure-tent": {
+      "status": "completed",
+      "prompt": "small caravan supply tent seen from high top-down, burgundy canvas, amber support pole, travel crates, transparent background, isolated structure, adapted to creek biome, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55101,
+      "size": [
+        96,
+        96
+      ],
+      "output": "structures/creek/tent.png"
+    },
+    "creek-structure-lodge": {
+      "status": "completed",
+      "prompt": "complete Portage caravan lodge building seen from high top-down, violet timber walls, warm windows, amber roof trim, central dark doorway, transparent background, isolated building, adapted to creek biome, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55100,
+      "size": [
+        224,
+        128
+      ],
+      "output": "structures/creek/lodge.png"
+    },
+    "grove-tile-ground": {
+      "status": "completed",
+      "prompt": "dense emerald forest floor with clover and scattered leaves, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53200,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/grove/ground.png"
+    },
+    "creek-impact": {
+      "status": "completed",
+      "prompt": "single elemental combat impact burst for creek biome, four-frame feeling condensed into one effect sprite, transparent background, palette teal, river blue, moss green, pale stone, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 56001,
+      "size": [
+        64,
+        64
+      ],
+      "output": "effects/creek-impact.png"
+    },
+    "grove-tile-path": {
+      "status": "completed",
+      "prompt": "warm ochre woodland dirt with roots and leaf litter, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53201,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/grove/path.png"
+    },
+    "grove-tile-plaza": {
+      "status": "completed",
+      "prompt": "living root-woven wooden pavers with green moss seams, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53202,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/grove/plaza.png"
+    },
+    "grove-tile-water": {
+      "status": "completed",
+      "prompt": "dark green woodland pond water with small lily reflections, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53203,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/grove/water.png"
+    },
+    "grove-tile-hazard": {
+      "status": "completed",
+      "prompt": "thorny root tangle covering dark soil, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53204,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/grove/hazard.png"
+    },
+    "grove-prop-tree": {
+      "status": "completed",
+      "prompt": "biome tree with trunk and broad canopy, readable from high top-down, transparent background, adapted to grove biome, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54200,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/grove/tree.png"
+    },
+    "grove-prop-rock": {
+      "status": "completed",
+      "prompt": "cluster of natural biome rocks, readable from high top-down, transparent background, adapted to grove biome, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54201,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/grove/rock.png"
+    },
+    "grove-prop-crystal": {
+      "status": "completed",
+      "prompt": "glowing elemental waypoint crystal on a small stone base, transparent background, adapted to grove biome, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54202,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/grove/crystal.png"
+    },
+    "grove-prop-shrub": {
+      "status": "completed",
+      "prompt": "small biome shrub and ground foliage cluster, transparent background, adapted to grove biome, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54203,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/grove/shrub.png"
+    },
+    "grove-prop-ruin": {
+      "status": "completed",
+      "prompt": "small broken ancient portal-stone ruin, weathered and mossy, transparent background, adapted to grove biome, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54205,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/grove/ruin.png"
+    },
+    "grove-prop-lantern": {
+      "status": "completed",
+      "prompt": "caravan trail lantern on a short dark metal post, warm amber glow, transparent background, adapted to grove biome, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54204,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/grove/lantern.png"
+    },
+    "grove-structure-tent": {
+      "status": "completed",
+      "prompt": "small caravan supply tent seen from high top-down, burgundy canvas, amber support pole, travel crates, transparent background, isolated structure, adapted to grove biome, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55201,
+      "size": [
+        96,
+        96
+      ],
+      "output": "structures/grove/tent.png"
+    },
+    "grove-impact": {
+      "status": "completed",
+      "prompt": "single elemental combat impact burst for grove biome, four-frame feeling condensed into one effect sprite, transparent background, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 56002,
+      "size": [
+        64,
+        64
+      ],
+      "output": "effects/grove-impact.png"
+    },
+    "stone-tile-ground": {
+      "status": "completed",
+      "prompt": "cool gray cave floor with tiny violet mineral specks, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53300,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/stone/ground.png"
+    },
+    "stone-tile-path": {
+      "status": "completed",
+      "prompt": "flattened slate trail with pale worn edges, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53301,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/stone/path.png"
+    },
+    "grove-structure-lodge": {
+      "status": "completed",
+      "prompt": "complete Portage caravan lodge building seen from high top-down, violet timber walls, warm windows, amber roof trim, central dark doorway, transparent background, isolated building, adapted to grove biome, palette emerald, moss, bark brown, firefly gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55200,
+      "size": [
+        224,
+        128
+      ],
+      "output": "structures/grove/lodge.png"
+    },
+    "stone-tile-plaza": {
+      "status": "completed",
+      "prompt": "precise geode-cut stone pavers with violet crystal seams, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53302,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/stone/plaza.png"
+    },
+    "stone-tile-hazard": {
+      "status": "completed",
+      "prompt": "bottomless dark chasm edged by fractured slate, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53304,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/stone/hazard.png"
+    },
+    "stone-tile-water": {
+      "status": "completed",
+      "prompt": "deep underground cobalt pool with mineral shimmer, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53303,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/stone/water.png"
+    },
+    "stone-prop-tree": {
+      "status": "completed",
+      "prompt": "biome tree with trunk and broad canopy, readable from high top-down, transparent background, adapted to stone biome, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54300,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/stone/tree.png"
+    },
+    "stone-prop-rock": {
+      "status": "completed",
+      "prompt": "cluster of natural biome rocks, readable from high top-down, transparent background, adapted to stone biome, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54301,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/stone/rock.png"
+    },
+    "stone-prop-crystal": {
+      "status": "completed",
+      "prompt": "glowing elemental waypoint crystal on a small stone base, transparent background, adapted to stone biome, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54302,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/stone/crystal.png"
+    },
+    "stone-prop-shrub": {
+      "status": "completed",
+      "prompt": "small biome shrub and ground foliage cluster, transparent background, adapted to stone biome, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54303,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/stone/shrub.png"
+    },
+    "stone-prop-lantern": {
+      "status": "completed",
+      "prompt": "caravan trail lantern on a short dark metal post, warm amber glow, transparent background, adapted to stone biome, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54304,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/stone/lantern.png"
+    },
+    "stone-prop-ruin": {
+      "status": "completed",
+      "prompt": "small broken ancient portal-stone ruin, weathered and mossy, transparent background, adapted to stone biome, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54305,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/stone/ruin.png"
+    },
+    "stone-structure-lodge": {
+      "status": "completed",
+      "prompt": "complete Portage caravan lodge building seen from high top-down, violet timber walls, warm windows, amber roof trim, central dark doorway, transparent background, isolated building, adapted to stone biome, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55300,
+      "size": [
+        224,
+        128
+      ],
+      "output": "structures/stone/lodge.png"
+    },
+    "stone-structure-tent": {
+      "status": "completed",
+      "prompt": "small caravan supply tent seen from high top-down, burgundy canvas, amber support pole, travel crates, transparent background, isolated structure, adapted to stone biome, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55301,
+      "size": [
+        96,
+        96
+      ],
+      "output": "structures/stone/tent.png"
+    },
+    "mist-tile-ground": {
+      "status": "completed",
+      "prompt": "dusky blue-gray marsh grass under thin lavender fog, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53400,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/mist/ground.png"
+    },
+    "mist-tile-path": {
+      "status": "completed",
+      "prompt": "raised weathered timber and muted gray mud trail, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53401,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/mist/path.png"
+    },
+    "mist-tile-plaza": {
+      "status": "completed",
+      "prompt": "moonlit violet stone pavers with fog-softened seams, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53402,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/mist/plaza.png"
+    },
+    "mist-tile-water": {
+      "status": "completed",
+      "prompt": "inky indigo marsh water with pale ghostly wisps, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53403,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/mist/water.png"
+    },
+    "stone-impact": {
+      "status": "completed",
+      "prompt": "single elemental combat impact burst for stone biome, four-frame feeling condensed into one effect sprite, transparent background, palette slate gray, violet crystal, cobalt, silver, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 56003,
+      "size": [
+        64,
+        64
+      ],
+      "output": "effects/stone-impact.png"
+    },
+    "mist-tile-hazard": {
+      "status": "completed",
+      "prompt": "dense magical violet fog vortex over black marsh, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53404,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/mist/hazard.png"
+    },
+    "mist-prop-crystal": {
+      "status": "completed",
+      "prompt": "glowing elemental waypoint crystal on a small stone base, transparent background, adapted to mist biome, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54402,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/mist/crystal.png"
+    },
+    "mist-prop-rock": {
+      "status": "completed",
+      "prompt": "cluster of natural biome rocks, readable from high top-down, transparent background, adapted to mist biome, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54401,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/mist/rock.png"
+    },
+    "mist-prop-tree": {
+      "status": "completed",
+      "prompt": "biome tree with trunk and broad canopy, readable from high top-down, transparent background, adapted to mist biome, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54400,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/mist/tree.png"
+    },
+    "mist-prop-shrub": {
+      "status": "completed",
+      "prompt": "small biome shrub and ground foliage cluster, transparent background, adapted to mist biome, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54403,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/mist/shrub.png"
+    },
+    "mist-prop-lantern": {
+      "status": "completed",
+      "prompt": "caravan trail lantern on a short dark metal post, warm amber glow, transparent background, adapted to mist biome, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54404,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/mist/lantern.png"
+    },
+    "mist-prop-ruin": {
+      "status": "completed",
+      "prompt": "small broken ancient portal-stone ruin, weathered and mossy, transparent background, adapted to mist biome, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54405,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/mist/ruin.png"
+    },
+    "mist-structure-tent": {
+      "status": "completed",
+      "prompt": "small caravan supply tent seen from high top-down, burgundy canvas, amber support pole, travel crates, transparent background, isolated structure, adapted to mist biome, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55401,
+      "size": [
+        96,
+        96
+      ],
+      "output": "structures/mist/tent.png"
+    },
+    "mist-impact": {
+      "status": "completed",
+      "prompt": "single elemental combat impact burst for mist biome, four-frame feeling condensed into one effect sprite, transparent background, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 56004,
+      "size": [
+        64,
+        64
+      ],
+      "output": "effects/mist-impact.png"
+    },
+    "mist-structure-lodge": {
+      "status": "completed",
+      "prompt": "complete Portage caravan lodge building seen from high top-down, violet timber walls, warm windows, amber roof trim, central dark doorway, transparent background, isolated building, adapted to mist biome, palette indigo, lavender, blue gray, ghostlight, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55400,
+      "size": [
+        224,
+        128
+      ],
+      "output": "structures/mist/lodge.png"
+    },
+    "sky-tile-plaza": {
+      "status": "completed",
+      "prompt": "ivory and blue celestial pavers with gold seams, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53502,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/sky/plaza.png"
+    },
+    "sky-tile-ground": {
+      "status": "completed",
+      "prompt": "soft turquoise floating-island grass with tiny golden flowers, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53500,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/sky/ground.png"
+    },
+    "sky-tile-path": {
+      "status": "completed",
+      "prompt": "pale sunlit sandstone trail with wind-swept edges, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53501,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/sky/path.png"
+    },
+    "sky-tile-hazard": {
+      "status": "completed",
+      "prompt": "deep starry blue open sky void with drifting cloud edges, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53504,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/sky/hazard.png"
+    },
+    "sky-tile-water": {
+      "status": "completed",
+      "prompt": "bright reflective sky pool with aurora colors, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, seamless square terrain texture, orthographic top-down tile, edge-to-edge texture, no objects, no perspective, no border",
+      "seed": 53503,
+      "size": [
+        32,
+        32
+      ],
+      "output": "tiles/sky/water.png"
+    },
+    "sky-prop-tree": {
+      "status": "completed",
+      "prompt": "biome tree with trunk and broad canopy, readable from high top-down, transparent background, adapted to sky biome, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54500,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/sky/tree.png"
+    },
+    "sky-prop-rock": {
+      "status": "completed",
+      "prompt": "cluster of natural biome rocks, readable from high top-down, transparent background, adapted to sky biome, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54501,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/sky/rock.png"
+    },
+    "sky-prop-crystal": {
+      "status": "completed",
+      "prompt": "glowing elemental waypoint crystal on a small stone base, transparent background, adapted to sky biome, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54502,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/sky/crystal.png"
+    },
+    "sky-prop-shrub": {
+      "status": "completed",
+      "prompt": "small biome shrub and ground foliage cluster, transparent background, adapted to sky biome, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54503,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/sky/shrub.png"
+    },
+    "sky-prop-ruin": {
+      "status": "completed",
+      "prompt": "small broken ancient portal-stone ruin, weathered and mossy, transparent background, adapted to sky biome, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54505,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/sky/ruin.png"
+    },
+    "sky-prop-lantern": {
+      "status": "completed",
+      "prompt": "caravan trail lantern on a short dark metal post, warm amber glow, transparent background, adapted to sky biome, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 54504,
+      "size": [
+        64,
+        64
+      ],
+      "output": "props/sky/lantern.png"
+    },
+    "sky-structure-lodge": {
+      "status": "completed",
+      "prompt": "complete Portage caravan lodge building seen from high top-down, violet timber walls, warm windows, amber roof trim, central dark doorway, transparent background, isolated building, adapted to sky biome, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55500,
+      "size": [
+        224,
+        128
+      ],
+      "output": "structures/sky/lodge.png"
+    },
+    "sky-structure-tent": {
+      "status": "completed",
+      "prompt": "small caravan supply tent seen from high top-down, burgundy canvas, amber support pole, travel crates, transparent background, isolated structure, adapted to sky biome, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 55501,
+      "size": [
+        96,
+        96
+      ],
+      "output": "structures/sky/tent.png"
+    },
+    "sky-impact": {
+      "status": "completed",
+      "prompt": "single elemental combat impact burst for sky biome, four-frame feeling condensed into one effect sprite, transparent background, palette turquoise, ivory, aurora violet, sunlight gold, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character",
+      "seed": 56005,
+      "size": [
+        64,
+        64
+      ],
+      "output": "effects/sky-impact.png"
+    }
+  }
+}
