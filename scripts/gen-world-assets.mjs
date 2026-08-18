@@ -34,6 +34,7 @@ const option = (name) => {
   return inline?.slice(name.length + 1);
 };
 const groups = new Set((option("--group") ?? "").split(",").filter(Boolean));
+const regenerate = new Set((option("--regenerate") ?? "").split(",").filter(Boolean));
 const only = new Set((option("--only") ?? "").split(",").filter(Boolean));
 
 if (!dryRun && !estimate && !KEY) {
@@ -66,13 +67,23 @@ const SPECIES = [
 ];
 const STAGES = [
   { id: "hatchling", detail: "tiny cute baby form with simple rounded proportions", seed: 1 },
-  { id: "adult", detail: "confident mature form with clear readable features", seed: 2 },
+  { id: "adult", detail: "fully grown animal with a heavy readable silhouette", seed: 2 },
   { id: "legend", detail: "majestic evolved form with radiant elemental crown and larger silhouette", seed: 3 },
 ];
+/**
+ * Beast species need this spelled out. "on all fours" alone was not enough:
+ * the generator still produced upright, bearded, human-faced figures for the
+ * salamander and the geode bear, because nothing in the prompt ruled a person
+ * out. Aurora is deliberately exempt — it is built on the humanoid skeleton.
+ */
+const BEAST_CLAUSE = "a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person";
+
 const CREATURES = SPECIES.flatMap((species, speciesIndex) => STAGES.map((stage) => ({
   id: `${species.id}-${stage.id}`,
   name: `${species.id} ${stage.id}`,
-  desc: `${stage.detail}, ${species.desc}`,
+  desc: species.template === "mannequin"
+    ? `${stage.detail}, ${species.desc}`
+    : `${stage.detail}, ${species.desc}, ${BEAST_CLAUSE}`,
   template: species.template,
   animate: true,
   seed: 52000 + speciesIndex * 20 + stage.seed,
@@ -194,6 +205,7 @@ const ITEMS = ITEM_DESCRIPTIONS.map(([id, description], index) => ({
 
 const CATALOG = [...CHARACTERS, ...ENVIRONMENT, ...ITEMS];
 const selected = CATALOG.filter((asset) => {
+  if (regenerate.size) return regenerate.has(asset.id);
   if (only.size) return only.has(asset.id);
   if (runAll) return true;
   return groups.has(asset.group);
@@ -270,6 +282,14 @@ async function download(url, destination) {
 }
 
 async function createCharacter(asset) {
+  // A regenerated character must forget its stored id and every frame on disk,
+  // or the API hands back the same sprite and the new prompt does nothing.
+  if (regenerate.has(asset.id)) {
+    delete state.characters[asset.id];
+    fs.rmSync(path.join(ROOT, "characters", asset.id), { recursive: true, force: true });
+    asset = { ...asset, existingId: undefined, seed: asset.seed + 900 };
+    saveState();
+  }
   const previous = state.characters[asset.id];
   const localMeta = path.join(ROOT, "characters", asset.id, "pixellab.json");
   let characterId = previous?.character_id ?? asset.existingId;

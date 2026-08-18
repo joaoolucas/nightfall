@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-08-17T19:40:51.275Z",
+  "generated_at": "2026-08-18T13:22:56.610Z",
   "characters": {
     "wayfarer": {
       "character_id": "3ed4671b-ce5e-4b63-b4b7-af8b9e832bf1",
@@ -134,47 +134,6 @@
         "height": 48
       },
       "view": "high top-down"
-    },
-    "cinderling-adult": {
-      "character_id": "8fe817f2-a1c0-45d1-abf3-5f4ce2a3d2df",
-      "create_job_id": "f05e8cba-0ce1-4fb2-a543-1ddf5c27caba",
-      "prompt": "confident mature form with clear readable features, smoldering salamander companion, glowing ember scales, broad lizard head, little flames along its back, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
-      "template": "dog",
-      "seed": 52002,
-      "status": "completed",
-      "size": {
-        "width": 48,
-        "height": 48
-      },
-      "view": "high top-down",
-      "walk_job_ids": [
-        "1c61d629-3704-4572-821a-34900bf62ea3",
-        "d1f04f3a-cd50-4ca5-92e9-cd7e739e52d2",
-        "e54a35e8-e76f-4f1c-abf0-1cd73a849ee7",
-        "9255d6eb-db66-4822-9a83-d097d446ab92"
-      ],
-      "walk_complete": true,
-      "animations": {
-        "attack": {
-          "complete": true,
-          "template": "bark",
-          "directions": [
-            "south",
-            "north",
-            "west",
-            "east"
-          ],
-          "frames": 6
-        },
-        "hurt": {
-          "complete": false,
-          "skipped": true
-        },
-        "death": {
-          "complete": false,
-          "skipped": true
-        }
-      }
     },
     "cinderling-hatchling": {
       "character_id": "8610d7b9-8622-4457-9704-6b014f4ba66e",
@@ -856,6 +815,44 @@
           "frames": 7
         }
       }
+    },
+    "cinderling-adult": {
+      "character_id": "1df5cc4c-8fb2-46c3-8554-c44a442f7c25",
+      "create_job_id": "2dd37edf-c4e0-46b2-b6a2-31a54da8fd8f",
+      "prompt": "fully grown animal with a heavy readable silhouette, smoldering salamander companion, glowing ember scales, broad lizard head, little flames along its back, on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "template": "dog",
+      "seed": 52902,
+      "status": "completed",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "view": "high top-down",
+      "animations": {
+        "walk": {
+          "complete": true,
+          "template": "walk-4-frames",
+          "directions": [
+            "north",
+            "east",
+            "south",
+            "west"
+          ],
+          "frames": 4
+        },
+        "attack": {
+          "complete": true,
+          "template": "bark",
+          "directions": [
+            "east",
+            "north",
+            "south",
+            "west"
+          ],
+          "frames": 6
+        }
+      },
+      "walk_complete": true
     }
   },
   "assets": {
