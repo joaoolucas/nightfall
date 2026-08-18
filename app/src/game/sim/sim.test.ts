@@ -15,11 +15,12 @@ import { advance } from "./tick";
 
 const MAP = createWorldMap("ember");
 
+/**
+ * Hunting is no longer a setting, so a test that wants to drive the Porter
+ * itself passes { manualControl: true } to advance instead.
+ */
 function freshState(): GameState {
-  const state = createInitialState("ember", 0);
-  // Tests drive the player deliberately unless they opt into auto-hunt.
-  state.settings = { ...state.settings, autoHunt: false };
-  return state;
+  return createInitialState("ember", 0);
 }
 
 /**
@@ -308,8 +309,8 @@ test("a lethal blow costs the Porter experience and returns them to the outpost"
   state = {
     ...state,
     progress: { ...state.progress, level: 3, exp: 500 },
-    // Auto-potion would otherwise keep the Porter alive indefinitely.
-    settings: { ...state.settings, autoHunt: false, autoPotion: false },
+    // Carrying no potion is now how you decline to be healed.
+    settings: { ...state.settings, potionId: null },
     inventory: { ...state.inventory, stacks: [] },
   };
   const player = playerOf(state);
@@ -343,7 +344,6 @@ test("spawn points repopulate over time up to their cap", () => {
 
 test("auto-hunt drives the real combat model, not a separate formula", () => {
   const state = createInitialState("ember", 0);
-  assert.equal(state.settings.autoHunt, true);
   const result = advance(state, MAP, 2500);
   assert.ok(result.state.kills > 0, "auto-hunt should actually kill something");
   assert.ok(

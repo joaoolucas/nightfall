@@ -5,19 +5,29 @@ import type { GameState, GroundPile } from "../core/types";
 import { capacity, inventoryWeight, itemDef } from "../world/items";
 import {
   canReach,
+  choosePotion,
   dropStack,
-  equipStack,
   putIntoPile,
   takeAllFromPile,
   takeFromPile,
-  unequipSlot,
   useStack,
 } from "./actions";
-import { createInitialState, companionAttack, handlingBonus, playerDefense, playerOf } from "./state";
+import { createInitialState, playerOf } from "./state";
 
 function baseState(): GameState {
   const state = createInitialState("ember", 0);
-  return { ...state, settings: { ...state.settings, autoHunt: false, autoLoot: false } };
+  return state;
+}
+
+/** The Porter starts with potions only, so tests that need loot bring their own. */
+function withCarried(state: GameState, defId: string): GameState {
+  return {
+    ...state,
+    inventory: {
+      ...state.inventory,
+      stacks: [...state.inventory.stacks, { instanceId: `carried:${defId}`, defId, count: 1 }],
+    },
+  };
 }
 
 /** A corpse on the Porter's own tile, so reach is never the thing under test. */
@@ -78,7 +88,7 @@ test("gold and shards go to their counters rather than occupying pack space", ()
 
 test("a full pack refuses the item instead of silently exceeding capacity", () => {
   let state = baseState();
-  const plate = itemDef("warden-plate");
+  const plate = itemDef("porter-mail");
   const room = capacity(state.progress.level) - inventoryWeight(state.inventory);
   const count = Math.floor(room / plate.weight);
   state = {
@@ -89,69 +99,18 @@ test("a full pack refuses the item instead of silently exceeding capacity", () =
         ...state.inventory.stacks,
         ...Array.from({ length: count }, (_, index) => ({
           instanceId: `plate-${index}`,
-          defId: "warden-plate",
+          defId: "porter-mail",
           count: 1,
         })),
       ],
     },
   };
-  state = withPile(state, [{ instanceId: "heavy", defId: "warden-plate", count: 1 }]);
+  state = withPile(state, [{ instanceId: "heavy", defId: "porter-mail", count: 1 }]);
 
   const next = takeFromPile(state, "corpse:1", "heavy");
   assert.equal(next.ground[0].items.length, 1, "the item must stay on the ground");
   assert.ok(next.log[0].text.includes("cannot carry"), `the refusal should be explained, got "${next.log[0].text}"`);
   assert.ok(inventoryWeight(next.inventory) <= capacity(next.progress.level));
-});
-
-test("equipping lends the weapon to the creature, and unequipping returns it to the pack", () => {
-  const state = baseState();
-  const blade = state.inventory.stacks.find((stack) => stack.defId === "worn-blade");
-  assert.ok(blade, "the starting kit should include a blade");
-
-  const before = handlingBonus(state);
-  const equipped = equipStack(state, blade!.instanceId);
-  assert.ok(equipped.inventory.equipment.weapon, "the weapon slot should be filled");
-  // The Porter never swings; the weapon's power reaches the fight through them.
-  assert.ok(handlingBonus(equipped) > before, "wearing a weapon must raise what the creature hits for");
-  const creature = equipped.entities.find((entity) => entity.kind === "companion");
-  assert.ok(creature, "a creature should be in the field");
-  assert.ok(companionAttack(equipped, creature!) > companionAttack(state, creature!));
-  assert.ok(
-    !equipped.inventory.stacks.some((stack) => stack.instanceId === blade!.instanceId),
-    "the blade should have left the backpack",
-  );
-
-  const removed = unequipSlot(equipped, "weapon");
-  assert.equal(removed.inventory.equipment.weapon, undefined);
-  assert.equal(handlingBonus(removed), before, "the bonus should return to its base value");
-  assert.ok(removed.inventory.stacks.some((stack) => stack.defId === "worn-blade"));
-});
-
-test("swapping a worn item returns the displaced one rather than destroying it", () => {
-  let state = baseState();
-  state = {
-    ...state,
-    inventory: {
-      ...state.inventory,
-      stacks: [...state.inventory.stacks, { instanceId: "sabre", defId: "caravan-sabre", count: 1 }],
-    },
-  };
-  const blade = state.inventory.stacks.find((stack) => stack.defId === "worn-blade")!;
-
-  const worn = equipStack(state, blade.instanceId);
-  const swapped = equipStack(worn, "sabre");
-
-  assert.equal(swapped.inventory.equipment.weapon?.defId, "caravan-sabre");
-  assert.ok(
-    swapped.inventory.stacks.some((stack) => stack.defId === "worn-blade"),
-    "the previous weapon must come back to the pack",
-  );
-});
-
-test("armour raises defense", () => {
-  const state = baseState();
-  const cloak = state.inventory.stacks.find((stack) => stack.defId === "travel-cloak")!;
-  assert.ok(playerDefense(equipStack(state, cloak.instanceId)) > playerDefense(state));
 });
 
 test("drinking a tonic heals the Porter and consumes exactly one", () => {
@@ -179,38 +138,62 @@ test("a tonic is not wasted at full health", () => {
 });
 
 test("dropping an item leaves it underfoot, and it can be taken back", () => {
-  const state = baseState();
-  const cloak = state.inventory.stacks.find((stack) => stack.defId === "travel-cloak")!;
+  const state = withCarried(baseState(), "ash-carapace");
+  const cloak = state.inventory.stacks.find((stack) => stack.defId === "ash-carapace")!;
   const player = playerOf(state);
 
   const dropped = dropStack(state, cloak.instanceId);
   const pile = dropped.ground.find((candidate) => candidate.x === player.x && candidate.y === player.y);
   assert.ok(pile, "a pile should appear underfoot");
-  assert.equal(pile!.items[0].defId, "travel-cloak");
+  assert.equal(pile!.items[0].defId, "ash-carapace");
   assert.ok(!dropped.inventory.stacks.some((stack) => stack.instanceId === cloak.instanceId));
 
   const retrieved = takeFromPile(dropped, pile!.id, pile!.items[0].instanceId);
-  assert.ok(retrieved.inventory.stacks.some((stack) => stack.defId === "travel-cloak"));
+  assert.ok(retrieved.inventory.stacks.some((stack) => stack.defId === "ash-carapace"));
 });
 
 test("an item can be stored back into a corpse", () => {
-  const state = withPile(baseState(), []);
-  const cloak = state.inventory.stacks.find((stack) => stack.defId === "travel-cloak")!;
+  const state = withPile(withCarried(baseState(), "ash-carapace"), []);
+  const cloak = state.inventory.stacks.find((stack) => stack.defId === "ash-carapace")!;
   const next = putIntoPile(state, cloak.instanceId, "corpse:1");
 
-  assert.equal(next.ground[0].items[0].defId, "travel-cloak");
+  assert.equal(next.ground[0].items[0].defId, "ash-carapace");
   assert.ok(!next.inventory.stacks.some((stack) => stack.instanceId === cloak.instanceId));
 });
 
 test("inventory actions never mutate the state they are given", () => {
   const state = withPile(baseState(), [{ instanceId: "a", defId: "ash-carapace", count: 1 }]);
   const snapshot = JSON.stringify(state);
-  const blade = state.inventory.stacks.find((stack) => stack.defId === "worn-blade")!;
+  const tonic = state.inventory.stacks.find((stack) => stack.defId === "tonic")!;
 
   takeFromPile(state, "corpse:1", "a");
-  equipStack(state, blade.instanceId);
-  dropStack(state, blade.instanceId);
-  useStack(state, blade.instanceId);
+  dropStack(state, tonic.instanceId);
+  useStack(state, tonic.instanceId);
+  choosePotion(state, null);
 
   assert.equal(JSON.stringify(state), snapshot, "actions must be pure over their input");
+});
+
+test("the Porter drinks the potion they chose, and nothing when they choose none", () => {
+  let state = baseState();
+  state = {
+    ...state,
+    inventory: {
+      ...state.inventory,
+      stacks: [...state.inventory.stacks, { instanceId: "g1", defId: "greater-tonic", count: 2 }],
+    },
+  };
+
+  assert.equal(state.settings.potionId, "tonic", "the starting kit picks the plain tonic");
+
+  const switched = choosePotion(state, "greater-tonic");
+  assert.equal(switched.settings.potionId, "greater-tonic");
+
+  const declined = choosePotion(state, null);
+  assert.equal(declined.settings.potionId, null, "choosing nothing is how you decline healing");
+});
+
+test("hunting and looting are not settings any more", () => {
+  const state = createInitialState("ember", 0);
+  assert.deepEqual(Object.keys(state.settings), ["potionId"], "the only choice left is which potion");
 });

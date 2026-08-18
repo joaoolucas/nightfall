@@ -1,30 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import type { EquipSlot, GroundPile, ItemStack } from "@/game/core/types";
-import { itemDef } from "@/game/world/items";
+import type { GroundPile, ItemStack } from "@/game/core/types";
+import { carriedPotions, itemDef } from "@/game/world/items";
 import ItemIcon from "./ItemIcon";
 import type { GameSim } from "./useGameSim";
 import styles from "./client.module.css";
 
 /**
- * Backpack, worn equipment, and any opened corpse.
+ * The backpack, an opened corpse, and the potion the Porter reaches for.
  *
- * Items move by dragging between the three, which is how this genre has always
- * handled loot: the payload names where a stack came from so the drop target
- * knows whether it is looting, storing, wearing or removing.
+ * Items move by dragging between the backpack and a container; the payload
+ * names where a stack came from so the drop target knows whether it is looting
+ * or storing.
  */
 
 type Source =
   | { from: "backpack"; instanceId: string }
-  | { from: "container"; instanceId: string; pileId: string }
-  | { from: "equipment"; slot: EquipSlot };
+  | { from: "container"; instanceId: string; pileId: string };
 
 const MIME = "application/x-portage-item";
-
-function encode(source: Source): string {
-  return JSON.stringify(source);
-}
 
 function decode(event: React.DragEvent): Source | null {
   try {
@@ -35,12 +30,7 @@ function decode(event: React.DragEvent): Source | null {
   }
 }
 
-function Slot({
-  stack,
-  source,
-  onActivate,
-  title,
-}: {
+function Slot({ stack, source, onActivate, title }: {
   stack: ItemStack;
   source: Source;
   onActivate?: () => void;
@@ -52,7 +42,7 @@ function Slot({
       title={title}
       draggable
       onDragStart={(event) => {
-        event.dataTransfer.setData(MIME, encode(source));
+        event.dataTransfer.setData(MIME, JSON.stringify(source));
         event.dataTransfer.effectAllowed = "move";
       }}
       onDoubleClick={onActivate}
@@ -66,18 +56,13 @@ function Slot({
         }
       }}
     >
-      <ItemIcon defId={stack.defId} />
+      <ItemIcon defId={stack.defId} size={22} />
       {stack.count > 1 ? <small>{stack.count}</small> : null}
     </div>
   );
 }
 
-function DropZone({
-  className,
-  onDropSource,
-  children,
-  label,
-}: {
+function DropZone({ className, onDropSource, children, label }: {
   className: string;
   onDropSource: (source: Source) => void;
   children: React.ReactNode;
@@ -106,42 +91,45 @@ function DropZone({
   );
 }
 
-const SLOT_LABEL: Record<EquipSlot, string> = {
-  weapon: "Weapon",
-  armor: "Armor",
-  amulet: "Amulet",
-};
+/**
+ * Which potion the Porter drinks when hurt.
+ *
+ * This replaced an auto-potion switch. Whether to be healed was never an
+ * interesting decision; which of your potions to spend is, because the good
+ * ones are worth carrying home instead.
+ */
+export function PotionChoice({ sim }: { sim: GameSim }) {
+  const potions = carriedPotions(sim.state.inventory);
+  const chosen = sim.state.settings.potionId;
 
-export function Equipment({ sim }: { sim: GameSim }) {
-  const { equipment } = sim.state.inventory;
   return (
     <section className={styles.panel}>
-      <div className={styles.panelHead}>Equipment</div>
-      <div className={styles.equipRow}>
-        {(Object.keys(SLOT_LABEL) as EquipSlot[]).map((slot) => {
-          const worn = equipment[slot];
+      <div className={styles.panelHead}>Potion <small>below 35%</small></div>
+      <div className={styles.potionRow}>
+        <button
+          type="button"
+          className={chosen === null ? styles.potionActive : ""}
+          onClick={() => sim.choosePotion(null)}
+          title="Drink nothing"
+        >
+          none
+        </button>
+        {potions.map((stack) => {
+          const def = itemDef(stack.defId);
           return (
-            <DropZone
-              key={slot}
-              className={styles.equipSlot}
-              label={SLOT_LABEL[slot]}
-              onDropSource={(source) => {
-                if (source.from === "backpack") sim.equip(source.instanceId);
-              }}
+            <button
+              key={stack.instanceId}
+              type="button"
+              className={chosen === stack.defId ? styles.potionActive : ""}
+              onClick={() => sim.choosePotion(stack.defId)}
+              title={`${def.name} — heals ${Math.round((def.heal ?? 0) * 100)}%`}
             >
-              {worn ? (
-                <Slot
-                  stack={worn}
-                  source={{ from: "equipment", slot }}
-                  onActivate={() => sim.unequip(slot)}
-                  title={`${itemDef(worn.defId).name} — double-click to remove`}
-                />
-              ) : (
-                <span className={styles.equipEmpty}>{SLOT_LABEL[slot]}</span>
-              )}
-            </DropZone>
+              <ItemIcon defId={stack.defId} size={20} />
+              <span>{stack.count}</span>
+            </button>
           );
         })}
+        {potions.length === 0 ? <p className={styles.empty}>No potions carried.</p> : null}
       </div>
     </section>
   );
@@ -156,20 +144,18 @@ export function Backpack({ sim }: { sim: GameSim }) {
         className={styles.backpack}
         label="Backpack"
         onDropSource={(source) => {
-          if (source.from === "equipment") sim.unequip(source.slot);
-          else if (source.from === "container") sim.takeItem(source.pileId, source.instanceId);
+          if (source.from === "container") sim.takeItem(source.pileId, source.instanceId);
         }}
       >
         {stacks.map((stack) => {
           const def = itemDef(stack.defId);
-          const action = def.slot ? "equip" : def.heal ? "use" : "drop";
           return (
             <Slot
               key={stack.instanceId}
               stack={stack}
               source={{ from: "backpack", instanceId: stack.instanceId }}
-              onActivate={() => (def.slot || def.heal ? sim.use(stack.instanceId) : sim.drop(stack.instanceId))}
-              title={`${def.name} · ${def.weight} oz — double-click to ${action}`}
+              onActivate={() => (def.heal ? sim.use(stack.instanceId) : sim.drop(stack.instanceId))}
+              title={`${def.name} · ${def.weight} oz · ${def.value} gold — double-click to ${def.heal ? "drink" : "drop"}`}
             />
           );
         })}
@@ -205,9 +191,7 @@ export function Container({ sim, pile, onClose }: { sim: GameSim; pile: GroundPi
         {pile.items.length === 0 ? <p className={styles.empty}>Nothing left.</p> : null}
       </DropZone>
       {pile.items.length > 0 ? (
-        <button type="button" className={styles.takeAll} onClick={() => sim.takeAll(pile.id)}>
-          Take all
-        </button>
+        <button type="button" className={styles.takeAll} onClick={() => sim.takeAll(pile.id)}>Take all</button>
       ) : null}
     </section>
   );

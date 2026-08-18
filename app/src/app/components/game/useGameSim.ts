@@ -10,16 +10,14 @@ import { advance } from "@/game/sim/tick";
 import { PLAYER_ID, createInitialState, playerOf } from "@/game/sim/state";
 import { catchUp, hydrate, persist } from "@/game/sim/save";
 import {
+  choosePotion as choosePotionAction,
   dropStack,
-  equipStack,
   putIntoPile,
+  summonCompanion,
   takeAllFromPile,
   takeFromPile,
-  summonCompanion,
-  unequipSlot,
   useStack,
 } from "@/game/sim/actions";
-import type { EquipSlot } from "@/game/core/types";
 
 /**
  * Bridges the headless simulation to React.
@@ -50,12 +48,10 @@ export interface GameSim {
   walkTo: (goal: GridPoint) => void;
   step: (delta: GridPoint) => void;
   setTarget: (entityId: string | null) => void;
-  toggleSetting: (key: keyof GameState["settings"]) => void;
+  choosePotion: (defId: string | null) => void;
   takeItem: (pileId: string, instanceId: string) => void;
   takeAll: (pileId: string) => void;
   putItem: (instanceId: string, pileId: string) => void;
-  equip: (instanceId: string) => void;
-  unequip: (slot: EquipSlot) => void;
   use: (instanceId: string) => void;
   drop: (instanceId: string) => void;
   summon: (companionId: string) => void;
@@ -217,14 +213,6 @@ export function useGameSim(): GameSim {
     setState(next);
   }, [takeControl]);
 
-  const toggleSetting = useCallback((key: keyof GameState["settings"]) => {
-    setState((current) => {
-      const next = { ...current, settings: { ...current.settings, [key]: !current.settings[key] } };
-      stateRef.current = next;
-      return next;
-    });
-  }, []);
-
   /**
    * Inventory actions are pure transitions, so the hook only has to apply one
    * and keep its ref in step with the tick loop's view of the world.
@@ -276,9 +264,8 @@ export function useGameSim(): GameSim {
     takeItem: (pileId, instanceId) => applyAction((current) => takeFromPile(current, pileId, instanceId)),
     takeAll: (pileId) => applyAction((current) => takeAllFromPile(current, pileId)),
     putItem: (instanceId, pileId) => applyAction((current) => putIntoPile(current, instanceId, pileId)),
-    equip: (instanceId) => applyAction((current) => equipStack(current, instanceId)),
-    unequip: (slot) => applyAction((current) => unequipSlot(current, slot)),
     use: (instanceId) => applyAction((current) => useStack(current, instanceId)),
+    choosePotion: (defId) => applyAction((current) => choosePotionAction(current, defId)),
     drop: (instanceId) => applyAction((current) => dropStack(current, instanceId)),
     summon: (companionId) => applyAction((current) => summonCompanion(current, companionId)),
     state,
@@ -294,7 +281,6 @@ export function useGameSim(): GameSim {
     walkTo,
     step,
     setTarget,
-    toggleSetting,
     changeZone,
     reset,
   };

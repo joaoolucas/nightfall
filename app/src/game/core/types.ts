@@ -63,7 +63,6 @@ export interface Entity extends GridPoint {
 // ---------------------------------------------------------------------------
 
 export type ItemKind = "gold" | "potion" | "weapon" | "armor" | "trophy" | "material";
-export type EquipSlot = "weapon" | "armor" | "amulet";
 
 export interface ItemDef {
   id: string;
@@ -74,9 +73,6 @@ export interface ItemDef {
   stackable: boolean;
   /** Gold value when sold. */
   value: number;
-  slot?: EquipSlot;
-  attack?: number;
-  defense?: number;
   /** Fraction of max hp restored. */
   heal?: number;
   sprite: string;
@@ -176,15 +172,18 @@ export interface LogEntry {
 export interface Inventory {
   /** Carried stacks. Order is the backpack order the client renders. */
   stacks: ItemStack[];
-  equipment: Partial<Record<EquipSlot, ItemStack>>;
   gold: number;
   shards: number;
 }
 
+/**
+ * Hunting and looting are what the game *is*, so neither is a switch any more —
+ * a Porter who does not hunt is watching an empty screen. What remains is the
+ * one choice that is genuinely a choice: which potion the Porter reaches for.
+ */
 export interface GameSettings {
-  autoHunt: boolean;
-  autoPotion: boolean;
-  autoLoot: boolean;
+  /** Item the Porter drinks when hurt, or null to drink nothing. */
+  potionId: string | null;
 }
 
 export interface GameState {

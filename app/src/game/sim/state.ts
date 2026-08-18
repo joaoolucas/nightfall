@@ -13,7 +13,7 @@ import type {
 } from "../core/types";
 import { createWorldMap, type WorldMap } from "../world/map";
 import { monsterTemplate, monstersOfZone, wardenOfZone, type MonsterTemplate } from "../world/monsters";
-import { capacity, equipmentBonus, inventoryWeight } from "../world/items";
+import { capacity, inventoryWeight } from "../world/items";
 
 export const SAVE_VERSION = 2;
 export const PLAYER_ID = "player";
@@ -59,12 +59,12 @@ export function playerMaxHp(progress: PlayerProgress): number {
 /**
  * What the Porter adds to their creature's attack.
  *
- * The Porter never swings — the handling skill and the weapon they carry are
- * passed to whatever is in the field, which is why equipment still matters.
+ * The Porter never swings; what they bring to the fight is command. Their level
+ * and handling skill are lent to whatever is in the field.
  */
 export function handlingBonus(state: GameState): number {
-  const { progress, inventory } = state;
-  return progress.level * 0.8 + progress.skills.melee * 1.8 + equipmentBonus(inventory).attack;
+  const { progress } = state;
+  return progress.level * 0.8 + progress.skills.melee * 1.8;
 }
 
 /** Total attack for the creature currently in the field. */
@@ -73,8 +73,7 @@ export function companionAttack(state: GameState, companion: Entity): number {
 }
 
 export function playerDefense(state: GameState): number {
-  const { progress, inventory } = state;
-  return 2 + progress.skills.shielding * 1.6 + equipmentBonus(inventory).defense;
+  return 2 + state.progress.skills.shielding * 1.6;
 }
 
 /** Over capacity, the Porter is slowed rather than stopped. */
@@ -226,16 +225,11 @@ export function createInitialState(zoneId: Species = "ember", now = 0): GameStat
     companions,
     activeCompanionIds,
     inventory: {
-      stacks: [
-        { instanceId: "i1", defId: "tonic", count: 5 },
-        { instanceId: "i2", defId: "worn-blade", count: 1 },
-        { instanceId: "i3", defId: "travel-cloak", count: 1 },
-      ],
-      equipment: {},
+      stacks: [{ instanceId: "i1", defId: "tonic", count: 5 }],
       gold: 120,
       shards: 8,
     },
-    settings: { autoHunt: true, autoPotion: true, autoLoot: true },
+    settings: { potionId: "tonic" },
     kills: 0,
     deaths: 0,
     playSeconds: 0,

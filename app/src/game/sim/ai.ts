@@ -222,7 +222,7 @@ export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupan
 
   // Loot first: an unopened corpse underfoot is worth more than the next kill.
   const pile = state.ground.find((candidate) => distance(player, candidate) <= 1 && candidate.items.length > 0);
-  if (state.settings.autoLoot && pile) {
+  if (pile) {
     player.path = [];
     return;
   }

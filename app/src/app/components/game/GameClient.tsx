@@ -8,8 +8,9 @@ import { PLAYER_ID, companionAttack, expForLevel, handlingBonus, playerDefense, 
 import { capacity, inventoryWeight } from "@/game/world/items";
 import { distance } from "@/game/core/grid";
 import { canReach } from "@/game/sim/actions";
+import BattleLog from "./BattleLog";
 import CreatureIcon from "./CreatureIcon";
-import { Backpack, Container, Equipment } from "./Inventory";
+import { Backpack, Container, PotionChoice } from "./Inventory";
 import Viewport from "./Viewport";
 import { useGameSim } from "./useGameSim";
 import styles from "./client.module.css";
@@ -17,9 +18,10 @@ import styles from "./client.module.css";
 /**
  * The game client.
  *
- * Viewport first, chrome around it: status, battle list, inventory and console —
- * the reading order of a top-down tile RPG, rather than the dashboard the old
- * shell used, where the world occupied under half the screen.
+ * Everything is on screen at once: the rail never scrolls and the log floats
+ * over the world instead of taking a band beneath it. What made that fit was
+ * removing panels rather than shrinking them — hunting and looting stopped
+ * being switches, and equipment went entirely.
  */
 
 function Bar({ value, max, tone }: { value: number; max: number; tone: "hp" | "exp" | "cap" }) {
@@ -36,23 +38,17 @@ export default function GameClient() {
   const { state } = sim;
   const player = useMemo(() => state.entities.find((entity) => entity.id === PLAYER_ID) ?? playerOf(state), [state]);
   const targets = useMemo(() => battleList(state), [state]);
+  const active = state.entities.find((entity) => entity.kind === "companion");
+
   const [openPileId, setOpenPileId] = useState<string | null>(null);
   const openPile = state.ground.find((pile) => pile.id === openPileId) ?? null;
 
   // A corpse that rots away or is walked away from closes itself, so the panel
-  // can never show contents the Porter can no longer touch.
+  // can never show contents the Porter can no longer reach.
   useEffect(() => {
     if (openPileId && !openPile) setOpenPileId(null);
     else if (openPile && !canReach(state, openPile)) setOpenPileId(null);
   }, [openPileId, openPile, state]);
-
-  // With auto-loot off, the nearest unlooted pile is offered for opening.
-  const reachablePile = state.ground.find(
-    (pile) => pile.items.length > 0 && distance(player, pile) <= 1,
-  );
-
-  // Only one creature is in the field, and it is the thing that actually fights.
-  const active = state.entities.find((entity) => entity.kind === "companion");
 
   const weight = inventoryWeight(state.inventory);
   const maxWeight = capacity(state.progress.level);
@@ -62,7 +58,7 @@ export default function GameClient() {
     <div className={styles.client}>
       <header className={styles.topbar}>
         <div className={styles.brand}>
-          <Image src="/game-assets/brand/logo.png" alt="" width={30} height={30} className={styles.pixel} />
+          <Image src="/game-assets/brand/logo.png" alt="" width={26} height={26} className={styles.pixel} />
           <span><b>PORTAGE</b><small>.FUN</small></span>
         </div>
         <nav className={styles.zoneNav} aria-label="Routes">
@@ -85,19 +81,22 @@ export default function GameClient() {
         </nav>
         <div className={styles.saveState}>
           <span className={sim.saveFailed ? styles.dotError : styles.dotLive} />
-          {sim.saveFailed ? "SAVE UNAVAILABLE" : sim.hydrated ? "SAVED LOCALLY" : "LOADING"}
+          {sim.saveFailed ? "SAVE FAILED" : sim.hydrated ? "SAVED" : "LOADING"}
         </div>
       </header>
 
       <div className={styles.stage}>
-        <Viewport sim={sim} />
+        <div className={styles.viewportWrap}>
+          <Viewport sim={sim} />
+          <BattleLog log={state.log} />
+        </div>
 
         <aside className={styles.rail}>
           <section className={styles.panel}>
-            <div className={styles.panelHead}>{zone.name.toUpperCase()}</div>
+            <div className={styles.panelHead}>{zone.name} <small>lv {state.progress.level}</small></div>
             <div className={styles.statRow}><span>Health</span><b>{Math.ceil(player.hp)} / {player.maxHp}</b></div>
             <Bar value={player.hp} max={player.maxHp} tone="hp" />
-            <div className={styles.statRow}><span>Level {state.progress.level}</span><b>{state.progress.exp} / {expForLevel(state.progress.level)}</b></div>
+            <div className={styles.statRow}><span>Experience</span><b>{state.progress.exp} / {expForLevel(state.progress.level)}</b></div>
             <Bar value={state.progress.exp} max={expForLevel(state.progress.level)} tone="exp" />
             <div className={styles.statRow}><span>Capacity</span><b>{weight} / {maxWeight} oz</b></div>
             <Bar value={weight} max={maxWeight} tone="cap" />
@@ -113,7 +112,7 @@ export default function GameClient() {
             <div className={styles.panelHead}>Battle list <small>{targets.length}</small></div>
             <div className={styles.battleList}>
               {targets.length === 0 ? <p className={styles.empty}>Nothing in sight.</p> : null}
-              {targets.map((entity) => (
+              {targets.slice(0, 4).map((entity) => (
                 <button
                   key={entity.id}
                   type="button"
@@ -144,20 +143,6 @@ export default function GameClient() {
             </div>
           </section>
 
-          {openPile ? <Container sim={sim} pile={openPile} onClose={() => setOpenPileId(null)} /> : null}
-
-          {!openPile && reachablePile ? (
-            <section className={styles.panel}>
-              <div className={styles.panelHead}>Ground</div>
-              <button type="button" className={styles.takeAll} onClick={() => setOpenPileId(reachablePile.id)}>
-                Open {reachablePile.corpseOf ? `dead ${reachablePile.corpseOf}` : "the pile"}
-              </button>
-            </section>
-          ) : null}
-
-          <Equipment sim={sim} />
-          <Backpack sim={sim} />
-
           <section className={styles.panel}>
             <div className={styles.panelHead}>Creatures <small>1 in field</small></div>
             <div className={styles.party}>
@@ -172,38 +157,22 @@ export default function GameClient() {
                     disabled={inField}
                     title={inField ? `${companion.name} is in the field` : `Send ${companion.name} out`}
                   >
-                    <CreatureIcon species={companion.species} stage={companion.stage} />
-                    <span><b>{companion.name}</b><small>Lv. {companion.level}{inField ? " · in field" : ""}</small></span>
+                    <CreatureIcon species={companion.species} stage={companion.stage} size={24} />
+                    <span><b>{companion.name}</b><small>Lv. {companion.level}</small></span>
                   </button>
                 );
               })}
             </div>
             <p className={styles.hint}>
-              Only one creature fights at a time. You carry, direct and take the blows — your handling
-              ({state.progress.skills.melee}) and weapon add {Math.round(handlingBonus(state))} to its attack.
+              You direct and take the blows; handling adds {Math.round(handlingBonus(state))} to its attack.
             </p>
           </section>
 
-          <section className={styles.panel}>
-            <div className={styles.panelHead}>Automation</div>
-            {(["autoHunt", "autoPotion", "autoLoot"] as const).map((key) => (
-              <label key={key} className={styles.toggle}>
-                <input type="checkbox" checked={state.settings[key]} onChange={() => sim.toggleSetting(key)} />
-                <span>{key === "autoHunt" ? "Auto-hunt" : key === "autoPotion" ? "Auto-potion" : "Auto-loot"}</span>
-              </label>
-            ))}
-          </section>
+          <PotionChoice sim={sim} />
+          <Backpack sim={sim} />
+          {openPile ? <Container sim={sim} pile={openPile} onClose={() => setOpenPileId(null)} /> : null}
         </aside>
       </div>
-
-      <footer className={styles.console} aria-live="polite">
-        {state.log.slice(0, 5).map((entry) => (
-          <p key={entry.id} className={styles[`tone_${entry.tone}`]}>{entry.text}</p>
-        ))}
-        <p className={styles.tone_system}>
-          {state.kills} defeated · {state.deaths} deaths · {Math.floor(state.playSeconds / 60)}m played
-        </p>
-      </footer>
 
       {sim.catchUpProgress !== null ? (
         <div className={styles.overlay} role="status" aria-live="polite">

@@ -126,7 +126,7 @@ export function hydrate(now: number): HydrateResult {
 
   const away = Math.max(0, (now - state.lastUpdatedAt) / 1000);
   const hunted = Math.min(MAX_SIMULATED_SECONDS, away);
-  if (hunted < 10 || !state.settings.autoHunt) {
+  if (hunted < 10) {
     return { state: { ...state, lastUpdatedAt: now }, offlineTicks: 0, awaySeconds: away, failed: false };
   }
   // The simulation itself is left to the caller so it can be run off the

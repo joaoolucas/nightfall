@@ -15,15 +15,15 @@ const ITEM_LIST: readonly ItemDef[] = [
   { id: "tonic", name: "travel tonic", kind: "potion", weight: 2.5, stackable: true, value: 45, heal: 0.42, sprite: "tonic" },
   { id: "greater-tonic", name: "greater tonic", kind: "potion", weight: 3.5, stackable: true, value: 120, heal: 0.75, sprite: "greater-tonic" },
 
-  { id: "worn-blade", name: "worn blade", kind: "weapon", weight: 38, stackable: false, value: 40, slot: "weapon", attack: 6, sprite: "worn-blade" },
-  { id: "caravan-sabre", name: "caravan sabre", kind: "weapon", weight: 42, stackable: false, value: 220, slot: "weapon", attack: 14, sprite: "caravan-sabre" },
-  { id: "warden-glaive", name: "warden glaive", kind: "weapon", weight: 58, stackable: false, value: 900, slot: "weapon", attack: 26, sprite: "warden-glaive" },
+  { id: "worn-blade", name: "worn blade", kind: "weapon", weight: 38, stackable: false, value: 40, sprite: "worn-blade" },
+  { id: "caravan-sabre", name: "caravan sabre", kind: "weapon", weight: 42, stackable: false, value: 220, sprite: "caravan-sabre" },
+  { id: "warden-glaive", name: "warden glaive", kind: "weapon", weight: 58, stackable: false, value: 900, sprite: "warden-glaive" },
 
-  { id: "travel-cloak", name: "travel cloak", kind: "armor", weight: 30, stackable: false, value: 55, slot: "armor", defense: 5, sprite: "travel-cloak" },
-  { id: "porter-mail", name: "porter mail", kind: "armor", weight: 62, stackable: false, value: 300, slot: "armor", defense: 13, sprite: "porter-mail" },
-  { id: "warden-plate", name: "warden plate", kind: "armor", weight: 88, stackable: false, value: 1100, slot: "armor", defense: 24, sprite: "warden-plate" },
+  { id: "travel-cloak", name: "travel cloak", kind: "armor", weight: 30, stackable: false, value: 55, sprite: "travel-cloak" },
+  { id: "porter-mail", name: "porter mail", kind: "armor", weight: 62, stackable: false, value: 300, sprite: "porter-mail" },
+  { id: "warden-plate", name: "warden plate", kind: "armor", weight: 88, stackable: false, value: 1100, sprite: "warden-plate" },
 
-  { id: "ember-charm", name: "ember charm", kind: "armor", weight: 3, stackable: false, value: 180, slot: "amulet", defense: 4, attack: 3, sprite: "ember-charm" },
+  { id: "ember-charm", name: "ember charm", kind: "armor", weight: 3, stackable: false, value: 180, sprite: "ember-charm" },
 
   { id: "evolution-crystal", name: "evolution crystal", kind: "material", weight: 6, stackable: true, value: 260, sprite: "evolution-crystal" },
   { id: "warden-relic", name: "warden relic", kind: "trophy", weight: 12, stackable: true, value: 750, sprite: "warden-relic" },
@@ -55,32 +55,15 @@ export function itemAtlasFrame(defId: string): string {
   return itemDef(defId).sprite;
 }
 
-/** Total weight carried, equipment included. */
+/** Total weight carried. */
 export function inventoryWeight(inventory: Inventory): number {
   const carried = inventory.stacks.reduce((sum, stack) => sum + itemDef(stack.defId).weight * stack.count, 0);
-  const worn = Object.values(inventory.equipment).reduce(
-    (sum, stack) => sum + (stack ? itemDef(stack.defId).weight * stack.count : 0),
-    0,
-  );
-  return Math.round((carried + worn + inventory.gold * 0.1) * 10) / 10;
+  return Math.round((carried + inventory.gold * 0.1) * 10) / 10;
 }
 
 /** Capacity grows with level, so a stronger Porter hauls more loot home. */
 export function capacity(level: number): number {
   return 400 + level * 20;
-}
-
-/** Attack and defense contributed by what the Porter is wearing. */
-export function equipmentBonus(inventory: Inventory): { attack: number; defense: number } {
-  let attack = 0;
-  let defense = 0;
-  for (const stack of Object.values(inventory.equipment)) {
-    if (!stack) continue;
-    const def = itemDef(stack.defId);
-    attack += def.attack ?? 0;
-    defense += def.defense ?? 0;
-  }
-  return { attack, defense };
 }
 
 /**
@@ -110,4 +93,9 @@ export function removeFromStacks(stacks: readonly ItemStack[], instanceId: strin
 
 export function findStack(stacks: readonly ItemStack[], defId: string): ItemStack | undefined {
   return stacks.find((stack) => stack.defId === defId);
+}
+
+/** Everything drinkable the Porter is carrying, for the potion chooser. */
+export function carriedPotions(inventory: Inventory): ItemStack[] {
+  return inventory.stacks.filter((stack) => (itemDef(stack.defId).heal ?? 0) > 0);
 }

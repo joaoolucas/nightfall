@@ -178,10 +178,6 @@ export default function Viewport({ sim }: { sim: GameSim }) {
           simRef.current.step(delta);
         }}
       />
-      <div className={styles.viewportBadge}>
-        <b>{sim.manual ? "MANUAL" : sim.state.settings.autoHunt ? "AUTO-HUNT" : "IDLE"}</b>
-        <span>WASD · QEZC diagonals · click to walk or attack · Esc clears target</span>
-      </div>
     </div>
   );
 }

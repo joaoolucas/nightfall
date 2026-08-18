@@ -1,14 +1,8 @@
 import { distance } from "../core/grid";
 import { nearestWalkable } from "../core/pathfind";
 import { Occupancy, createWorldMap, isFree } from "../world/map";
-import type { EquipSlot, GameState, GroundPile, ItemStack } from "../core/types";
-import {
-  addToStacks,
-  capacity,
-  inventoryWeight,
-  itemDef,
-  removeFromStacks,
-} from "../world/items";
+import type { GameState, GroundPile, ItemStack } from "../core/types";
+import { addToStacks, capacity, inventoryWeight, itemDef, removeFromStacks } from "../world/items";
 import { PLAYER_ID, makeCompanion, playerOf } from "./state";
 
 /**
@@ -130,54 +124,11 @@ export function dropStack(state: GameState, instanceId: string, count?: number):
   };
 }
 
-/**
- * Wear a carried item. Whatever occupied the slot returns to the backpack, so
- * swapping gear never destroys it.
- */
-export function equipStack(state: GameState, instanceId: string): GameState {
-  const stack = state.inventory.stacks.find((candidate) => candidate.instanceId === instanceId);
-  if (!stack) return state;
-  const def = itemDef(stack.defId);
-  if (!def.slot) return log(state, `You cannot wear ${def.name}.`, "system");
-
-  const displaced = state.inventory.equipment[def.slot];
-  let stacks = removeFromStacks(state.inventory.stacks, instanceId, 1);
-  if (displaced) stacks = addToStacks(stacks, displaced);
-
-  return log(
-    {
-      ...state,
-      inventory: {
-        ...state.inventory,
-        stacks,
-        equipment: { ...state.inventory.equipment, [def.slot]: { ...stack, count: 1 } },
-      },
-    },
-    `You are now wearing ${def.name}.`,
-    "system",
-  );
-}
-
-export function unequipSlot(state: GameState, slot: EquipSlot): GameState {
-  const worn = state.inventory.equipment[slot];
-  if (!worn) return state;
-  const def = itemDef(worn.defId);
-  if (def.weight > remainingCapacity(state) + def.weight) return state;
-
-  const equipment = { ...state.inventory.equipment };
-  delete equipment[slot];
-  return {
-    ...state,
-    inventory: { ...state.inventory, stacks: addToStacks(state.inventory.stacks, worn), equipment },
-  };
-}
-
-/** Drink or otherwise consume a carried item. */
+/** Drink a carried potion. Anything else is loot, and doing nothing is correct. */
 export function useStack(state: GameState, instanceId: string): GameState {
   const stack = state.inventory.stacks.find((candidate) => candidate.instanceId === instanceId);
   if (!stack) return state;
   const def = itemDef(stack.defId);
-  if (def.slot) return equipStack(state, instanceId);
   if (!def.heal) return state;
 
   const player = playerOf(state);
@@ -245,4 +196,9 @@ export function summonCompanion(state: GameState, companionId: string): GameStat
     `${companion.name} steps forward.`,
     "system",
   );
+}
+
+/** Choose which potion the Porter reaches for when hurt. */
+export function choosePotion(state: GameState, defId: string | null): GameState {
+  return { ...state, settings: { ...state.settings, potionId: defId } };
 }

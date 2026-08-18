@@ -1,4 +1,6 @@
-/* Tibia-shaped client chrome: dark bevelled panels around a dominant viewport. */
+/* Tibia-shaped client chrome: dark bevelled panels around a dominant viewport.
+   Everything fits one screen — the rail never scrolls, and the log floats over
+   the world rather than taking a band beneath it. */
 
 .client {
   --ink: #0b0910;
@@ -15,7 +17,7 @@
 
   height: 100vh;
   display: grid;
-  grid-template-rows: 44px minmax(0, 1fr) 132px;
+  grid-template-rows: 40px minmax(0, 1fr);
   gap: 4px;
   padding: 4px;
   color: var(--text);
@@ -39,13 +41,13 @@
   box-shadow: inset 0 0 0 1px var(--bevel);
 }
 .brand { display: flex; align-items: center; gap: 8px; }
-.brand b { color: var(--gold); font-family: var(--font-display), monospace; font-size: 13px; letter-spacing: .06em; }
-.brand small { color: var(--dim); font-size: 9px; }
+.brand b { color: var(--gold); font-family: var(--font-display), monospace; font-size: 12px; letter-spacing: .06em; }
+.brand small { color: var(--dim); font-size: 8px; }
 
 .zoneNav { display: flex; gap: 4px; overflow-x: auto; }
 .zoneNav button {
   flex: none;
-  padding: 5px 10px;
+  padding: 4px 9px;
   border: 2px solid var(--edge);
   color: var(--dim);
   background: var(--panel);
@@ -65,11 +67,13 @@
 
 /* --- stage -------------------------------------------------------------- */
 
-.stage { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 288px; gap: 4px; }
+.stage { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 268px; gap: 4px; }
+
+.viewportWrap { position: relative; min-width: 0; min-height: 0; }
 
 .viewport {
-  position: relative;
-  min-width: 0;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
   border: 2px solid var(--edge);
   background: #0a0810;
@@ -78,30 +82,58 @@
 .canvas { width: 100%; height: 100%; display: block; outline: none; cursor: crosshair; image-rendering: pixelated; }
 .canvas:focus-visible { box-shadow: inset 0 0 0 2px var(--gold); }
 
-.viewportBadge {
+/* --- floating battle log ------------------------------------------------ */
+
+.battleLog {
   position: absolute;
-  left: 8px;
-  bottom: 8px;
+  left: 10px;
+  bottom: 10px;
+  z-index: 5;
+  width: min(430px, 52%);
+  border: 2px solid var(--edge);
+  background: rgba(14, 10, 18, .82);
+  box-shadow: inset 0 0 0 1px #50405a;
+  backdrop-filter: blur(2px);
+}
+.battleLogClosed { width: auto; }
+.battleLogToggle {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 5px 9px;
-  border: 2px solid var(--edge);
-  background: rgba(24, 18, 28, .9);
-  box-shadow: inset 0 0 0 1px #50405a;
-  pointer-events: none;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 8px;
+  border: 0;
+  color: var(--gold);
+  background: rgba(40, 30, 48, .8);
+  font: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  cursor: pointer;
 }
-.viewportBadge b { color: var(--gold); font-size: 10px; letter-spacing: .1em; }
-.viewportBadge span { color: var(--dim); font-size: 9px; }
+.battleLogToggle em { font-style: normal; color: var(--dim); }
+.battleLogBody { max-height: 116px; overflow: hidden; padding: 6px 9px 8px; font-size: 11px; line-height: 1.5; }
+.battleLogBody p { margin: 0; }
+
+.tone_combat { color: #d7c6dc; }
+.tone_damage { color: #e08a8a; }
+.tone_loot { color: #e0b45c; }
+.tone_level { color: #7fd0e0; }
+.tone_system { color: #8d7f96; }
 
 /* --- right rail --------------------------------------------------------- */
 
-.rail { min-height: 0; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
-.rail::-webkit-scrollbar { width: 8px; }
-.rail::-webkit-scrollbar-thumb { background: #40324a; }
+.rail {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
+  gap: 4px;
+}
 
 .panel {
-  padding: 8px;
+  min-height: 0;
+  padding: 7px;
   border: 2px solid var(--edge);
   background: var(--panel);
   box-shadow: inset 0 0 0 1px var(--bevel);
@@ -109,41 +141,41 @@
 .panelHead {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 7px;
-  padding-bottom: 5px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
   border-bottom: 1px solid #43354a;
   color: var(--gold);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
 .panelHead small { color: var(--dim); }
 
-.statRow { display: flex; justify-content: space-between; margin: 6px 0 3px; font-size: 10px; }
+.statRow { display: flex; justify-content: space-between; margin: 5px 0 2px; font-size: 10px; }
 .statRow span { color: var(--dim); }
 .statRow b { color: var(--text); }
 
-.bar { display: block; height: 9px; border: 1px solid var(--edge); background: #150f19; }
+.bar { display: block; height: 8px; border: 1px solid var(--edge); background: #150f19; }
 .bar i { display: block; height: 100%; transition: width .15s linear; }
 .bar_hp i { background: linear-gradient(#d4494d, var(--hp)); }
 .bar_exp i { background: linear-gradient(#6fa0ea, var(--exp)); }
 .bar_cap i { background: linear-gradient(#9b87e8, var(--cap)); }
 
-.statGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 9px; }
-.statGrid div { padding: 5px 6px; background: #1b141f; box-shadow: inset 0 0 0 1px #3b2e42; }
+.statGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 8px; }
+.statGrid div { padding: 4px 6px; background: #1b141f; box-shadow: inset 0 0 0 1px #3b2e42; }
 .statGrid span { display: block; color: var(--dim); font-size: 9px; }
 .statGrid b { color: var(--text); font-size: 12px; }
 
 /* --- battle list -------------------------------------------------------- */
 
-.battleList { display: flex; flex-direction: column; gap: 2px; max-height: 168px; overflow-y: auto; }
+.battleList { display: flex; flex-direction: column; gap: 2px; }
 .battleList button {
   display: grid;
-  grid-template-columns: 20px 1fr;
+  grid-template-columns: 18px 1fr;
   align-items: center;
-  gap: 7px;
-  padding: 4px 5px;
+  gap: 6px;
+  padding: 3px 5px;
   border: 0;
   color: var(--text);
   background: #1b141f;
@@ -156,19 +188,44 @@
 .battleActive { background: #4a2130 !important; box-shadow: inset 0 0 0 1px #d7484a !important; }
 .battleList em { color: var(--dim); font-size: 9px; font-style: normal; text-align: center; }
 .battleList b { display: block; font-size: 10px; font-weight: 400; }
-.battleList i { display: block; height: 4px; margin-top: 3px; background: #150f19; }
+.battleList i { display: block; height: 3px; margin-top: 2px; background: #150f19; }
 .battleList i em { display: block; height: 100%; background: #b8383c; }
 
 .empty { color: var(--dim); font-size: 10px; font-style: italic; }
 
-/* --- skills, backpack, party -------------------------------------------- */
+/* --- skills, creatures, backpack ---------------------------------------- */
 
-.skills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-.skills div { padding: 5px; background: #1b141f; box-shadow: inset 0 0 0 1px #3b2e42; text-align: center; }
+.skills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.skills div { padding: 4px; background: #1b141f; box-shadow: inset 0 0 0 1px #3b2e42; text-align: center; }
 .skills span { display: block; color: var(--dim); font-size: 9px; text-transform: capitalize; }
-.skills b { color: var(--gold); font-size: 14px; }
+.skills b { color: var(--gold); font-size: 13px; }
 
-.backpack { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.party { display: grid; grid-template-rows: repeat(6, 28px); gap: 2px; }
+.party button {
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 5px;
+  border: 0;
+  color: var(--text);
+  background: #1b141f;
+  box-shadow: inset 0 0 0 1px #3b2e42;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.party button:hover:not(:disabled) { background: #2a2030; }
+.party button:disabled { cursor: default; }
+.partyActive { background: #2c2438 !important; box-shadow: inset 0 0 0 1px var(--gold) !important; }
+.party b { display: block; font-size: 10px; font-weight: 400; }
+.party small { color: var(--dim); font-size: 9px; }
+.hint { margin-top: 6px; color: var(--dim); font-size: 9px; line-height: 1.45; }
+
+.creaturePlaceholder { display: inline-block; background: #150f19; box-shadow: inset 0 0 0 1px #3b2e42; }
+
+.backpack { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: min-content; gap: 3px; min-height: 30px; overflow-y: auto; }
 .slot {
   position: relative;
   aspect-ratio: 1;
@@ -176,38 +233,58 @@
   place-items: center;
   background: #150f19;
   box-shadow: inset 0 0 0 1px #3b2e42;
+  cursor: grab;
 }
+.slot:active { cursor: grabbing; }
 .slot small { position: absolute; right: 1px; bottom: 0; color: #fff2c6; font-size: 9px; text-shadow: 0 1px 0 #000; }
-.itemGlyph { display: grid; place-items: center; font-size: 15px; line-height: 1; }
+.itemGlyph { display: grid; place-items: center; font-size: 14px; line-height: 1; }
+.dropOver { box-shadow: inset 0 0 0 2px var(--gold) !important; background: #2b2032; }
 
-.party { display: flex; flex-direction: column; gap: 4px; }
-.party div { display: flex; align-items: center; gap: 7px; padding: 3px 5px; background: #1b141f; box-shadow: inset 0 0 0 1px #3b2e42; }
-.party b { display: block; font-size: 10px; font-weight: 400; }
-.party small { color: var(--dim); font-size: 9px; }
+/* --- potion choice ------------------------------------------------------ */
 
-.toggle { display: flex; align-items: center; gap: 7px; padding: 3px 0; font-size: 10px; cursor: pointer; }
-.toggle input { accent-color: var(--gold); }
-
-/* --- console ------------------------------------------------------------ */
-
-.console {
+.potionRow { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.potionRow button {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  overflow: hidden;
-  padding: 7px 10px;
-  border: 2px solid var(--edge);
-  background: #120d16;
-  box-shadow: inset 0 0 0 1px var(--bevel);
-  font-size: 11px;
-  line-height: 1.5;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 7px;
+  border: 0;
+  color: var(--dim);
+  background: #1b141f;
+  box-shadow: inset 0 0 0 1px #3b2e42;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
 }
-.console p { margin: 0; }
-.tone_combat { color: #d7c6dc; }
-.tone_damage { color: #e08a8a; }
-.tone_loot { color: #e0b45c; }
-.tone_level { color: #7fd0e0; }
-.tone_system { color: #8d7f96; }
+.potionRow button:hover { color: var(--text); background: #2a2030; }
+.potionActive { color: var(--text) !important; background: #2c2438 !important; box-shadow: inset 0 0 0 1px var(--gold) !important; }
+
+.closeButton {
+  padding: 0 4px;
+  border: 0;
+  color: var(--dim);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.closeButton:hover { color: var(--text); }
+
+.takeAll {
+  width: 100%;
+  margin-top: 5px;
+  padding: 5px;
+  border: 2px solid var(--edge);
+  color: #1a1220;
+  background: var(--gold);
+  box-shadow: inset 0 0 0 1px #fff2c6;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.takeAll:hover { filter: brightness(1.08); }
 
 /* --- overlay ------------------------------------------------------------ */
 
@@ -235,79 +312,11 @@
   cursor: pointer;
 }
 
+/* Narrow screens keep the same promise: the rail drops beneath the world and
+   flows into as many columns as fit, so nothing has to be scrolled to be read. */
 @media (max-width: 1080px) {
-  .stage { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) 260px; }
-  .rail { flex-direction: row; overflow-x: auto; }
-  .panel { flex: none; width: 250px; }
+  .stage { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) 344px; }
+  .rail { display: block; columns: 244px; column-gap: 4px; }
+  .rail > * { break-inside: avoid; margin-bottom: 4px; }
+  .party { grid-template-rows: repeat(6, 26px); }
 }
-
-/* --- equipment, containers and drag targets ------------------------------ */
-
-.equipRow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-.equipSlot {
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  background: #150f19;
-  box-shadow: inset 0 0 0 1px #3b2e42;
-}
-.equipEmpty {
-  color: #6b5c74;
-  font-size: 8px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-.dropOver { box-shadow: inset 0 0 0 2px var(--gold) !important; background: #2b2032; }
-
-.backpack { min-height: 34px; }
-.slot { cursor: grab; }
-.slot:active { cursor: grabbing; }
-
-.closeButton {
-  padding: 0 4px;
-  border: 0;
-  color: var(--dim);
-  background: none;
-  font: inherit;
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-}
-.closeButton:hover { color: var(--text); }
-
-.takeAll {
-  width: 100%;
-  margin-top: 6px;
-  padding: 6px;
-  border: 2px solid var(--edge);
-  color: #1a1220;
-  background: var(--gold);
-  box-shadow: inset 0 0 0 1px #fff2c6;
-  font: inherit;
-  font-size: 10px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.takeAll:hover { filter: brightness(1.08); }
-
-/* --- creature roster ----------------------------------------------------- */
-
-.party button {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 3px 5px;
-  border: 0;
-  color: var(--text);
-  background: #1b141f;
-  box-shadow: inset 0 0 0 1px #3b2e42;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.party button:hover:not(:disabled) { background: #2a2030; }
-.party button:disabled { cursor: default; }
-.partyActive { background: #2c2438 !important; box-shadow: inset 0 0 0 1px var(--gold) !important; }
-.hint { margin-top: 7px; color: var(--dim); font-size: 9px; line-height: 1.5; }
-.creaturePlaceholder { display: inline-block; background: #150f19; box-shadow: inset 0 0 0 1px #3b2e42; }

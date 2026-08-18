@@ -118,8 +118,11 @@ function pickUp(state: GameState, stacks: ItemStack[], events: CombatEvent[]): v
   }
 }
 
+/** Drink the potion the Porter chose, if they are carrying any. */
 function drinkPotion(state: GameState, player: Entity, events: CombatEvent[]): boolean {
-  const stack = findStack(state.inventory.stacks, "greater-tonic") ?? findStack(state.inventory.stacks, "tonic");
+  const chosen = state.settings.potionId;
+  if (!chosen) return false;
+  const stack = findStack(state.inventory.stacks, chosen);
   if (!stack) return false;
   const def = itemDef(stack.defId);
   const healed = Math.round(player.maxHp * (def.heal ?? 0.4));
@@ -306,12 +309,11 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
   }
   player.level = state.progress.level;
 
-  if (state.settings.autoPotion && player.hp / player.maxHp <= AUTO_POTION_AT) {
-    drinkPotion(state, player, events);
-  }
+  if (player.hp / player.maxHp <= AUTO_POTION_AT) drinkPotion(state, player, events);
 
   // --- planning -----------------------------------------------------------
-  if (state.settings.autoHunt && !options.manualControl) planAutoHunt(state, map, occupancy, state.tick);
+  // Hunting is the game, not a setting; only manual steering suspends it.
+  if (!options.manualControl) planAutoHunt(state, map, occupancy, state.tick);
 
   let companionIndex = 0;
   for (const entity of state.entities) {
@@ -399,17 +401,16 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
     entity.moveCooldown = stepCost(entity, overloaded);
   }
 
-  // Automatic looting of anything underfoot or adjacent.
-  if (state.settings.autoLoot) {
-    const pile = state.ground.find(
-      (candidate) => distance(player, candidate) <= 1 && candidate.items.length > 0,
+  // Loot underfoot is always picked up: walking over a corpse and leaving the
+  // gold behind was never a decision anyone wanted to make.
+  const underfoot = state.ground.find(
+    (candidate) => distance(player, candidate) <= 1 && candidate.items.length > 0,
+  );
+  if (underfoot) {
+    pickUp(state, underfoot.items, events);
+    state.ground = state.ground.map((candidate) =>
+      candidate.id === underfoot.id ? { ...candidate, items: [] } : candidate,
     );
-    if (pile) {
-      pickUp(state, pile.items, events);
-      state.ground = state.ground.map((candidate) =>
-        candidate.id === pile.id ? { ...candidate, items: [] } : candidate,
-      );
-    }
   }
 
   state.playSeconds += TICK_MS / 1000;
@@ -426,7 +427,7 @@ export function advance(state: GameState, map: WorldMap, ticks: number, options:
     ground: state.ground.map((pile) => ({ ...pile, items: [...pile.items] })),
     spawns: state.spawns.map((spawn) => ({ ...spawn })),
     progress: { ...state.progress, skills: { ...state.progress.skills }, skillTries: { ...state.progress.skillTries } },
-    inventory: { ...state.inventory, stacks: [...state.inventory.stacks], equipment: { ...state.inventory.equipment } },
+    inventory: { ...state.inventory, stacks: [...state.inventory.stacks] },
     companions: state.companions.map((companion) => ({ ...companion })),
     log: [...state.log],
   };
