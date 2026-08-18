@@ -82,7 +82,15 @@ const STAGES = [
  * salamander and the geode bear, because nothing in the prompt ruled a person
  * out. Aurora is deliberately exempt — it is built on the humanoid skeleton.
  */
-const BEAST_CLAUSE = "a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person";
+const BEAST_CLAUSE = [
+  "a four-legged animal seen from above",
+  // Legs have to be visible and planted, or the walk cycle animates a body with
+  // no ground contact and the creature reads as hovering rather than walking.
+  "standing squarely on four clearly visible legs, all four feet planted flat on the ground",
+  "body held level and symmetrical, facing straight forward, not turned or angled",
+  "animal head with a muzzle, no human face, no beard, no arms, no hands",
+  "not anthropomorphic, not bipedal, not standing upright, not on hind legs, not a person",
+].join(", ");
 
 const CREATURES = SPECIES.flatMap((species, speciesIndex) => STAGES.map((stage) => ({
   id: `${species.id}-${stage.id}`,
