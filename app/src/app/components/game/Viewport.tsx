@@ -67,14 +67,15 @@ export default function Viewport({ sim }: { sim: GameSim }) {
 
   useEffect(() => {
     const zone = sim.state.zoneId;
-    // Combatants first: they are what the player looks at while the rest streams in.
-    for (const id of characterKey.split(",")) void loadCharacter(id);
+    // Request order is load order: the browser serves these in the order they
+    // are queued, so the ground and the combatants must come before decoration
+    // and before the residents who are only visible back at the hub.
     loadTileset(zone)
       .then((tileset) => { tilesetRef.current = tileset; })
       .catch(() => { tilesetRef.current = null; });
+    for (const id of characterKey.split(",")) void loadCharacter(id);
     void loadAll(zoneEnvironmentSources(zone));
     void loadAll(ITEMS.map((item) => itemSpritePath(item.id)));
-    // Outpost residents are only visible at the hub, so they come last.
     for (const id of [...Object.values(NPC_CHARACTER), ...AMBIENT_CHARACTERS]) void loadCharacter(id);
   }, [sim.state.zoneId, characterKey]);
 

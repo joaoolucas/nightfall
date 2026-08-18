@@ -39,11 +39,28 @@ export function manifestOf(id: CharacterId): CharacterManifest | null {
   return manifests.get(id) ?? null;
 }
 
-/** Load a character's manifest and every frame it declares. */
+const IDLE_DIRECTIONS = [
+  "south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west",
+] as const;
+
+/**
+ * Load a character in two phases.
+ *
+ * A full character is roughly forty-six frames, and a biome shows a dozen
+ * characters — over five hundred images. Requesting them all at once put the
+ * eight idle sprites that make a creature visible at all behind four hundred
+ * animation frames in the browser's queue, so the world took half a minute to
+ * stop rendering as coloured blocks. Idle frames now resolve first and the
+ * clips stream in behind them; resolveFrame already falls back to idle for any
+ * clip that has not arrived.
+ */
 export function loadCharacter(id: CharacterId): Promise<void> {
   const existing = pending.get(id);
   if (existing) return existing;
   const task = (async () => {
+    // Phase one: the eight rotation frames. Enough to draw the character.
+    await loadAll(IDLE_DIRECTIONS.map((direction) => `${ROOT}/${id}/idle-${direction}.png`));
+
     let manifest: CharacterManifest | null = null;
     try {
       const response = await fetch(`${ROOT}/${id}/pixellab.json`);
@@ -56,18 +73,16 @@ export function loadCharacter(id: CharacterId): Promise<void> {
     }
     manifests.set(id, manifest);
 
-    const sources = new Set<string>();
-    for (const direction of ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"]) {
-      sources.add(`${ROOT}/${id}/idle-${direction}.png`);
-    }
+    // Phase two: animation clips, deliberately not awaited by the caller.
+    const clips = new Set<string>();
     for (const [name, clip] of Object.entries(manifest?.animations ?? {})) {
       for (const direction of clip.directions) {
         for (let frame = 0; frame < clip.frames; frame += 1) {
-          sources.add(`${ROOT}/${id}/${name}-${direction}-${frame}.png`);
+          clips.add(`${ROOT}/${id}/${name}-${direction}-${frame}.png`);
         }
       }
     }
-    await loadAll(sources);
+    void loadAll(clips);
   })();
   pending.set(id, task);
   return task;
