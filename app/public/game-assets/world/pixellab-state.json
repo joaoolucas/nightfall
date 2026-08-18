@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-08-18T20:32:35.053Z",
+  "generated_at": "2026-08-18T21:56:09.388Z",
   "characters": {
     "wayfarer": {
       "character_id": "3ed4671b-ce5e-4b63-b4b7-af8b9e832bf1",
@@ -1813,6 +1813,126 @@
         64
       ],
       "output": "effects/sky-impact.png"
+    },
+    "ui-health": {
+      "status": "completed",
+      "prompt": "a bright red heart with a pale highlight, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58000,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/health.png"
+    },
+    "ui-capacity": {
+      "status": "completed",
+      "prompt": "a brass balance scale with two hanging pans, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58002,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/capacity.png"
+    },
+    "ui-exp": {
+      "status": "completed",
+      "prompt": "a five-pointed golden star, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58001,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/exp.png"
+    },
+    "ui-attack": {
+      "status": "completed",
+      "prompt": "a single dark monster claw with three long curved sharp talons, side view, bone white talon tips, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58703,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/attack.png"
+    },
+    "ui-shield": {
+      "status": "completed",
+      "prompt": "a plain battered iron kite shield with a brass rim, blank front, no face, no eyes, no emblem, no crest, no decoration, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58704,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/shield.png"
+    },
+    "ui-vitality": {
+      "status": "completed",
+      "prompt": "a small green sprout with two leaves, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58006,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/vitality.png"
+    },
+    "ui-handling": {
+      "status": "completed",
+      "prompt": "a coiled leather leash with a brass ring, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58005,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/handling.png"
+    },
+    "ui-ledger": {
+      "status": "completed",
+      "prompt": "an open leather ledger book with a quill pen, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58008,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/ledger.png"
+    },
+    "ui-map": {
+      "status": "completed",
+      "prompt": "a rolled parchment map tied with a red cord, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58007,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/map.png"
+    },
+    "ui-pack": {
+      "status": "completed",
+      "prompt": "a canvas backpack with two brass buckles, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58009,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/pack.png"
+    },
+    "ui-skull": {
+      "status": "completed",
+      "prompt": "a small pale bone skull, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58010,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/skull.png"
+    },
+    "ui-hourglass": {
+      "status": "completed",
+      "prompt": "a brass hourglass with amber sand, crisp 16-bit pixel art game interface icon, one single centered object filling the frame, bold simple silhouette, chunky readable shapes, few colours, single dark plum outline, warm amber highlights, deep violet shadows, transparent background, flat lighting from the upper left, no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+      "seed": 58011,
+      "size": [
+        32,
+        32
+      ],
+      "output": "ui/hourglass.png"
     }
   }
 }

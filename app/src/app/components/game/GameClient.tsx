@@ -1,16 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { zoneFor } from "@/game/world/zones";
 import { battleList } from "@/game/sim/ai";
 import { PLAYER_ID, companionAttack, expForLevel, playerDefense, playerOf } from "@/game/sim/state";
 import { capacity, inventoryWeight } from "@/game/world/items";
-import { distance } from "@/game/core/grid";
+import { distance, type GridPoint } from "@/game/core/grid";
 import { canReach } from "@/game/sim/actions";
 import BattleLog from "./BattleLog";
-import CreatureIcon from "./CreatureIcon";
-import { BackpackIcon, MapIcon, SkillsIcon } from "./Icons";
+import CreatureIcon, { SpriteIcon } from "./CreatureIcon";
+import ItemIcon from "./ItemIcon";
+import UiIcon, { type UiIconName } from "./UiIcon";
 import { BackpackWindow, Container, PotionChoice } from "./Inventory";
 import MapWindow from "./MapWindow";
 import SkillsWindow from "./SkillsWindow";
@@ -21,21 +22,37 @@ import styles from "./client.module.css";
 /**
  * The game client.
  *
- * The rail used to hold everything at once, so everything was small. It now
- * holds only what you watch while a fight is happening — your health, what is
- * coming for you, who is fighting, what you drink — at a size you can read
- * without leaning in. Skills, the backpack and the route map are consulted, not
- * watched, so they moved behind the icon bar and open as windows over the world.
+ * The rail holds only what you watch while a fight is happening — your health,
+ * what is coming for you, who is fighting, what you drink. Skills, the backpack
+ * and the route map are consulted rather than watched, so they open as windows
+ * over the world from the icon bar.
  */
 
 type WindowId = "map" | "skills" | "backpack";
 
-function Bar({ value, max, tone }: { value: number; max: number; tone: "hp" | "exp" | "cap" }) {
+/** A reading with its icon and bar: the shape every measure in the rail takes. */
+function Gauge({ icon, label, reading, value, max, tone }: {
+  icon: UiIconName;
+  label: string;
+  reading: string;
+  value: number;
+  max: number;
+  tone: "hp" | "exp" | "cap" | "over";
+}) {
   const pct = max <= 0 ? 0 : Math.max(0, Math.min(100, (value / max) * 100));
   return (
-    <span className={`${styles.bar} ${styles[`bar_${tone}`]}`}>
-      <i style={{ width: `${pct}%` }} />
-    </span>
+    <div className={styles.gauge}>
+      <UiIcon name={icon} />
+      <div>
+        <div className={styles.gaugeHead}>
+          <span>{label}</span>
+          <b>{reading}</b>
+        </div>
+        <span className={`${styles.bar} ${styles[`bar_${tone}`]}`}>
+          <i style={{ width: `${pct}%` }} />
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -43,7 +60,12 @@ export default function GameClient() {
   const sim = useGameSim();
   const { state } = sim;
   const player = useMemo(() => state.entities.find((entity) => entity.id === PLAYER_ID) ?? playerOf(state), [state]);
-  const targets = useMemo(() => battleList(state), [state]);
+  // What the viewport reaches, in tiles, reported by the canvas as it resizes.
+  const [view, setView] = useState<GridPoint>({ x: 9, y: 9 });
+  const onView = useCallback((half: GridPoint) => {
+    setView((current) => (current.x === half.x && current.y === half.y ? current : half));
+  }, []);
+  const targets = useMemo(() => battleList(state, view), [state, view]);
   const active = state.entities.find((entity) => entity.kind === "companion");
 
   const [openWindow, setOpenWindow] = useState<WindowId | null>(null);
@@ -59,48 +81,38 @@ export default function GameClient() {
 
   const weight = inventoryWeight(state.inventory);
   const maxWeight = capacity(state.progress.level);
+  const nextLevel = expForLevel(state.progress.level);
   const zone = zoneFor(state.zoneId);
   const toggle = (id: WindowId) => setOpenWindow((current) => (current === id ? null : id));
+
+  const tabs: { id: WindowId; icon: UiIconName; label: string; title: string }[] = [
+    { id: "map", icon: "map", label: zone.name, title: "Choose where to hunt" },
+    { id: "skills", icon: "ledger", label: "Skills", title: "Your skills and your tally" },
+    { id: "backpack", icon: "pack", label: "Backpack", title: "What you are carrying" },
+  ];
 
   return (
     <div className={styles.client}>
       <header className={styles.topbar}>
         <div className={styles.brand}>
-          <Image src="/game-assets/brand/logo.png" alt="" width={30} height={30} className={styles.pixel} />
+          <Image src="/game-assets/brand/logo.png" alt="" width={32} height={32} className={styles.pixel} />
           <span><b>PORTAGE</b><small>.FUN</small></span>
         </div>
 
         <nav className={styles.iconBar} aria-label="Client windows">
-          <button
-            type="button"
-            className={openWindow === "map" ? styles.iconActive : ""}
-            aria-pressed={openWindow === "map"}
-            onClick={() => toggle("map")}
-            title="Hunting grounds — choose where to hunt"
-          >
-            <MapIcon />
-            <span>{zone.name}</span>
-          </button>
-          <button
-            type="button"
-            className={openWindow === "skills" ? styles.iconActive : ""}
-            aria-pressed={openWindow === "skills"}
-            onClick={() => toggle("skills")}
-            title="Skills"
-          >
-            <SkillsIcon />
-            <span>Skills</span>
-          </button>
-          <button
-            type="button"
-            className={openWindow === "backpack" ? styles.iconActive : ""}
-            aria-pressed={openWindow === "backpack"}
-            onClick={() => toggle("backpack")}
-            title="Backpack"
-          >
-            <BackpackIcon />
-            <span>Backpack</span>
-          </button>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={openWindow === tab.id ? styles.iconActive : ""}
+              aria-pressed={openWindow === tab.id}
+              onClick={() => toggle(tab.id)}
+              title={tab.title}
+            >
+              <UiIcon name={tab.icon} />
+              <span>{tab.label}</span>
+            </button>
+          ))}
         </nav>
 
         <div className={styles.saveState}>
@@ -111,8 +123,16 @@ export default function GameClient() {
 
       <div className={styles.stage}>
         <div className={styles.viewportWrap}>
-          <Viewport sim={sim} />
+          <Viewport sim={sim} onView={onView} />
           <BattleLog log={state.log} />
+          {openWindow ? (
+            <button
+              type="button"
+              className={styles.scrim}
+              aria-label="Close window"
+              onClick={() => setOpenWindow(null)}
+            />
+          ) : null}
           {openWindow === "map" ? <MapWindow sim={sim} onClose={() => setOpenWindow(null)} /> : null}
           {openWindow === "skills" ? <SkillsWindow sim={sim} onClose={() => setOpenWindow(null)} /> : null}
           {openWindow === "backpack" ? <BackpackWindow sim={sim} onClose={() => setOpenWindow(null)} /> : null}
@@ -120,18 +140,48 @@ export default function GameClient() {
 
         <aside className={styles.rail}>
           <section className={styles.panel}>
-            <div className={styles.panelHead}>{zone.name} <small>lv {state.progress.level}</small></div>
-            <div className={styles.statRow}><span>Health</span><b>{Math.ceil(player.hp)} / {player.maxHp}</b></div>
-            <Bar value={player.hp} max={player.maxHp} tone="hp" />
-            <div className={styles.statRow}><span>Experience</span><b>{state.progress.exp} / {expForLevel(state.progress.level)}</b></div>
-            <Bar value={state.progress.exp} max={expForLevel(state.progress.level)} tone="exp" />
-            <div className={styles.statRow}><span>Capacity</span><b>{weight} / {maxWeight} oz</b></div>
-            <Bar value={weight} max={maxWeight} tone="cap" />
+            <div className={styles.panelHead}>{zone.name} <small>Level {state.progress.level}</small></div>
+            <Gauge
+              icon="health"
+              label="Health"
+              reading={`${Math.ceil(player.hp)} / ${player.maxHp}`}
+              value={player.hp}
+              max={player.maxHp}
+              tone="hp"
+            />
+            <Gauge
+              icon="exp"
+              label="Experience"
+              reading={`${state.progress.exp.toLocaleString()} / ${nextLevel.toLocaleString()}`}
+              value={state.progress.exp}
+              max={nextLevel}
+              tone="exp"
+            />
+            <Gauge
+              icon="capacity"
+              label="Capacity"
+              reading={`${weight} / ${maxWeight} oz`}
+              value={weight}
+              max={maxWeight}
+              tone={weight > maxWeight ? "over" : "cap"}
+            />
             <div className={styles.statGrid}>
-              <div><span>Creature atk</span><b>{active ? Math.round(companionAttack(state, active)) : "—"}</b></div>
-              <div><span>Your defense</span><b>{Math.round(playerDefense(state))}</b></div>
-              <div><span>Gold</span><b>{state.inventory.gold.toLocaleString()}</b></div>
-              <div><span>Shards</span><b>{state.inventory.shards.toLocaleString()}</b></div>
+              <div>
+                <UiIcon name="attack" />
+                <span>Creature attack<b>{active ? Math.round(companionAttack(state, active)) : "—"}</b></span>
+              </div>
+              <div>
+                <UiIcon name="shield" />
+                <span>Your defense<b>{Math.round(playerDefense(state))}</b></span>
+              </div>
+              <div>
+                <ItemIcon defId="gold" />
+                <span>Gold<b>{state.inventory.gold.toLocaleString()}</b></span>
+              </div>
+              <div>
+                <ItemIcon defId="shard" />
+                <span>Shards<b>{state.inventory.shards.toLocaleString()}</b></span>
+              </div>
             </div>
           </section>
 
@@ -145,12 +195,14 @@ export default function GameClient() {
                   type="button"
                   className={entity.id === player.targetId ? styles.battleActive : ""}
                   onClick={() => sim.setTarget(entity.id)}
+                  title={`Send your creature at ${entity.name}`}
                 >
-                  <em>{distance(player, entity)}</em>
-                  <span>
+                  <SpriteIcon charId={entity.charId} />
+                  <span className={styles.battleText}>
                     <b>{entity.name}</b>
                     <i><em style={{ width: `${Math.max(0, (entity.hp / entity.maxHp) * 100)}%` }} /></i>
                   </span>
+                  <em className={styles.range}>{distance(player, entity)}</em>
                 </button>
               ))}
             </div>
@@ -170,8 +222,11 @@ export default function GameClient() {
                     disabled={inField}
                     title={inField ? `${companion.name} is in the field` : `Send ${companion.name} out`}
                   >
-                    <CreatureIcon species={companion.species} stage={companion.stage} size={34} />
-                    <span className={styles.partyText}><b>{companion.name}</b><small>Lv. {companion.level}</small></span>
+                    <CreatureIcon species={companion.species} stage={companion.stage} />
+                    <span className={styles.partyText}>
+                      <b>{companion.name}</b>
+                      <small>Lv. {companion.level}</small>
+                    </span>
                   </button>
                 );
               })}

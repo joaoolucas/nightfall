@@ -1,7 +1,7 @@
 "use client";
 
-import { getSprite } from "@/game/render/atlas";
 import { itemAtlasFrame, itemDef } from "@/game/world/items";
+import PixelIcon from "./PixelIcon";
 import styles from "./client.module.css";
 
 /**
@@ -32,33 +32,19 @@ const TINT: Record<string, string> = {
   material: "#a98fd6",
 };
 
-export default function ItemIcon({ defId, size = 26 }: { defId: string; size?: number }) {
+export default function ItemIcon({ defId, size = 32 }: { defId: string; size?: number }) {
   const def = itemDef(defId);
-  const sprite = getSprite("items", itemAtlasFrame(defId));
-
-  if (!sprite) {
-    return (
-      <span className={styles.itemGlyph} style={{ width: size, height: size, color: TINT[def.kind] }} aria-hidden>
-        {GLYPH[def.kind] ?? "◆"}
-      </span>
-    );
-  }
-
-  // One shared sheet shown through a window, rather than one request per icon.
-  const scale = size / sprite.w;
   return (
-    <span
-      role="img"
-      aria-label={def.name}
-      className={styles.pixel}
-      style={{
-        width: size,
-        height: size,
-        backgroundImage: "url(/game-assets/world/atlas/items.png)",
-        backgroundPosition: `-${sprite.x * scale}px -${sprite.y * scale}px`,
-        backgroundSize: `${sprite.image.naturalWidth * scale}px ${sprite.image.naturalHeight * scale}px`,
-        imageRendering: "pixelated",
-      }}
+    <PixelIcon
+      atlas="items"
+      frame={itemAtlasFrame(defId)}
+      size={size}
+      label={def.name}
+      fallback={
+        <span className={styles.itemGlyph} style={{ width: size, height: size, color: TINT[def.kind] }} aria-hidden>
+          {GLYPH[def.kind] ?? "◆"}
+        </span>
+      }
     />
   );
 }

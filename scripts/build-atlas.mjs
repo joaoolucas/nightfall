@@ -103,6 +103,18 @@ async function buildItems() {
   console.log(`  items: 1 atlas, ${result?.count ?? 0} frames`);
 }
 
+async function buildUi() {
+  const dir = path.join(ROOT, "ui");
+  if (!fs.existsSync(dir)) return console.log("  ui: none");
+  const entries = fs.readdirSync(dir)
+    .filter((name) => name.endsWith(".png"))
+    .sort()
+    .map((file) => ({ key: file.replace(/.png$/, ""), file: path.join(dir, file) }));
+  if (checkOnly) return console.log(`  ui: ${entries.length} icons`);
+  const result = await pack("ui", entries, OUT);
+  console.log(`  ui: 1 atlas, ${result?.count ?? 0} icons`);
+}
+
 async function buildTiles() {
   const base = path.join(ROOT, "tilesets");
   if (!fs.existsSync(base)) return console.log("  tilesets: none");
@@ -125,6 +137,7 @@ async function buildTiles() {
 console.log(checkOnly ? "Atlas check:" : "Building atlases...");
 await buildCharacters();
 await buildItems();
+await buildUi();
 await buildTiles();
 if (!checkOnly) {
   const total = fs.readdirSync(path.join(OUT, "characters")).filter((f) => f.endsWith(".png")).length;

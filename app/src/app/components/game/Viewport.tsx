@@ -22,6 +22,7 @@ import {
 import { loadTileset, type TilesetData } from "@/utils/world-tilesets";
 import { MONSTERS } from "@/game/world/monsters";
 import { loadAtlas } from "@/game/render/atlas";
+import { TILE } from "@/game/render/renderer";
 import type { GameSim } from "./useGameSim";
 import styles from "./client.module.css";
 
@@ -34,7 +35,7 @@ const KEY_DELTAS: Record<string, GridPoint> = {
   KeyZ: { x: -1, y: 1 }, KeyC: { x: 1, y: 1 },
 };
 
-export default function Viewport({ sim }: { sim: GameSim }) {
+export default function Viewport({ sim, onView }: { sim: GameSim; onView?: (half: GridPoint) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef(createScene());
   const simRef = useRef(sim);
@@ -111,12 +112,18 @@ export default function Viewport({ sim }: { sim: GameSim }) {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       canvas.width = Math.max(1, Math.round(rect.width * dpr));
       canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      // How far the camera reaches from the Porter, in tiles. The battle list
+      // uses it so that what it names is what you can actually see.
+      onView?.({
+        x: Math.max(1, Math.floor(rect.width / TILE / 2)),
+        y: Math.max(1, Math.floor(rect.height / TILE / 2)),
+      });
     };
     resize();
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, []);
+  }, [onView]);
 
   useEffect(() => {
     let previous = performance.now();

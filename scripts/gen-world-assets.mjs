@@ -10,6 +10,7 @@
 //   node --env-file=.env scripts/gen-world-assets.mjs --dry-run
 //   node --env-file=.env scripts/gen-world-assets.mjs --group characters
 //   node --env-file=.env scripts/gen-world-assets.mjs --group environment
+//   node --env-file=.env scripts/gen-world-assets.mjs --group ui
 //   node --env-file=.env scripts/gen-world-assets.mjs --all
 //   node --env-file=.env scripts/gen-world-assets.mjs --only wayfarer,cinderling-adult
 //
@@ -232,7 +233,48 @@ const ITEMS = ITEM_DESCRIPTIONS.map(([id, description], index) => ({
   description: `${description}, ${ITEM_STYLE}`,
 }));
 
-const CATALOG = [...CHARACTERS, ...ENVIRONMENT, ...ITEMS];
+// Client iconography.
+//
+// These are the only assets that are not part of the world, and they are drawn
+// by the same generator on purpose: an SVG glyph beside a pixel-art gold coin
+// reads as two different programs. Icons must survive a 2:1 downscale to 16px,
+// so the prompts ask for bold silhouettes and few colours rather than detail.
+const UI_STYLE = [
+  "crisp 16-bit pixel art game interface icon",
+  "one single centered object filling the frame",
+  "bold simple silhouette, chunky readable shapes, few colours",
+  "single dark plum outline, warm amber highlights, deep violet shadows",
+  "transparent background, flat lighting from the upper left",
+  "no text, no letters, no border, no frame, no background scene, no shadow on the ground",
+].join(", ");
+const UI_DESCRIPTIONS = [
+  ["health", "a bright red heart with a pale highlight"],
+  ["exp", "a five-pointed golden star"],
+  ["capacity", "a brass balance scale with two hanging pans"],
+  ["attack", "a single dark monster claw with three long curved sharp talons, side view, bone white talon tips"],
+  ["shield", "a plain battered iron kite shield with a brass rim, blank front, no face, no eyes, no emblem, no crest, no decoration"],
+  ["handling", "a coiled leather leash with a brass ring"],
+  ["vitality", "a small green sprout with two leaves"],
+  ["map", "a rolled parchment map tied with a red cord"],
+  ["ledger", "an open leather ledger book with a quill pen"],
+  ["pack", "a canvas backpack with two brass buckles"],
+  ["skull", "a small pale bone skull"],
+  ["hourglass", "a brass hourglass with amber sand"],
+];
+/** Bumped per icon when a prompt is rewritten, so the retry is not the same draw. */
+const UI_RESEED = { attack: 700, shield: 700 };
+const UI_ICONS = UI_DESCRIPTIONS.map(([id, description], index) => ({
+  id: `ui-${id}`,
+  group: "ui",
+  kind: "pixen",
+  out: `ui/${id}.png`,
+  size: [32, 32],
+  noBackground: true,
+  seed: 58000 + index + (UI_RESEED[id] ?? 0),
+  description: `${description}, ${UI_STYLE}`,
+}));
+
+const CATALOG = [...CHARACTERS, ...ENVIRONMENT, ...ITEMS, ...UI_ICONS];
 const selected = CATALOG.filter((asset) => {
   if (regenerate.size) return regenerate.has(asset.id);
   if (only.size) return only.has(asset.id);
@@ -547,7 +589,7 @@ if (estimate) {
 if (dryRun) process.exit(0);
 
 const characterAssets = selected.filter((asset) => asset.group === "characters");
-const environmentAssets = selected.filter((asset) => asset.group === "environment" || asset.group === "items");
+const staticAssets = selected.filter((asset) => asset.kind === "pixen");
 if (characterAssets.length) {
   console.log(`\nCreating/resuming ${characterAssets.length} directional characters...`);
   // Tier 1 allows eight background jobs. Clear jobs left by an interrupted run,
@@ -568,9 +610,9 @@ if (characterAssets.length) {
     await syncCharacter(entry);
   });
 }
-if (environmentAssets.length) {
-  console.log(`\nGenerating ${environmentAssets.length} environment assets...`);
-  await mapLimit(environmentAssets, 3, createStatic);
+if (staticAssets.length) {
+  console.log(`\nGenerating ${staticAssets.length} static assets...`);
+  await mapLimit(staticAssets, 3, createStatic);
 }
 const balance = await api("/balance", null, "GET");
 console.log(`\nDone. Remaining PixelLab balance: ${JSON.stringify(balance)}`);

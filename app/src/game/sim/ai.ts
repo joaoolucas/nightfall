@@ -47,10 +47,10 @@ export function nearestMonster(state: GameState, from: GridPoint, radius = Infin
 }
 
 /** Live monsters sorted by distance — the battle list the client renders. */
-export function battleList(state: GameState, radius = 9): Entity[] {
+export function battleList(state: GameState, view: GridPoint = { x: 9, y: 9 }): Entity[] {
   const player = playerOf(state);
   return monstersOf(state)
-    .filter((monster) => distance(player, monster) <= radius)
+    .filter((monster) => Math.abs(monster.x - player.x) <= view.x && Math.abs(monster.y - player.y) <= view.y)
     .sort((a, b) => distance(player, a) - distance(player, b));
 }
 

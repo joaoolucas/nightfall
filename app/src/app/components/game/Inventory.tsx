@@ -5,6 +5,7 @@ import type { GroundPile, ItemStack } from "@/game/core/types";
 import { capacity, carriedPotions, inventoryWeight, itemDef } from "@/game/world/items";
 import GameWindow from "./GameWindow";
 import ItemIcon from "./ItemIcon";
+import UiIcon from "./UiIcon";
 import type { GameSim } from "./useGameSim";
 import styles from "./client.module.css";
 
@@ -31,7 +32,7 @@ function decode(event: React.DragEvent): Source | null {
   }
 }
 
-function Slot({ stack, source, onActivate, title, size = 26 }: {
+function Slot({ stack, source, onActivate, title, size = 32 }: {
   stack: ItemStack;
   source: Source;
   onActivate?: () => void;
@@ -126,7 +127,7 @@ export function PotionChoice({ sim }: { sim: GameSim }) {
               onClick={() => sim.choosePotion(stack.defId)}
               title={`${def.name} — heals ${Math.round((def.heal ?? 0) * 100)}%`}
             >
-              <ItemIcon defId={stack.defId} size={24} />
+              <ItemIcon defId={stack.defId} size={32} />
               <span>{stack.count}</span>
             </button>
           );
@@ -145,17 +146,20 @@ export function BackpackWindow({ sim, onClose }: { sim: GameSim; onClose: () => 
   return (
     <GameWindow title="Backpack" subtitle={`${stacks.length} stacks`} onClose={onClose}>
       <div className={styles.packStats}>
-        <div><span>Gold</span><b>{gold.toLocaleString()}</b></div>
-        <div><span>Shards</span><b>{shards.toLocaleString()}</b></div>
+        <div><ItemIcon defId="gold" /><span>Gold<b>{gold.toLocaleString()}</b></span></div>
+        <div><ItemIcon defId="shard" /><span>Shards<b>{shards.toLocaleString()}</b></span></div>
       </div>
       <div className={styles.skillRow}>
-        <div className={styles.skillHead}>
-          <b>Capacity</b>
-          <span>{weight} / {maxWeight} oz</span>
+        <UiIcon name="capacity" />
+        <div>
+          <div className={styles.skillHead}>
+            <b>Capacity</b>
+            <span>{weight} / {maxWeight} oz</span>
+          </div>
+          <span className={`${styles.bar} ${styles.bar_cap}`}>
+            <i style={{ width: `${Math.min(100, (weight / maxWeight) * 100)}%` }} />
+          </span>
         </div>
-        <span className={`${styles.bar} ${styles.bar_cap}`}>
-          <i style={{ width: `${Math.min(100, (weight / maxWeight) * 100)}%` }} />
-        </span>
       </div>
       <DropZone
         className={styles.packGrid}
@@ -170,7 +174,6 @@ export function BackpackWindow({ sim, onClose }: { sim: GameSim; onClose: () => 
             <Slot
               key={stack.instanceId}
               stack={stack}
-              size={34}
               source={{ from: "backpack", instanceId: stack.instanceId }}
               onActivate={() => (def.heal ? sim.use(stack.instanceId) : sim.drop(stack.instanceId))}
               title={`${def.name} · ${def.weight} oz · ${def.value} gold — double-click to ${def.heal ? "drink" : "drop"}`}
