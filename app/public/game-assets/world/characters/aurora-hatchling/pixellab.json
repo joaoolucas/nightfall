@@ -25,6 +25,13 @@
       "frames": 6,
       "template": "taking-punch"
     },
+    "death": {
+      "directions": [
+        "south"
+      ],
+      "frames": 7,
+      "template": "falling-back-death"
+    },
     "walk": {
       "directions": [
         "south",

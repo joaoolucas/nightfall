@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-08-17T19:38:40.666Z",
+  "generated_at": "2026-08-17T19:40:51.275Z",
   "characters": {
     "wayfarer": {
       "character_id": "3ed4671b-ce5e-4b63-b4b7-af8b9e832bf1",
@@ -707,6 +707,14 @@
             "south"
           ],
           "frames": 6
+        },
+        "death": {
+          "complete": true,
+          "template": "falling-back-death",
+          "directions": [
+            "south"
+          ],
+          "frames": 7
         }
       }
     },
@@ -830,6 +838,22 @@
             "east"
           ],
           "frames": 6
+        },
+        "hurt": {
+          "complete": true,
+          "template": "taking-punch",
+          "directions": [
+            "south"
+          ],
+          "frames": 6
+        },
+        "death": {
+          "complete": true,
+          "template": "falling-back-death",
+          "directions": [
+            "south"
+          ],
+          "frames": 7
         }
       }
     }
