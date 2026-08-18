@@ -13,7 +13,7 @@ import {
   unequipSlot,
   useStack,
 } from "./actions";
-import { createInitialState, playerAttack, playerDefense, playerOf } from "./state";
+import { createInitialState, companionAttack, handlingBonus, playerDefense, playerOf } from "./state";
 
 function baseState(): GameState {
   const state = createInitialState("ember", 0);
@@ -103,15 +103,19 @@ test("a full pack refuses the item instead of silently exceeding capacity", () =
   assert.ok(inventoryWeight(next.inventory) <= capacity(next.progress.level));
 });
 
-test("equipping raises attack and unequipping returns the item to the pack", () => {
+test("equipping lends the weapon to the creature, and unequipping returns it to the pack", () => {
   const state = baseState();
   const blade = state.inventory.stacks.find((stack) => stack.defId === "worn-blade");
   assert.ok(blade, "the starting kit should include a blade");
 
-  const before = playerAttack(state);
+  const before = handlingBonus(state);
   const equipped = equipStack(state, blade!.instanceId);
   assert.ok(equipped.inventory.equipment.weapon, "the weapon slot should be filled");
-  assert.ok(playerAttack(equipped) > before, "wearing a weapon must raise attack");
+  // The Porter never swings; the weapon's power reaches the fight through them.
+  assert.ok(handlingBonus(equipped) > before, "wearing a weapon must raise what the creature hits for");
+  const creature = equipped.entities.find((entity) => entity.kind === "companion");
+  assert.ok(creature, "a creature should be in the field");
+  assert.ok(companionAttack(equipped, creature!) > companionAttack(state, creature!));
   assert.ok(
     !equipped.inventory.stacks.some((stack) => stack.instanceId === blade!.instanceId),
     "the blade should have left the backpack",
@@ -119,7 +123,7 @@ test("equipping raises attack and unequipping returns the item to the pack", () 
 
   const removed = unequipSlot(equipped, "weapon");
   assert.equal(removed.inventory.equipment.weapon, undefined);
-  assert.equal(playerAttack(removed), before, "attack should return to its base value");
+  assert.equal(handlingBonus(removed), before, "the bonus should return to its base value");
   assert.ok(removed.inventory.stacks.some((stack) => stack.defId === "worn-blade"));
 });
 

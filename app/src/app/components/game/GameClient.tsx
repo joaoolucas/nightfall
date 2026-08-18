@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ZONES, zoneFor } from "@/game/world/zones";
 import { creatureSpritePath } from "@/utils/portage";
 import { battleList } from "@/game/sim/ai";
-import { PLAYER_ID, expForLevel, playerAttack, playerDefense, playerOf } from "@/game/sim/state";
+import { PLAYER_ID, companionAttack, expForLevel, handlingBonus, playerDefense, playerOf } from "@/game/sim/state";
 import { capacity, inventoryWeight } from "@/game/world/items";
 import { distance } from "@/game/core/grid";
 import { canReach } from "@/game/sim/actions";
@@ -50,6 +50,9 @@ export default function GameClient() {
   const reachablePile = state.ground.find(
     (pile) => pile.items.length > 0 && distance(player, pile) <= 1,
   );
+
+  // Only one creature is in the field, and it is the thing that actually fights.
+  const active = state.entities.find((entity) => entity.kind === "companion");
 
   const weight = inventoryWeight(state.inventory);
   const maxWeight = capacity(state.progress.level);
@@ -99,8 +102,8 @@ export default function GameClient() {
             <div className={styles.statRow}><span>Capacity</span><b>{weight} / {maxWeight} oz</b></div>
             <Bar value={weight} max={maxWeight} tone="cap" />
             <div className={styles.statGrid}>
-              <div><span>Attack</span><b>{Math.round(playerAttack(state))}</b></div>
-              <div><span>Defense</span><b>{Math.round(playerDefense(state))}</b></div>
+              <div><span>Creature atk</span><b>{active ? Math.round(companionAttack(state, active)) : "—"}</b></div>
+              <div><span>Your defense</span><b>{Math.round(playerDefense(state))}</b></div>
               <div><span>Gold</span><b>{state.inventory.gold.toLocaleString()}</b></div>
               <div><span>Shards</span><b>{state.inventory.shards.toLocaleString()}</b></div>
             </div>
@@ -132,7 +135,9 @@ export default function GameClient() {
             <div className={styles.skills}>
               {(["melee", "shielding", "vitality"] as const).map((skill) => (
                 <div key={skill}>
-                  <span>{skill}</span>
+                  {/* The stored id stays "melee" so old saves keep working; the
+                      Porter commands rather than swings, so the label does not. */}
+                  <span>{skill === "melee" ? "handling" : skill}</span>
                   <b>{state.progress.skills[skill]}</b>
                 </div>
               ))}
@@ -154,17 +159,29 @@ export default function GameClient() {
           <Backpack sim={sim} />
 
           <section className={styles.panel}>
-            <div className={styles.panelHead}>Party</div>
+            <div className={styles.panelHead}>Creatures <small>1 in field</small></div>
             <div className={styles.party}>
-              {state.companions
-                .filter((companion) => state.activeCompanionIds.includes(companion.id))
-                .map((companion) => (
-                  <div key={companion.id}>
+              {state.companions.map((companion) => {
+                const inField = state.activeCompanionIds.includes(companion.id);
+                return (
+                  <button
+                    key={companion.id}
+                    type="button"
+                    className={inField ? styles.partyActive : ""}
+                    onClick={() => sim.summon(companion.id)}
+                    disabled={inField}
+                    title={inField ? `${companion.name} is in the field` : `Send ${companion.name} out`}
+                  >
                     <Image src={creatureSpritePath(companion.species, companion.stage)} alt="" width={30} height={30} className={styles.pixel} />
-                    <span><b>{companion.name}</b><small>Lv. {companion.level}</small></span>
-                  </div>
-                ))}
+                    <span><b>{companion.name}</b><small>Lv. {companion.level}{inField ? " · in field" : ""}</small></span>
+                  </button>
+                );
+              })}
             </div>
+            <p className={styles.hint}>
+              Only one creature fights at a time. You carry, direct and take the blows — your handling
+              ({state.progress.skills.melee}) and weapon add {Math.round(handlingBonus(state))} to its attack.
+            </p>
           </section>
 
           <section className={styles.panel}>

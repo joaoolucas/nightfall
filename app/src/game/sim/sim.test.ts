@@ -10,7 +10,7 @@ import { monsterTemplate, monstersOfZone, wardenOfZone } from "../world/monsters
 import { itemDef } from "../world/items";
 import { rollLoot } from "./loot";
 import { rollSwing } from "./combat";
-import { createInitialState, makeMonster, playerOf, PLAYER_ID } from "./state";
+import { MAX_ACTIVE_COMPANIONS, createInitialState, makeMonster, playerOf, PLAYER_ID } from "./state";
 import { advance } from "./tick";
 
 const MAP = createWorldMap("ember");
@@ -105,14 +105,42 @@ test("heavy armour blocks more often than light armour", () => {
   assert.ok(count(18) > count(3), "defense should measurably reduce damage taken");
 });
 
-test("adjacent combatants trade blows on a cooldown rather than continuously", () => {
-  const state = withMonsterBeside(soloState(), "coalback");
-  playerOf(state).targetId = state.entities.at(-1)!.id;
+test("the Porter never swings — only the creature does", () => {
+  const state = withMonsterBeside(freshState(), "coalback");
+  const monsterId = state.entities.at(-1)!.id;
+  playerOf(state).targetId = monsterId;
+
+  const result = advance(state, MAP, 120, { manualControl: true });
+  const fromPorter = result.events.filter(
+    (event) => event.sourceId === PLAYER_ID && (event.type === "hit" || event.type === "block" || event.type === "miss"),
+  );
+  assert.equal(fromPorter.length, 0, "the Porter is a handler and must land no blows at all");
+
+  const fromCreature = result.events.filter(
+    (event) => event.sourceId?.startsWith("companion:") && (event.type === "hit" || event.type === "block" || event.type === "miss"),
+  );
+  assert.ok(fromCreature.length > 0, "the creature must be the one fighting");
+});
+
+test("a creature trades blows on a cooldown rather than continuously", () => {
+  // Put the creature next to the monster so the very first tick is a swing.
+  const withMonster = withMonsterBeside(freshState(), "coalback");
+  const monster = withMonster.entities.at(-1)!;
+  const state = {
+    ...withMonster,
+    entities: withMonster.entities.map((entity) =>
+      entity.kind === "companion"
+        ? { ...entity, x: monster.x, y: monster.y + 1, targetId: monster.id, attackCooldown: 0 }
+        : entity,
+    ),
+  };
 
   // A swing resolves as exactly one of hit, block or miss, so count all three.
   const swings = (events: ReturnType<typeof advance>["events"]) =>
     events.filter(
-      (event) => event.sourceId === PLAYER_ID && (event.type === "hit" || event.type === "block" || event.type === "miss"),
+      (event) =>
+        event.sourceId?.startsWith("companion:") &&
+        (event.type === "hit" || event.type === "block" || event.type === "miss"),
     ).length;
 
   const first = advance(state, MAP, 1, { manualControl: true });
@@ -122,8 +150,20 @@ test("adjacent combatants trade blows on a cooldown rather than continuously", (
   const during = advance(first.state, MAP, 8, { manualControl: true });
   assert.equal(swings(during.events), 0, "nothing may resolve while the attack is cooling down");
 
-  const later = advance(during.state, MAP, 16, { manualControl: true });
+  const later = advance(during.state, MAP, 24, { manualControl: true });
   assert.ok(swings(later.events) >= 1, "the swing must come back up");
+});
+
+test("only one creature is ever in the field", () => {
+  const state = createInitialState("ember", 0);
+  const inField = state.entities.filter((entity) => entity.kind === "companion");
+  assert.equal(inField.length, MAX_ACTIVE_COMPANIONS);
+  assert.equal(state.activeCompanionIds.length, MAX_ACTIVE_COMPANIONS);
+  assert.ok(state.companions.length > 1, "the rest of the roster stays available to swap in");
+
+  // And it stays that way through play.
+  const result = advance(state, MAP, 600);
+  assert.equal(result.state.entities.filter((entity) => entity.kind === "companion").length, MAX_ACTIVE_COMPANIONS);
 });
 
 test("a monster with line of sight chases the player and one behind a wall does not", () => {

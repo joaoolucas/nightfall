@@ -16,7 +16,7 @@ import {
   expForLevel,
   isOverloaded,
   makeMonster,
-  playerAttack,
+  companionAttack,
   playerDefense,
   playerMaxHp,
   playerOf,
@@ -60,8 +60,12 @@ function attackCost(entity: Entity): number {
   return 22;
 }
 
+/**
+ * The Porter never appears here: they do not swing at all. Their creature
+ * carries their handling skill and their weapon into the fight instead.
+ */
 function attackPowerOf(state: GameState, entity: Entity): number {
-  return entity.kind === "player" ? playerAttack(state) : entity.stats.attack;
+  return entity.kind === "companion" ? companionAttack(state, entity) : entity.stats.attack;
 }
 
 function defensePowerOf(state: GameState, entity: Entity): number {
@@ -332,6 +336,9 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
     if (hostile && distance(entity, target) <= 1) {
       entity.path = [];
       entity.direction = directionTowards(entity, target);
+      // The Porter is a handler: they hold the target and take the blows, but
+      // the killing is the creature's. Facing the enemy is as far as it goes.
+      if (entity.kind === "player") continue;
       if (entity.attackCooldown > 0) continue;
       entity.state = "attacking";
       entity.stateTicks = ATTACK_WINDUP;
@@ -347,8 +354,9 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
           target.stateTicks = DEATH_RECOVERY_TICKS;
           killPlayer(state, target, events);
         }
-        if (entity.kind === "player" && trainSkill(state, "melee")) {
-          events.push({ type: "skillUp", tick: state.tick, text: "melee", amount: state.progress.skills.melee });
+        // Directing a creature to land a blow is what advances handling.
+        if (entity.kind === "companion" && trainSkill(state, "melee")) {
+          events.push({ type: "skillUp", tick: state.tick, text: "handling", amount: state.progress.skills.melee });
         }
       } else {
         events.push({

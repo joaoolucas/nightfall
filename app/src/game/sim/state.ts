@@ -21,6 +21,15 @@ export const PLAYER_ID = "player";
 /** Ten kills in a zone summon its Warden; the tenth spawn is the boss. */
 export const WARDEN_EVERY = 10;
 
+/**
+ * Only one creature is in the field at a time.
+ *
+ * The Porter is a handler, not a fighter: they carry, direct and take the hits,
+ * and the creature does the killing. A single companion is what makes the
+ * choice of *which* creature matter.
+ */
+export const MAX_ACTIVE_COMPANIONS = 1;
+
 const STARTER_COMPANIONS: Companion[] = [
   { id: "cinder", name: "Cinderling", species: "ember", rarity: "uncommon", stage: "adult", level: 5, exp: 0 },
   { id: "ripple", name: "Ripple", species: "creek", rarity: "common", stage: "hatchling", level: 4, exp: 12 },
@@ -47,10 +56,20 @@ export function playerMaxHp(progress: PlayerProgress): number {
   return 180 + progress.level * 26 + progress.skills.vitality * 18;
 }
 
-/** Melee power: level, the melee skill, and whatever is equipped. */
-export function playerAttack(state: GameState): number {
+/**
+ * What the Porter adds to their creature's attack.
+ *
+ * The Porter never swings — the handling skill and the weapon they carry are
+ * passed to whatever is in the field, which is why equipment still matters.
+ */
+export function handlingBonus(state: GameState): number {
   const { progress, inventory } = state;
-  return 6 + progress.level * 1.5 + progress.skills.melee * 2.2 + equipmentBonus(inventory).attack;
+  return progress.level * 0.8 + progress.skills.melee * 1.8 + equipmentBonus(inventory).attack;
+}
+
+/** Total attack for the creature currently in the field. */
+export function companionAttack(state: GameState, companion: Entity): number {
+  return companion.stats.attack + handlingBonus(state);
 }
 
 export function playerDefense(state: GameState): number {
@@ -186,7 +205,7 @@ export function createInitialState(zoneId: Species = "ember", now = 0): GameStat
   };
   const start = { x: map.start.x, y: map.start.y };
   const companions = STARTER_COMPANIONS.map((companion) => ({ ...companion }));
-  const activeCompanionIds = ["cinder", "ripple", "bramble"];
+  const activeCompanionIds = ["cinder"];
   const entities: Entity[] = [makePlayer(progress, start)];
   activeCompanionIds.forEach((id, index) => {
     const companion = companions.find((candidate) => candidate.id === id);

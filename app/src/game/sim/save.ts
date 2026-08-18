@@ -2,7 +2,7 @@ import { TICK_MS, type GameState } from "../core/types";
 import { createWorldMap } from "../world/map";
 import { itemDef } from "../world/items";
 import { advance } from "./tick";
-import { SAVE_VERSION, createInitialState } from "./state";
+import { MAX_ACTIVE_COMPANIONS, SAVE_VERSION, createInitialState } from "./state";
 
 /**
  * Persistence and offline catch-up.
@@ -85,6 +85,12 @@ function validate(value: unknown): GameState | null {
     settings: { ...base.settings, ...saved.settings },
     chain: { ...base.chain, ...saved.chain },
   };
+
+  // A save from before the one-creature rule may list a whole party; keep the
+  // first and leave the rest on the roster rather than in the field.
+  state.activeCompanionIds = state.activeCompanionIds.slice(0, MAX_ACTIVE_COMPANIONS);
+  const allowed = new Set(state.activeCompanionIds.map((id) => `companion:${id}`));
+  state.entities = state.entities.filter((entity) => entity.kind !== "companion" || allowed.has(entity.id));
 
   // Drop any stack naming an item that no longer exists in the catalogue.
   state.inventory.stacks = state.inventory.stacks.filter((stack) => {

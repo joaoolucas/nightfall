@@ -15,6 +15,7 @@ import {
   putIntoPile,
   takeAllFromPile,
   takeFromPile,
+  summonCompanion,
   unequipSlot,
   useStack,
 } from "@/game/sim/actions";
@@ -57,6 +58,7 @@ export interface GameSim {
   unequip: (slot: EquipSlot) => void;
   use: (instanceId: string) => void;
   drop: (instanceId: string) => void;
+  summon: (companionId: string) => void;
   changeZone: (zone: Species) => void;
   reset: () => void;
 }
@@ -278,6 +280,7 @@ export function useGameSim(): GameSim {
     unequip: (slot) => applyAction((current) => unequipSlot(current, slot)),
     use: (instanceId) => applyAction((current) => useStack(current, instanceId)),
     drop: (instanceId) => applyAction((current) => dropStack(current, instanceId)),
+    summon: (companionId) => applyAction((current) => summonCompanion(current, companionId)),
     state,
     map,
     catchUpProgress,

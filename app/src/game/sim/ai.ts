@@ -190,13 +190,22 @@ export function planCompanion(state: GameState, map: WorldMap, occupancy: Occupa
  * loot rules apply. Manual control always wins — the caller skips this while
  * the player is steering.
  */
+/**
+ * How close the Porter gets to what they are hunting.
+ *
+ * They cannot fight, so walking into melee would only feed the monster free
+ * hits. Hanging back a few tiles still keeps the creature — which engages
+ * anything its handler has marked within eight tiles — on the target.
+ */
+const HANDLER_STANDOFF = 3;
+
 export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupancy, tick: number): void {
   const player = playerOf(state);
   if (!isAlive(player)) return;
 
   const target = state.entities.find((entity) => entity.id === player.targetId);
   if (target && isAlive(target)) {
-    if (distance(player, target) <= 1) {
+    if (distance(player, target) <= HANDLER_STANDOFF) {
       player.path = [];
       player.direction = directionTowards(player, target);
       return;

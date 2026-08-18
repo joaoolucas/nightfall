@@ -1,4 +1,6 @@
 import { distance } from "../core/grid";
+import { nearestWalkable } from "../core/pathfind";
+import { Occupancy, createWorldMap, isFree } from "../world/map";
 import type { EquipSlot, GameState, GroundPile, ItemStack } from "../core/types";
 import {
   addToStacks,
@@ -7,7 +9,7 @@ import {
   itemDef,
   removeFromStacks,
 } from "../world/items";
-import { PLAYER_ID, playerOf } from "./state";
+import { PLAYER_ID, makeCompanion, playerOf } from "./state";
 
 /**
  * Player-driven inventory actions.
@@ -208,4 +210,39 @@ export function putIntoPile(state: GameState, instanceId: string, pileId: string
       candidate.id === pileId ? { ...candidate, items: addToStacks(candidate.items, stack) } : candidate,
     ),
   };
+}
+
+/**
+ * Put a different creature in the field.
+ *
+ * Only one is out at a time, so this is a swap, not an addition: the one on the
+ * ground is recalled and the chosen one takes its place beside the Porter. A
+ * creature recovering from defeat cannot be sent back out immediately.
+ */
+export function summonCompanion(state: GameState, companionId: string): GameState {
+  const companion = state.companions.find((candidate) => candidate.id === companionId);
+  if (!companion) return state;
+  if (state.activeCompanionIds.includes(companionId)) return state;
+
+  const player = playerOf(state);
+  const spot = nearestWalkable(
+    { x: player.x, y: player.y },
+    (point) => isFree(createWorldMap(state.zoneId), new Occupancy(state.entities), point, `companion:${companionId}`),
+    4,
+  );
+  if (!spot) return state;
+
+  // Recall whoever is out, keeping their remaining health for when they return.
+  const entities = state.entities.filter((entity) => entity.kind !== "companion");
+  const summoned = makeCompanion(companion, spot, 0);
+
+  return log(
+    {
+      ...state,
+      activeCompanionIds: [companionId],
+      entities: [...entities, summoned],
+    },
+    `${companion.name} steps forward.`,
+    "system",
+  );
 }
