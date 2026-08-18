@@ -1,18 +1,28 @@
 {
-  "character_id": "34123e64-a8ed-41e5-b0c5-7464eb7cc760",
+  "character_id": "db7b652e-62ff-47f7-b0b3-710e5f18462e",
   "name": "shard adult",
-  "prompt": "confident mature form with clear readable features, round geode bear companion, stone plates and violet crystal growths, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+  "prompt": "fully grown animal with a heavy readable silhouette, round geode bear companion, stone plates and violet crystal growths, on all fours, a four-legged animal seen from above, standing squarely on four clearly visible legs, all four feet planted flat on the ground, body held level and symmetrical, facing straight forward, not turned or angled, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not standing upright, not on hind legs, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
   "size": {
     "width": 48,
     "height": 48
   },
   "view": "high top-down",
   "animations": {
-    "attack": {
+    "walk": {
       "directions": [
+        "north",
         "east",
         "south",
+        "west"
+      ],
+      "frames": 8,
+      "template": "walk-8-frames"
+    },
+    "attack": {
+      "directions": [
+        "south",
         "west",
+        "east",
         "north"
       ],
       "frames": 7,
@@ -24,16 +34,6 @@
       ],
       "frames": 9,
       "template": "angry"
-    },
-    "walk": {
-      "directions": [
-        "east",
-        "north",
-        "west",
-        "south"
-      ],
-      "frames": 8,
-      "template": "walk-8-frames"
     }
   }
 }

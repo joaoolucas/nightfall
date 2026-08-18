@@ -1,32 +1,32 @@
 {
-  "character_id": "db909e5b-d05d-42d3-a5b0-bdd81e895405",
+  "character_id": "97176298-3a38-47f9-9bfc-a75a3425b8e4",
   "name": "wisp legend",
-  "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+  "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, a small winged creature seen from above, hovering just above the ground, insect body with wings held symmetrically, facing straight forward, not turned or angled, no human face, no beard, no arms, no hands, no legs in a human stance, not anthropomorphic, not bipedal, not standing upright, not a person, not armoured, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
   "size": {
     "width": 48,
     "height": 48
   },
   "view": "high top-down",
   "animations": {
-    "attack": {
+    "walk": {
       "directions": [
         "east",
         "south",
         "west",
         "north"
       ],
-      "frames": 7,
-      "template": "angry"
-    },
-    "walk": {
-      "directions": [
-        "south",
-        "east",
-        "north",
-        "west"
-      ],
       "frames": 8,
       "template": "walk-8-frames"
+    },
+    "attack": {
+      "directions": [
+        "east",
+        "north",
+        "west",
+        "south"
+      ],
+      "frames": 7,
+      "template": "angry"
     }
   }
 }

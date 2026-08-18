@@ -65,6 +65,18 @@ export default function Viewport({ sim }: { sim: GameSim }) {
     return [...ids].sort().join(",");
   }, [sim.state.zoneId, sim.state.activeCompanionIds, sim.state.companions]);
 
+  /**
+   * Every creature the player owns, for the roster portraits.
+   *
+   * This has to be a string, not the companions array: the reducer rebuilds
+   * that array every tick, so depending on it directly would re-run the loader
+   * ten times a second — the same stampede that once left the ground blank.
+   */
+  const rosterKey = useMemo(
+    () => sim.state.companions.map((c) => creatureCharacterId(c.species, c.stage)).sort().join(","),
+    [sim.state.companions],
+  );
+
   useEffect(() => {
     const zone = sim.state.zoneId;
     // Request order is load order: the browser serves these in the order they
@@ -78,7 +90,11 @@ export default function Viewport({ sim }: { sim: GameSim }) {
     void loadAtlas("items");
     void loadAll(zoneEnvironmentSources(zone));
     for (const id of [...Object.values(NPC_CHARACTER), ...AMBIENT_CHARACTERS]) void loadCharacter(id);
-  }, [sim.state.zoneId, characterKey]);
+    // The roster panel draws every creature you own from its world sprite, so
+    // those atlases are needed even for creatures that are not in the field.
+    // They come last: a portrait can wait, the world cannot.
+    for (const id of rosterKey.split(",")) void loadCharacter(id);
+  }, [sim.state.zoneId, characterKey, rosterKey]);
 
   // Feed newly produced simulation events into the transient visuals.
   useEffect(() => {

@@ -1,32 +1,32 @@
 {
-  "character_id": "f8a2c1ba-8f3b-43c0-b852-8863f3bde539",
+  "character_id": "d6e8d176-d5c3-43b3-8d8d-4aeee71e51fa",
   "name": "wisp hatchling",
-  "prompt": "tiny cute baby form with simple rounded proportions, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+  "prompt": "tiny cute baby form with simple rounded proportions, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, a small winged creature seen from above, hovering just above the ground, insect body with wings held symmetrically, facing straight forward, not turned or angled, no human face, no beard, no arms, no hands, no legs in a human stance, not anthropomorphic, not bipedal, not standing upright, not a person, not armoured, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
   "size": {
     "width": 48,
     "height": 48
   },
   "view": "high top-down",
   "animations": {
-    "attack": {
-      "directions": [
-        "north",
-        "south",
-        "east",
-        "west"
-      ],
-      "frames": 7,
-      "template": "angry"
-    },
     "walk": {
       "directions": [
-        "east",
         "west",
+        "north",
         "south",
-        "north"
+        "east"
       ],
       "frames": 8,
       "template": "walk-8-frames"
+    },
+    "attack": {
+      "directions": [
+        "north",
+        "east",
+        "west",
+        "south"
+      ],
+      "frames": 7,
+      "template": "angry"
     }
   }
 }

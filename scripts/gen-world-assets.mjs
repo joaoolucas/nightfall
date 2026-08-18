@@ -68,7 +68,7 @@ const SPECIES = [
   { id: "ripple", template: "bear", desc: "round water frog companion, translucent blue body, huge kind eyes, rippling water collar, squat on all fours" },
   { id: "bramble", template: "dog", desc: "leafy fox companion, green leaf fur, cream face, curling living vine tail, on all fours" },
   { id: "shard", template: "bear", desc: "round geode bear companion, stone plates and violet crystal growths, on all fours" },
-  { id: "wisp", template: "cat", desc: "small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground" },
+  { id: "wisp", template: "cat", flier: true, desc: "small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground" },
   { id: "aurora", template: "mannequin", desc: "mystical feathered kite companion, pearly body, wide iridescent aurora wings, floating above ground" },
 ];
 const STAGES = [
@@ -92,12 +92,24 @@ const BEAST_CLAUSE = [
   "not anthropomorphic, not bipedal, not standing upright, not on hind legs, not a person",
 ].join(", ");
 
+/**
+ * A flier cannot be told to plant four feet on the ground — that would fight
+ * the creature's own concept. It still needs the anti-humanoid half, since the
+ * moth otherwise generates as an armoured person with wings.
+ */
+const FLIER_CLAUSE = [
+  "a small winged creature seen from above, hovering just above the ground",
+  "insect body with wings held symmetrically, facing straight forward, not turned or angled",
+  "no human face, no beard, no arms, no hands, no legs in a human stance",
+  "not anthropomorphic, not bipedal, not standing upright, not a person, not armoured",
+].join(", ");
+
 const CREATURES = SPECIES.flatMap((species, speciesIndex) => STAGES.map((stage) => ({
   id: `${species.id}-${stage.id}`,
   name: `${species.id} ${stage.id}`,
   desc: species.template === "mannequin"
     ? `${stage.detail}, ${species.desc}`
-    : `${stage.detail}, ${species.desc}, ${BEAST_CLAUSE}`,
+    : `${stage.detail}, ${species.desc}, ${species.flier ? FLIER_CLAUSE : BEAST_CLAUSE}`,
   template: species.template,
   animate: true,
   seed: 52000 + speciesIndex * 20 + stage.seed,

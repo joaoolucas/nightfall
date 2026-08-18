@@ -3,12 +3,12 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { ZONES, zoneFor } from "@/game/world/zones";
-import { creatureSpritePath } from "@/utils/portage";
 import { battleList } from "@/game/sim/ai";
 import { PLAYER_ID, companionAttack, expForLevel, handlingBonus, playerDefense, playerOf } from "@/game/sim/state";
 import { capacity, inventoryWeight } from "@/game/world/items";
 import { distance } from "@/game/core/grid";
 import { canReach } from "@/game/sim/actions";
+import CreatureIcon from "./CreatureIcon";
 import { Backpack, Container, Equipment } from "./Inventory";
 import Viewport from "./Viewport";
 import { useGameSim } from "./useGameSim";
@@ -172,7 +172,7 @@ export default function GameClient() {
                     disabled={inField}
                     title={inField ? `${companion.name} is in the field` : `Send ${companion.name} out`}
                   >
-                    <Image src={creatureSpritePath(companion.species, companion.stage)} alt="" width={30} height={30} className={styles.pixel} />
+                    <CreatureIcon species={companion.species} stage={companion.stage} />
                     <span><b>{companion.name}</b><small>Lv. {companion.level}{inField ? " · in field" : ""}</small></span>
                   </button>
                 );
