@@ -11,7 +11,7 @@ import {
 import { selectWangTile, type TilesetData } from "@/utils/world-tilesets";
 import type { PropKind } from "@/utils/world-engine";
 import { distance, type GridPoint } from "../core/grid";
-import type { CombatEvent, Entity, GameState, GroundPile } from "../core/types";
+import { TICK_MS, type CombatEvent, type Entity, type GameState, type GroundPile } from "../core/types";
 import { ATTACK_WINDUP, DEATH_TICKS, HURT_TICKS } from "../sim/combat";
 import { PLAYER_ID } from "../sim/state";
 import type { WorldMap } from "../world/map";
@@ -75,10 +75,55 @@ export interface Impact {
   born: number;
 }
 
-/** Per-entity smoothed position, so tile-stepped movement reads as walking. */
+/**
+ * Per-entity drawing state.
+ *
+ * Movement is interpolated across the *measured* duration of a step rather than
+ * eased toward the target tile. Easing looked right in isolation but was wrong
+ * in time: it converged in about a tenth of a second while a step actually
+ * takes four to eight, so a creature snapped onto its new tile and then stood
+ * still for the rest of the interval. Combined with a walk cycle running off a
+ * wall clock, that is precisely the "picture being dragged" read.
+ *
+ * The step duration is measured from the gap between tile changes, so the
+ * renderer never has to know the simulation's tick costs.
+ */
 interface Visual {
+  /** Drawn position, in tiles. */
   x: number;
   y: number;
+  /** Where this step began, and where it ends. */
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  /** When the current step began, and how long the last one took. */
+  stepStart: number;
+  stepDuration: number;
+  /** Tiles travelled; the walk cycle loops once per tile. */
+  walkPhase: number;
+  /** When the current non-looping clip began. */
+  stateSince: number;
+  lastState: string;
+}
+
+/** Fallback until a creature has taken two steps and its pace can be measured. */
+const DEFAULT_STEP_MS = 420;
+
+function newVisual(entity: Entity, now: number): Visual {
+  return {
+    x: entity.x,
+    y: entity.y,
+    fromX: entity.x,
+    fromY: entity.y,
+    toX: entity.x,
+    toY: entity.y,
+    stepStart: now,
+    stepDuration: DEFAULT_STEP_MS,
+    walkPhase: 0,
+    stateSince: now,
+    lastState: entity.state,
+  };
 }
 
 export interface RenderScene {
@@ -119,37 +164,67 @@ export function ingestEvents(scene: RenderScene, state: GameState, events: reado
   void state;
 }
 
-/** Ease each entity's drawn position toward its tile. */
-export function advanceVisuals(scene: RenderScene, state: GameState, deltaMs: number): void {
+/** Advance every entity's drawn position and animation phase. */
+export function advanceVisuals(scene: RenderScene, state: GameState, deltaMs: number, now: number): void {
   const alive = new Set(state.entities.map((entity) => entity.id));
   for (const id of [...scene.visuals.keys()]) if (!alive.has(id)) scene.visuals.delete(id);
-  const rate = Math.min(1, deltaMs / 110);
+
   for (const entity of state.entities) {
-    const current = scene.visuals.get(entity.id);
-    if (!current) {
-      scene.visuals.set(entity.id, { x: entity.x, y: entity.y });
+    let visual = scene.visuals.get(entity.id);
+    if (!visual) {
+      visual = newVisual(entity, now);
+      scene.visuals.set(entity.id, visual);
       continue;
     }
-    // A large jump means a teleport or respawn, not a step: snap instead of sliding.
-    if (Math.abs(current.x - entity.x) > 2 || Math.abs(current.y - entity.y) > 2) {
-      current.x = entity.x;
-      current.y = entity.y;
-      continue;
+
+    if (entity.state !== visual.lastState) {
+      visual.lastState = entity.state;
+      visual.stateSince = now;
     }
-    current.x += (entity.x - current.x) * rate;
-    current.y += (entity.y - current.y) * rate;
+
+    if (entity.x !== visual.toX || entity.y !== visual.toY) {
+      // A jump of more than one tile is a respawn or a recall, not a step.
+      if (Math.abs(entity.x - visual.toX) > 1 || Math.abs(entity.y - visual.toY) > 1) {
+        Object.assign(visual, newVisual(entity, now));
+        continue;
+      }
+      // Start from wherever the sprite actually is, so a step that begins
+      // before the last one finished does not snap.
+      const elapsed = now - visual.stepStart;
+      if (elapsed > 40) visual.stepDuration = Math.min(900, Math.max(120, elapsed));
+      visual.fromX = visual.x;
+      visual.fromY = visual.y;
+      visual.toX = entity.x;
+      visual.toY = entity.y;
+      visual.stepStart = now;
+    }
+
+    const progress = Math.min(1, (now - visual.stepStart) / visual.stepDuration);
+    const beforeX = visual.x;
+    const beforeY = visual.y;
+    visual.x = visual.fromX + (visual.toX - visual.fromX) * progress;
+    visual.y = visual.fromY + (visual.toY - visual.fromY) * progress;
+    // One full gait cycle per tile crossed, so the feet always match the pace.
+    if (entity.state === "walking") {
+      visual.walkPhase += Math.hypot(visual.x - beforeX, visual.y - beforeY);
+    }
   }
+  void deltaMs;
 }
 
 function visualOf(scene: RenderScene, entity: Entity): Visual {
-  return scene.visuals.get(entity.id) ?? { x: entity.x, y: entity.y };
+  return scene.visuals.get(entity.id) ?? newVisual(entity, 0);
 }
 
-/** Fraction through a non-looping clip, from the entity's remaining state ticks. */
-function clipPhase(entity: Entity): number {
-  const total = entity.state === "attacking" ? ATTACK_WINDUP : entity.state === "hurt" ? HURT_TICKS : DEATH_TICKS;
-  if (total <= 0) return 0;
-  return Math.min(1, Math.max(0, 1 - entity.stateTicks / total));
+/**
+ * Fraction through a non-looping clip, measured in real time rather than in
+ * simulation ticks — otherwise the clip advances only ten times a second and a
+ * six-frame swing plays as five stills.
+ */
+function clipPhase(entity: Entity, visual: Visual, now: number): number {
+  const ticks = entity.state === "attacking" ? ATTACK_WINDUP : entity.state === "hurt" ? HURT_TICKS : DEATH_TICKS;
+  if (ticks <= 0) return 0;
+  return Math.min(1, Math.max(0, (now - visual.stateSince) / (ticks * TICK_MS)));
 }
 
 function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, color: string, size = 11) {
@@ -284,8 +359,8 @@ function drawEntity(
     id: entity.charId,
     state: entity.state,
     direction: entity.direction,
-    phase: clipPhase(entity),
-    now,
+    phase: clipPhase(entity, visual, now),
+    walkPhase: visual.walkPhase,
   });
 
   ctx.save();

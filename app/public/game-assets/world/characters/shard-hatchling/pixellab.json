@@ -28,12 +28,12 @@
     "walk": {
       "directions": [
         "south",
-        "north",
+        "west",
         "east",
-        "west"
+        "north"
       ],
-      "frames": 4,
-      "template": "walk-4-frames"
+      "frames": 8,
+      "template": "walk-8-frames"
     }
   }
 }

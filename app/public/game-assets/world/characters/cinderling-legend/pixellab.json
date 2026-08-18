@@ -20,13 +20,13 @@
     },
     "walk": {
       "directions": [
-        "south",
+        "west",
         "north",
         "east",
-        "west"
+        "south"
       ],
-      "frames": 4,
-      "template": "walk-4-frames"
+      "frames": 8,
+      "template": "walk-8-frames"
     }
   }
 }

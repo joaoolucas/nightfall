@@ -34,13 +34,13 @@
     },
     "walk": {
       "directions": [
-        "south",
         "north",
         "east",
-        "west"
+        "west",
+        "south"
       ],
-      "frames": 4,
-      "template": "walk-4-frames"
+      "frames": 8,
+      "template": "walking-8-frames"
     }
   }
 }

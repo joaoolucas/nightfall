@@ -10,23 +10,23 @@
   "animations": {
     "attack": {
       "directions": [
-        "north",
+        "west",
         "east",
-        "south",
-        "west"
+        "north",
+        "south"
       ],
       "frames": 7,
       "template": "angry"
     },
     "walk": {
       "directions": [
-        "south",
         "north",
-        "east",
-        "west"
+        "west",
+        "south",
+        "east"
       ],
-      "frames": 4,
-      "template": "walk-4-frames"
+      "frames": 8,
+      "template": "walk-8-frames"
     }
   }
 }

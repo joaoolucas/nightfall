@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-08-18T13:22:56.610Z",
+  "generated_at": "2026-08-18T19:37:55.792Z",
   "characters": {
     "wayfarer": {
       "character_id": "3ed4671b-ce5e-4b63-b4b7-af8b9e832bf1",
@@ -13,7 +13,6 @@
         "height": 48
       },
       "view": "high top-down",
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -41,8 +40,20 @@
             "south"
           ],
           "frames": 7
+        },
+        "walk": {
+          "complete": true,
+          "template": "walking-8-frames",
+          "directions": [
+            "east",
+            "south",
+            "west",
+            "north"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "pathfinder-tavi": {
       "character_id": "f8d992de-51ed-422d-8222-9a022eac9138",
@@ -138,7 +149,7 @@
     "cinderling-hatchling": {
       "character_id": "8610d7b9-8622-4457-9704-6b014f4ba66e",
       "create_job_id": "39bb7771-87b4-4577-b3e0-0201af6ca25b",
-      "prompt": "tiny cute baby form with simple rounded proportions, smoldering salamander companion, glowing ember scales, broad lizard head, little flames along its back, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "tiny cute baby form with simple rounded proportions, smoldering salamander companion, glowing ember scales, broad lizard head, little flames along its back, on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "dog",
       "seed": 52001,
       "status": "completed",
@@ -153,7 +164,6 @@
         "90d86182-37f3-49c8-8890-0755efa407c1",
         "cde4da2f-90a8-4939-8811-82edf55e7380"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -165,13 +175,25 @@
             "west"
           ],
           "frames": 6
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "south",
+            "north",
+            "east",
+            "west"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "cinderling-legend": {
       "character_id": "ef8047f5-d17c-4a37-ac3e-07ffe02aa840",
       "create_job_id": "51f62a35-d6f4-40c0-a347-0d93d522b888",
-      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, smoldering salamander companion, glowing ember scales, broad lizard head, little flames along its back, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, smoldering salamander companion, glowing ember scales, broad lizard head, little flames along its back, on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "dog",
       "seed": 52003,
       "status": "completed",
@@ -186,7 +208,6 @@
         "bc4709a7-a985-4f88-83b0-d451bfd24974",
         "2e6c6ac4-e517-4ccf-bc0e-7e9ff94b83aa"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -198,13 +219,25 @@
             "south"
           ],
           "frames": 6
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "west",
+            "north",
+            "east",
+            "south"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "ripple-hatchling": {
       "character_id": "62990fb6-285c-4183-b3ff-0808698d645d",
       "create_job_id": "96f285ec-2303-4d6d-a348-2ce7e45e9c3f",
-      "prompt": "tiny cute baby form with simple rounded proportions, round water frog companion, translucent blue body, huge kind eyes, rippling water collar, squat on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "tiny cute baby form with simple rounded proportions, round water frog companion, translucent blue body, huge kind eyes, rippling water collar, squat on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "bear",
       "seed": 52021,
       "status": "completed",
@@ -219,7 +252,6 @@
         "d9da4dbe-2994-4c57-b2a2-9ace23004069",
         "4109d3b8-00d9-4f34-baa8-fb093b395c9f"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -239,13 +271,25 @@
             "south"
           ],
           "frames": 9
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "south",
+            "west",
+            "east",
+            "north"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "ripple-adult": {
       "character_id": "c57ca774-053c-41fd-8003-c83ea08f381c",
       "create_job_id": "7407aeaa-339b-44b1-a45c-b591ec8ae1fc",
-      "prompt": "confident mature form with clear readable features, round water frog companion, translucent blue body, huge kind eyes, rippling water collar, squat on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "fully grown animal with a heavy readable silhouette, round water frog companion, translucent blue body, huge kind eyes, rippling water collar, squat on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "bear",
       "seed": 52022,
       "status": "completed",
@@ -260,7 +304,6 @@
         "38fe4bbc-ba50-4985-95b8-64196f8ee20d",
         "fb6b18e5-8a9a-4c16-9fb7-b3a132c197f8"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -284,13 +327,25 @@
         "death": {
           "complete": false,
           "skipped": true
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "west",
+            "north",
+            "south",
+            "east"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "ripple-legend": {
       "character_id": "26a9a52c-c064-4fd6-9610-1e00179eaf0b",
       "create_job_id": "32bc79a5-d97c-40c2-b4c0-55aacda52c09",
-      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, round water frog companion, translucent blue body, huge kind eyes, rippling water collar, squat on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, round water frog companion, translucent blue body, huge kind eyes, rippling water collar, squat on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "bear",
       "seed": 52023,
       "status": "completed",
@@ -305,7 +360,6 @@
         "d24d11eb-d5c8-416e-9bf7-e61d64d5a00a",
         "0adfcf1d-b806-4b85-b725-74095865586d"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -325,13 +379,25 @@
             "south"
           ],
           "frames": 9
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "east",
+            "west",
+            "north",
+            "south"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "bramble-hatchling": {
       "character_id": "9f846aab-ee92-436d-ac7d-3df8b4e90ffe",
       "create_job_id": "ee287bda-c478-4234-94a3-aae960c01471",
-      "prompt": "tiny cute baby form with simple rounded proportions, leafy fox companion, green leaf fur, cream face, curling living vine tail, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "tiny cute baby form with simple rounded proportions, leafy fox companion, green leaf fur, cream face, curling living vine tail, on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "dog",
       "seed": 52041,
       "status": "completed",
@@ -346,7 +412,6 @@
         "8dc10ddf-9537-4d6a-bada-d3bf6795e009",
         "ae1649a4-1f84-48d9-a25b-d822507e18b7"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -358,13 +423,25 @@
             "east"
           ],
           "frames": 6
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "north",
+            "east",
+            "west",
+            "south"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "bramble-adult": {
       "character_id": "e7ce578a-50d8-47b7-9d0e-218589a62caa",
       "create_job_id": "1c9bc2eb-3807-4365-885f-5206486cc685",
-      "prompt": "confident mature form with clear readable features, leafy fox companion, green leaf fur, cream face, curling living vine tail, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "fully grown animal with a heavy readable silhouette, leafy fox companion, green leaf fur, cream face, curling living vine tail, on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "dog",
       "seed": 52042,
       "status": "completed",
@@ -379,7 +456,6 @@
         "cb71caee-b52e-489f-9e3a-fd29de8e2f5d",
         "3bb6303d-6e75-41ef-8258-351d8cd102d6"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -399,13 +475,25 @@
         "death": {
           "complete": false,
           "skipped": true
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "north",
+            "east",
+            "west",
+            "south"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "bramble-legend": {
       "character_id": "857e202c-87c0-4959-85b9-ddc5582c416a",
       "create_job_id": "369dcd0a-8dcf-4ea7-a7ec-8b849eb62485",
-      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, leafy fox companion, green leaf fur, cream face, curling living vine tail, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, leafy fox companion, green leaf fur, cream face, curling living vine tail, on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "dog",
       "seed": 52043,
       "status": "completed",
@@ -420,7 +508,6 @@
         "4fbd0738-62b3-4f83-98bd-1fb74b2e915c",
         "318de3a8-3daf-48dd-9e52-edab87e364c1"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -432,13 +519,25 @@
             "east"
           ],
           "frames": 6
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "west",
+            "south",
+            "north",
+            "east"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "shard-hatchling": {
       "character_id": "5c789589-083e-4fa7-9d64-e1f78f52f1f3",
       "create_job_id": "5ff99a9a-737f-4fcc-9ac2-18991a71e440",
-      "prompt": "tiny cute baby form with simple rounded proportions, round geode bear companion, stone plates and violet crystal growths, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "tiny cute baby form with simple rounded proportions, round geode bear companion, stone plates and violet crystal growths, on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "bear",
       "seed": 52061,
       "status": "completed",
@@ -453,7 +552,6 @@
         "e38b5062-64db-4ab0-903b-a21ddb7a173c",
         "8734c8cb-5620-45b2-b3c3-8cc8b66e3273"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -473,13 +571,25 @@
             "south"
           ],
           "frames": 9
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "south",
+            "west",
+            "east",
+            "north"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "shard-adult": {
       "character_id": "34123e64-a8ed-41e5-b0c5-7464eb7cc760",
       "create_job_id": "9240f3a1-01e7-4459-80c4-4888bb445d21",
-      "prompt": "confident mature form with clear readable features, round geode bear companion, stone plates and violet crystal growths, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "fully grown animal with a heavy readable silhouette, round geode bear companion, stone plates and violet crystal growths, on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "bear",
       "seed": 52062,
       "status": "completed",
@@ -494,7 +604,6 @@
         "83d9abd0-082d-4161-acdc-ef9c06fbe38e",
         "89e5a286-d3ed-4df4-a338-24d40f06a6c8"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -518,13 +627,25 @@
         "death": {
           "complete": false,
           "skipped": true
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "east",
+            "north",
+            "west",
+            "south"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "shard-legend": {
       "character_id": "f1b2bd4d-9236-4932-b816-d225e42f8f4e",
       "create_job_id": "c34b229b-b290-46de-9426-db0cb3d74c91",
-      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, round geode bear companion, stone plates and violet crystal growths, on all fours, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, round geode bear companion, stone plates and violet crystal growths, on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "bear",
       "seed": 52063,
       "status": "completed",
@@ -539,7 +660,6 @@
         "e27eca80-830b-41cb-a6eb-5a53f0617e6d",
         "889eaf12-7be4-48c9-8cd7-906275e8211f"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -559,13 +679,25 @@
             "south"
           ],
           "frames": 9
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "east",
+            "west",
+            "south",
+            "north"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "wisp-hatchling": {
       "character_id": "f8a2c1ba-8f3b-43c0-b852-8863f3bde539",
       "create_job_id": "7b6e1ec3-933c-4ecd-9898-48a80e91bb96",
-      "prompt": "tiny cute baby form with simple rounded proportions, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "tiny cute baby form with simple rounded proportions, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "cat",
       "seed": 52081,
       "status": "completed",
@@ -580,7 +712,6 @@
         "354ba37f-2353-4f67-96d9-426c1a3e6980",
         "4d2277cc-70dc-48eb-9ce1-380b13430bf6"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -592,13 +723,25 @@
             "west"
           ],
           "frames": 7
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "east",
+            "west",
+            "south",
+            "north"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "wisp-legend": {
       "character_id": "db909e5b-d05d-42d3-a5b0-bdd81e895405",
       "create_job_id": "40f81070-1f92-40e4-886f-db6573b5f421",
-      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "majestic evolved form with radiant elemental crown and larger silhouette, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "cat",
       "seed": 52083,
       "status": "completed",
@@ -613,7 +756,6 @@
         "7d97e815-0e8a-453a-99b5-eb30d5924eff",
         "64adddf0-cb50-4ac9-9e83-a3fde9f85ce7"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -625,8 +767,20 @@
             "north"
           ],
           "frames": 7
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "aurora-hatchling": {
       "character_id": "4fb834de-a97a-40b8-9c8f-93a2544823db",
@@ -646,7 +800,6 @@
         "3a44b9fa-98cd-4193-88b8-6068a6d74601",
         "e2fb7dd2-310a-45f9-b31d-189fc1ad6aa7"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -674,13 +827,25 @@
             "south"
           ],
           "frames": 7
+        },
+        "walk": {
+          "complete": true,
+          "template": "walking-8-frames",
+          "directions": [
+            "east",
+            "north",
+            "south",
+            "west"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "wisp-adult": {
       "character_id": "bb4fe071-cb6d-4d17-b8f8-dce2b29b6b24",
       "create_job_id": "a423d9b9-4db0-49bd-bfda-f1b932a81cfe",
-      "prompt": "confident mature form with clear readable features, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "fully grown animal with a heavy readable silhouette, small shadow moth companion, smoky purple round body, luminous gold eyes, tiny mist wings, hovering just above ground, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "cat",
       "seed": 52082,
       "status": "completed",
@@ -695,7 +860,6 @@
         "d504929e-dd59-4984-bead-56de1f345f4d",
         "9b941987-f5f6-4c2f-9fe7-55fd5c48f2b0"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -715,13 +879,25 @@
         "death": {
           "complete": false,
           "skipped": true
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "north",
+            "west",
+            "south",
+            "east"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "aurora-adult": {
       "character_id": "bb2a6a54-95e5-4853-a26f-852c4f90a95f",
       "create_job_id": "60baf520-a407-438e-b84d-9516002572c1",
-      "prompt": "confident mature form with clear readable features, mystical feathered kite companion, pearly body, wide iridescent aurora wings, floating above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
+      "prompt": "fully grown animal with a heavy readable silhouette, mystical feathered kite companion, pearly body, wide iridescent aurora wings, floating above ground, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "mannequin",
       "seed": 52102,
       "status": "completed",
@@ -736,7 +912,6 @@
         "298dd3f5-cb12-4b7d-8e68-be2a56622b53",
         "ef02ea70-3753-489b-b628-c2150551eed6"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -764,8 +939,20 @@
             "south"
           ],
           "frames": 7
+        },
+        "walk": {
+          "complete": true,
+          "template": "walking-8-frames",
+          "directions": [
+            "north",
+            "west",
+            "east",
+            "south"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "aurora-legend": {
       "character_id": "204ddc4d-830a-47ca-8433-06fdad6507ba",
@@ -785,7 +972,6 @@
         "6c286f70-0d77-4e93-bd4f-ded2798491cc",
         "f0c36160-29fb-44a4-bd33-ede999ea9004"
       ],
-      "walk_complete": true,
       "animations": {
         "attack": {
           "complete": true,
@@ -813,15 +999,27 @@
             "south"
           ],
           "frames": 7
+        },
+        "walk": {
+          "complete": true,
+          "template": "walking-8-frames",
+          "directions": [
+            "north",
+            "east",
+            "west",
+            "south"
+          ],
+          "frames": 8
         }
-      }
+      },
+      "walk_complete": true
     },
     "cinderling-adult": {
       "character_id": "1df5cc4c-8fb2-46c3-8554-c44a442f7c25",
       "create_job_id": "2dd37edf-c4e0-46b2-b6a2-31a54da8fd8f",
       "prompt": "fully grown animal with a heavy readable silhouette, smoldering salamander companion, glowing ember scales, broad lizard head, little flames along its back, on all fours, a four-legged animal seen from above, all four feet on the ground, animal head with a muzzle, no human face, no beard, no arms, no hands, not anthropomorphic, not bipedal, not humanoid, not a person, original Portage.fun game asset, crisp 16-bit pixel art, high top-down RPG camera, cozy dark-fantasy caravan aesthetic, deep violet shadows, warm amber highlights, limited harmonious palette, single dark plum outline, medium detail, clean readable silhouette, no text, no letters, no logo, no copyrighted character, centered full-body sprite, transparent background, game-ready directional character",
       "template": "dog",
-      "seed": 52902,
+      "seed": 52002,
       "status": "completed",
       "size": {
         "width": 48,
@@ -829,17 +1027,6 @@
       },
       "view": "high top-down",
       "animations": {
-        "walk": {
-          "complete": true,
-          "template": "walk-4-frames",
-          "directions": [
-            "north",
-            "east",
-            "south",
-            "west"
-          ],
-          "frames": 4
-        },
         "attack": {
           "complete": true,
           "template": "bark",
@@ -850,6 +1037,17 @@
             "west"
           ],
           "frames": 6
+        },
+        "walk": {
+          "complete": true,
+          "template": "walk-8-frames",
+          "directions": [
+            "north",
+            "south",
+            "east",
+            "west"
+          ],
+          "frames": 8
         }
       },
       "walk_complete": true

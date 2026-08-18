@@ -8,16 +8,6 @@
   },
   "view": "high top-down",
   "animations": {
-    "walk": {
-      "directions": [
-        "north",
-        "east",
-        "south",
-        "west"
-      ],
-      "frames": 4,
-      "template": "walk-4-frames"
-    },
     "attack": {
       "directions": [
         "east",
@@ -27,6 +17,16 @@
       ],
       "frames": 6,
       "template": "bark"
+    },
+    "walk": {
+      "directions": [
+        "north",
+        "south",
+        "east",
+        "west"
+      ],
+      "frames": 8,
+      "template": "walk-8-frames"
     }
   }
 }

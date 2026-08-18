@@ -76,8 +76,8 @@ export interface FrameRequest {
   direction: Direction8;
   /** 0..1 through the current non-looping clip (attack, hurt, death). */
   phase: number;
-  /** Milliseconds, for looping clips. */
-  now: number;
+  /** Tiles travelled so far; the walk cycle loops once per tile. */
+  walkPhase: number;
 }
 
 /**
@@ -86,7 +86,7 @@ export interface FrameRequest {
  * is missing still renders rather than vanishing.
  */
 export function resolveFrame(request: FrameRequest): Sprite | undefined {
-  const { id, state, direction, phase, now } = request;
+  const { id, state, direction, phase, walkPhase } = request;
   const atlas = atlasNameOf(id);
   const candidates: string[] = [];
 
@@ -100,12 +100,10 @@ export function resolveFrame(request: FrameRequest): Sprite | undefined {
     const key = clipFrameKey(id, "death", direction, phase);
     if (key) candidates.push(key);
   } else if (state === "walking") {
-    const clip = manifestOf(id)?.animations?.walk;
-    if (clip && clip.frames > 0) {
-      const loop = (Math.floor(now / 140) % clip.frames) / clip.frames;
-      const key = clipFrameKey(id, "walk", direction, loop);
-      if (key) candidates.push(key);
-    }
+    // The gait is driven by distance covered, not by elapsed time, so a slow
+    // monster and a quick companion each plant their feet at their own pace.
+    const key = clipFrameKey(id, "walk", direction, walkPhase - Math.floor(walkPhase));
+    if (key) candidates.push(key);
   }
 
   candidates.push(`idle-${direction}`, "idle-south");

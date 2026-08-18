@@ -35,6 +35,12 @@ const option = (name) => {
 };
 const groups = new Set((option("--group") ?? "").split(",").filter(Boolean));
 const regenerate = new Set((option("--regenerate") ?? "").split(",").filter(Boolean));
+/**
+ * Clips to redo for the selected characters, e.g. --reanimate walk. A completed
+ * clip is otherwise skipped, so switching a walk cycle from four frames to eight
+ * would never take effect.
+ */
+const reanimate = new Set((option("--reanimate") ?? "").split(",").filter(Boolean));
 const only = new Set((option("--only") ?? "").split(",").filter(Boolean));
 
 if (!dryRun && !estimate && !KEY) {
@@ -106,10 +112,13 @@ const CHARACTERS = [...NPCS, ...CREATURES].map((entry) => ({ ...entry, group: "c
  * compromise: in this genre a slain creature is simply replaced by its corpse.
  */
 const SKELETON_ANIMATIONS = {
-  mannequin: { walk: ["walking-4-frames", "walk"], attack: ["cross-punch", "lead-jab"], hurt: ["taking-punch"], death: ["falling-back-death"] },
-  dog: { walk: ["walk-4-frames"], attack: ["bark"], hurt: [], death: [] },
-  bear: { walk: ["walk-4-frames"], attack: ["attack-left", "jump-attack"], hurt: ["angry"], death: [] },
-  cat: { walk: ["walk-4-frames"], attack: ["angry", "jump"], hurt: [], death: [] },
+  // Eight-frame gaits where the skeleton offers them: a four-frame cycle over a
+  // 400ms step is only ten frames a second of leg movement, which reads as a
+  // sliding picture however smoothly the sprite itself is interpolated.
+  mannequin: { walk: ["walking-8-frames", "walking-4-frames", "walk"], attack: ["cross-punch", "lead-jab"], hurt: ["taking-punch"], death: ["falling-back-death"] },
+  dog: { walk: ["walk-8-frames", "walk-4-frames"], attack: ["bark"], hurt: [], death: [] },
+  bear: { walk: ["walk-8-frames", "walk-4-frames"], attack: ["attack-left", "jump-attack"], hurt: ["angry"], death: [] },
+  cat: { walk: ["walk-8-frames", "walk-4-frames"], attack: ["angry", "jump"], hurt: [], death: [] },
 };
 
 /**
@@ -344,7 +353,20 @@ async function syncAnimations(asset, characterId, detail, out) {
   record.animations = record.animations ?? {};
   let current = detail;
 
-  for (const step of plan) {
+  for (let step of plan) {
+    if (reanimate.has(step.name)) {
+      delete record.animations[step.name];
+      if (step.name === "walk") delete record.walk_complete;
+      const prefix = `${step.name}-`;
+      for (const file of fs.readdirSync(out)) {
+        if (file.startsWith(prefix)) fs.rmSync(path.join(out, file), { force: true });
+      }
+      // Clearing local state is not enough: the character still carries the old
+      // clip on the API, and it is still in the preference list, so the search
+      // below would match it and simply re-download what we just deleted.
+      // Demand the preferred template and nothing else.
+      step = { ...step, templates: step.templates.slice(0, 1) };
+    }
     if (isAnimationComplete(record, step.name)) continue;
     let clip = current.animations?.find((animation) => step.templates.includes(animation.animation_type));
     if (!clip) {
@@ -484,7 +506,7 @@ if (estimate) {
     if (!known?.character_id && !asset.existingId) rotations += DIRECTIONS.length;
     if (!asset.animate) continue;
     for (const step of animationPlan(asset)) {
-      if (isAnimationComplete(known, step.name)) continue;
+      if (!reanimate.has(step.name) && isAnimationComplete(known, step.name)) continue;
       clips += step.directions.length;
     }
   }

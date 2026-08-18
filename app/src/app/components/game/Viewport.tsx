@@ -113,7 +113,7 @@ export default function Viewport({ sim }: { sim: GameSim }) {
           const rect = canvas.getBoundingClientRect();
           const dpr = canvas.width / Math.max(1, rect.width);
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-          advanceVisuals(sceneRef.current, current.state, now - previous);
+          advanceVisuals(sceneRef.current, current.state, now - previous, now);
           render({
             ctx,
             scene: sceneRef.current,

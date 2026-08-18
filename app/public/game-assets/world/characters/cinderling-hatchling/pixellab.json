@@ -25,8 +25,8 @@
         "east",
         "west"
       ],
-      "frames": 4,
-      "template": "walk-4-frames"
+      "frames": 8,
+      "template": "walk-8-frames"
     }
   }
 }
