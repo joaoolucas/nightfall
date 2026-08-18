@@ -8,15 +8,16 @@ import {
   propPath,
   structurePath,
 } from "@/utils/world-art";
-import { getTileImage, selectWangTile, type TilesetData } from "@/utils/world-tilesets";
+import { selectWangTile, type TilesetData } from "@/utils/world-tilesets";
 import type { PropKind } from "@/utils/world-engine";
 import { distance, type GridPoint } from "../core/grid";
 import type { CombatEvent, Entity, GameState, GroundPile } from "../core/types";
 import { ATTACK_WINDUP, DEATH_TICKS, HURT_TICKS } from "../sim/combat";
 import { PLAYER_ID } from "../sim/state";
 import type { WorldMap } from "../world/map";
-import { itemSpritePath } from "../world/items";
+import { itemAtlasFrame } from "../world/items";
 import { resolveFrame } from "./sprites";
+import { drawSprite, getSprite } from "./atlas";
 
 /**
  * The world renderer.
@@ -188,8 +189,8 @@ function drawGround(
     for (let y = minY; y < maxY; y += 1) {
       for (let x = minX; x < maxX; x += 1) {
         const wang = selectWangTile(tileset, map, x, y);
-        const image = wang ? getTileImage(wang.imagePath) : null;
-        if (image) ctx.drawImage(image, Math.round(x * TILE - camera.x), Math.round(y * TILE - camera.y), TILE, TILE);
+        const sprite = wang ? getSprite(`tilesets/${map.zoneId}`, `wang_${wang.id}`) : undefined;
+        if (sprite) drawSprite(ctx, sprite, x * TILE - camera.x, y * TILE - camera.y, TILE, TILE);
       }
     }
   }
@@ -256,10 +257,10 @@ function drawPile(ctx: CanvasRenderingContext2D, pile: GroundPile, camera: GridP
   }
   const top = pile.items.slice(0, 3);
   top.forEach((stack, index) => {
-    const image = getImage(itemSpritePath(stack.defId));
+    const sprite = getSprite("items", itemAtlasFrame(stack.defId));
     const ox = cx - 10 + index * 9;
     const oy = by - 20 - index * 4;
-    if (image) ctx.drawImage(image, Math.round(ox), Math.round(oy), 22, 22);
+    if (sprite) drawSprite(ctx, sprite, ox, oy, 22, 22);
     else {
       ctx.fillStyle = stack.defId === "gold" ? "#e9c15c" : "#a9b4d0";
       ctx.fillRect(ox + 5, oy + 8, 12, 10);
@@ -279,7 +280,7 @@ function drawEntity(
   const visual = visualOf(scene, entity);
   const cx = visual.x * TILE + TILE / 2 - camera.x;
   const by = (visual.y + 1) * TILE - camera.y;
-  const image = resolveFrame({
+  const sprite = resolveFrame({
     id: entity.charId,
     state: entity.state,
     direction: entity.direction,
@@ -302,8 +303,8 @@ function drawEntity(
     ctx.strokeRect(Math.round(cx - TILE / 2) + 1, Math.round(by - TILE) + 1, TILE - 2, TILE - 2);
   }
 
-  if (image) {
-    ctx.drawImage(image, Math.round(cx - CHARACTER / 2), Math.round(by - CHARACTER + 10), CHARACTER, CHARACTER);
+  if (sprite) {
+    drawSprite(ctx, sprite, cx - CHARACTER / 2, by - CHARACTER + 10, CHARACTER, CHARACTER);
   } else {
     ctx.fillStyle = entity.kind === "monster" ? "#8d4450" : "#6d4b72";
     ctx.fillRect(cx - 14, by - 46, 28, 46);

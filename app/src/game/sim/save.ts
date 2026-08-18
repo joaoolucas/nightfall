@@ -8,21 +8,42 @@ import { SAVE_VERSION, createInitialState } from "./state";
  * Persistence and offline catch-up.
  *
  * The catch-up runs the *same* reducer as live play rather than a parallel
- * estimation formula. The previous implementation used a closed-form
- * approximation that could disagree with what actually happens on screen; here
- * an eight-hour absence is simply 288,000 ticks of the real simulation, chunked
- * so the loop stays responsive.
+ * estimation formula, so what you are paid for matches what you would have
+ * seen. That fidelity is not free: an eight-hour absence is 288,000 ticks and
+ * measures at roughly sixteen seconds of work. Running it in one synchronous
+ * pass froze the tab outright, so `catchUp` yields between chunks and reports
+ * progress, and the client shows a bar while it runs.
  */
 
 const SAVE_KEY = "portage-save-v2";
-/** The longest absence that still pays out, in real seconds. */
-export const MAX_OFFLINE_SECONDS = 8 * 60 * 60;
-/** Ticks simulated per chunk while catching up. */
-const CATCHUP_CHUNK = 600;
+
+/**
+ * How much of an absence is actually hunted.
+ *
+ * The catch-up replays real ticks rather than estimating, which is the whole
+ * point — but that fidelity has a measured price: Chrome runs the simulation at
+ * about 5,000 ticks per second, so a full eight hours would be 288,000 ticks
+ * and just under a minute of waiting before the player could touch anything.
+ *
+ * So the caravan hunts for an hour and then makes camp. Nothing beyond that
+ * hour is awarded: inventing rewards for time that was never simulated is
+ * exactly the estimate this replaced, and it would let the numbers on screen
+ * disagree with the rules of the game again.
+ */
+export const MAX_SIMULATED_SECONDS = 60 * 60;
+/**
+ * Ticks per chunk while catching up. Sized so a chunk costs roughly a frame:
+ * small enough that the tab keeps painting, large enough that an eight-hour
+ * absence does not pay the yield cost hundreds of times over.
+ */
+const CATCHUP_CHUNK = 2000;
 
 export interface HydrateResult {
   state: GameState;
+  /** Ticks still owed to the player; the caller runs them through catchUp. */
   offlineTicks: number;
+  /** How long the player was actually gone, which may exceed what is hunted. */
+  awaySeconds: number;
   failed: boolean;
 }
 
@@ -83,39 +104,63 @@ export function hydrate(now: number): HydrateResult {
   try {
     raw = window.localStorage.getItem(SAVE_KEY);
   } catch {
-    return { state: { ...createInitialState("ember", now), lastUpdatedAt: now }, offlineTicks: 0, failed: true };
+    return { state: { ...createInitialState("ember", now), lastUpdatedAt: now }, offlineTicks: 0, awaySeconds: 0, failed: true };
   }
-  if (!raw) return { state: { ...createInitialState("ember", now), lastUpdatedAt: now }, offlineTicks: 0, failed: false };
+  if (!raw) return { state: { ...createInitialState("ember", now), lastUpdatedAt: now }, offlineTicks: 0, awaySeconds: 0, failed: false };
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return { state: { ...createInitialState("ember", now), lastUpdatedAt: now }, offlineTicks: 0, failed: false };
+    return { state: { ...createInitialState("ember", now), lastUpdatedAt: now }, offlineTicks: 0, awaySeconds: 0, failed: false };
   }
 
   const state = validate(parsed);
-  if (!state) return { state: { ...createInitialState("ember", now), lastUpdatedAt: now }, offlineTicks: 0, failed: false };
+  if (!state) return { state: { ...createInitialState("ember", now), lastUpdatedAt: now }, offlineTicks: 0, awaySeconds: 0, failed: false };
 
-  const away = Math.max(0, Math.min(MAX_OFFLINE_SECONDS, (now - state.lastUpdatedAt) / 1000));
-  if (away < 10 || !state.settings.autoHunt) {
-    return { state: { ...state, lastUpdatedAt: now }, offlineTicks: 0, failed: false };
+  const away = Math.max(0, (now - state.lastUpdatedAt) / 1000);
+  const hunted = Math.min(MAX_SIMULATED_SECONDS, away);
+  if (hunted < 10 || !state.settings.autoHunt) {
+    return { state: { ...state, lastUpdatedAt: now }, offlineTicks: 0, awaySeconds: away, failed: false };
   }
-  const caught = catchUp(state, Math.floor((away * 1000) / TICK_MS));
-  return { state: { ...caught, lastUpdatedAt: now }, offlineTicks: Math.floor((away * 1000) / TICK_MS), failed: false };
+  // The simulation itself is left to the caller so it can be run off the
+  // critical path with a progress indicator rather than blocking first paint.
+  return {
+    state,
+    offlineTicks: Math.floor((hunted * 1000) / TICK_MS),
+    awaySeconds: away,
+    failed: false,
+  };
 }
 
-/** Run `ticks` of the real simulation, discarding events to stay fast. */
-export function catchUp(state: GameState, ticks: number): GameState {
+/**
+ * Run `ticks` of the real simulation, discarding events to stay fast and
+ * yielding to the event loop between chunks so the tab keeps painting.
+ */
+export async function catchUp(
+  state: GameState,
+  ticks: number,
+  onProgress?: (done: number, total: number) => void,
+): Promise<GameState> {
   const map = createWorldMap(state.zoneId);
   let current = state;
-  let remaining = ticks;
-  while (remaining > 0) {
-    const chunk = Math.min(CATCHUP_CHUNK, remaining);
+  let done = 0;
+  let lastPercent = -1;
+  while (done < ticks) {
+    const chunk = Math.min(CATCHUP_CHUNK, ticks - done);
     current = advance(current, map, chunk, { manualControl: false, collectEvents: false }).state;
-    remaining -= chunk;
+    done += chunk;
+    // Progress is reported only when the whole percentage moves. Reporting
+    // every chunk drove a full client re-render hundreds of times and cost far
+    // more than the simulation it was reporting on.
+    const percent = Math.floor((done / ticks) * 100);
+    if (percent !== lastPercent) {
+      lastPercent = percent;
+      onProgress?.(done, ticks);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 0));
   }
-  return current;
+  return { ...current, lastUpdatedAt: Date.now() };
 }
 
 export { SAVE_KEY };

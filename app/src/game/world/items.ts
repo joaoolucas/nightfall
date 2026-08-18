@@ -50,6 +50,11 @@ export function itemSpritePath(defId: string): string {
   return `/game-assets/world/items/${itemDef(defId).sprite}.png`;
 }
 
+/** Frame key for this item inside the packed `items` atlas. */
+export function itemAtlasFrame(defId: string): string {
+  return itemDef(defId).sprite;
+}
+
 /** Total weight carried, equipment included. */
 export function inventoryWeight(inventory: Inventory): number {
   const carried = inventory.stacks.reduce((sum, stack) => sum + itemDef(stack.defId).weight * stack.count, 0);

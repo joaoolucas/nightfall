@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { itemDef, itemSpritePath } from "@/game/world/items";
+import { getSprite } from "@/game/render/atlas";
+import { itemAtlasFrame, itemDef } from "@/game/world/items";
 import styles from "./client.module.css";
 
 /**
- * An item's sprite, with a drawn stand-in when the art is not there yet.
+ * An item's sprite, taken from the packed item atlas.
  *
- * The catalogue is deliberately allowed to run ahead of the art pipeline, so a
- * missing PNG has to degrade to something readable rather than a broken image.
+ * Falls back to a drawn glyph while the sheet is still loading, or for an item
+ * the art pipeline has not produced yet — the catalogue is deliberately allowed
+ * to run ahead of the art.
  */
 
 const GLYPH: Record<string, string> = {
@@ -32,26 +33,32 @@ const TINT: Record<string, string> = {
 };
 
 export default function ItemIcon({ defId, size = 26 }: { defId: string; size?: number }) {
-  const [failed, setFailed] = useState(false);
   const def = itemDef(defId);
+  const sprite = getSprite("items", itemAtlasFrame(defId));
 
-  if (failed) {
+  if (!sprite) {
     return (
       <span className={styles.itemGlyph} style={{ width: size, height: size, color: TINT[def.kind] }} aria-hidden>
         {GLYPH[def.kind] ?? "◆"}
       </span>
     );
   }
+
+  // One shared sheet shown through a window, rather than one request per icon.
+  const scale = size / sprite.w;
   return (
-    // A plain img: next/image cannot report a load failure we can fall back from.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={itemSpritePath(defId)}
-      alt={def.name}
-      width={size}
-      height={size}
+    <span
+      role="img"
+      aria-label={def.name}
       className={styles.pixel}
-      onError={() => setFailed(true)}
+      style={{
+        width: size,
+        height: size,
+        backgroundImage: "url(/game-assets/world/atlas/items.png)",
+        backgroundPosition: `-${sprite.x * scale}px -${sprite.y * scale}px`,
+        backgroundSize: `${sprite.image.naturalWidth * scale}px ${sprite.image.naturalHeight * scale}px`,
+        imageRendering: "pixelated",
+      }}
     />
   );
 }

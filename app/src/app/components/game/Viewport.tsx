@@ -21,7 +21,7 @@ import {
 } from "@/utils/world-art";
 import { loadTileset, type TilesetData } from "@/utils/world-tilesets";
 import { MONSTERS } from "@/game/world/monsters";
-import { ITEMS, itemSpritePath } from "@/game/world/items";
+import { loadAtlas } from "@/game/render/atlas";
 import type { GameSim } from "./useGameSim";
 import styles from "./client.module.css";
 
@@ -70,12 +70,13 @@ export default function Viewport({ sim }: { sim: GameSim }) {
     // Request order is load order: the browser serves these in the order they
     // are queued, so the ground and the combatants must come before decoration
     // and before the residents who are only visible back at the hub.
+    void loadAtlas(`tilesets/${zone}`);
     loadTileset(zone)
       .then((tileset) => { tilesetRef.current = tileset; })
       .catch(() => { tilesetRef.current = null; });
     for (const id of characterKey.split(",")) void loadCharacter(id);
+    void loadAtlas("items");
     void loadAll(zoneEnvironmentSources(zone));
-    void loadAll(ITEMS.map((item) => itemSpritePath(item.id)));
     for (const id of [...Object.values(NPC_CHARACTER), ...AMBIENT_CHARACTERS]) void loadCharacter(id);
   }, [sim.state.zoneId, characterKey]);
 

@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test:game": "tsx --test src/utils/idle-game.test.ts src/utils/world-engine.test.ts src/game/sim/sim.test.ts"
+    "test:game": "tsx --test src/utils/world-engine.test.ts src/game/sim/sim.test.ts src/game/sim/actions.test.ts",
+    "build:atlas": "node ../scripts/build-atlas.mjs"
   },
   "dependencies": {
     "@starknet-io/get-starknet-discovery": "6.0.3",

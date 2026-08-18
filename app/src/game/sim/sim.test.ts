@@ -5,7 +5,7 @@ import { distance } from "../core/grid";
 import { findPath, nearestWalkable } from "../core/pathfind";
 import { derive, nextFloat } from "../core/rng";
 import type { GameState } from "../core/types";
-import { createWorldMap, isWalkable, walkableFor } from "../world/map";
+import { Occupancy, createWorldMap, isWalkable, walkableFor } from "../world/map";
 import { monsterTemplate, monstersOfZone, wardenOfZone } from "../world/monsters";
 import { itemDef } from "../world/items";
 import { rollLoot } from "./loot";
@@ -326,12 +326,12 @@ test("entity occupancy blocks pathing through another creature", () => {
   const blocker = state.entities.at(-1)!;
 
   // From the Porter's point of view, the monster's tile is solid but its own is not.
-  const forPlayer = walkableFor(MAP, state.entities, PLAYER_ID);
+  const forPlayer = walkableFor(MAP, new Occupancy(state.entities), PLAYER_ID);
   assert.equal(forPlayer({ x: blocker.x, y: blocker.y }), false, "a living creature occupies its tile");
   assert.equal(forPlayer({ x: player.x, y: player.y }), true, "a mover never blocks itself");
 
   // From the monster's point of view, the Porter's tile is solid.
-  const forMonster = walkableFor(MAP, state.entities, blocker.id);
+  const forMonster = walkableFor(MAP, new Occupancy(state.entities), blocker.id);
   assert.equal(forMonster({ x: player.x, y: player.y }), false, "the Porter blocks other creatures");
   assert.equal(forMonster({ x: blocker.x, y: blocker.y }), true);
 });

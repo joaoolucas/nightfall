@@ -1,14 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo } from "react";
-import { IDLE_ZONES } from "@/utils/idle-game";
+import { useEffect, useMemo, useState } from "react";
+import { ZONES, zoneFor } from "@/game/world/zones";
 import { creatureSpritePath } from "@/utils/portage";
 import { battleList } from "@/game/sim/ai";
 import { PLAYER_ID, expForLevel, playerAttack, playerDefense, playerOf } from "@/game/sim/state";
-import { capacity, inventoryWeight, itemDef } from "@/game/world/items";
+import { capacity, inventoryWeight } from "@/game/world/items";
 import { distance } from "@/game/core/grid";
-import ItemIcon from "./ItemIcon";
+import { canReach } from "@/game/sim/actions";
+import { Backpack, Container, Equipment } from "./Inventory";
 import Viewport from "./Viewport";
 import { useGameSim } from "./useGameSim";
 import styles from "./client.module.css";
@@ -35,9 +36,24 @@ export default function GameClient() {
   const { state } = sim;
   const player = useMemo(() => state.entities.find((entity) => entity.id === PLAYER_ID) ?? playerOf(state), [state]);
   const targets = useMemo(() => battleList(state), [state]);
+  const [openPileId, setOpenPileId] = useState<string | null>(null);
+  const openPile = state.ground.find((pile) => pile.id === openPileId) ?? null;
+
+  // A corpse that rots away or is walked away from closes itself, so the panel
+  // can never show contents the Porter can no longer touch.
+  useEffect(() => {
+    if (openPileId && !openPile) setOpenPileId(null);
+    else if (openPile && !canReach(state, openPile)) setOpenPileId(null);
+  }, [openPileId, openPile, state]);
+
+  // With auto-loot off, the nearest unlooted pile is offered for opening.
+  const reachablePile = state.ground.find(
+    (pile) => pile.items.length > 0 && distance(player, pile) <= 1,
+  );
+
   const weight = inventoryWeight(state.inventory);
   const maxWeight = capacity(state.progress.level);
-  const zone = IDLE_ZONES.find((candidate) => candidate.id === state.zoneId) ?? IDLE_ZONES[0];
+  const zone = zoneFor(state.zoneId);
 
   return (
     <div className={styles.client}>
@@ -47,7 +63,7 @@ export default function GameClient() {
           <span><b>PORTAGE</b><small>.FUN</small></span>
         </div>
         <nav className={styles.zoneNav} aria-label="Routes">
-          {IDLE_ZONES.map((candidate, index) => {
+          {ZONES.map((candidate, index) => {
             const locked = state.progress.level < candidate.requiredLevel;
             return (
               <button
@@ -123,21 +139,19 @@ export default function GameClient() {
             </div>
           </section>
 
-          <section className={styles.panel}>
-            <div className={styles.panelHead}>Backpack <small>{state.inventory.stacks.length}</small></div>
-            <div className={styles.backpack}>
-              {state.inventory.stacks.map((stack) => {
-                const def = itemDef(stack.defId);
-                return (
-                  <div key={stack.instanceId} className={styles.slot} title={`${def.name} (${def.weight} oz)`}>
-                    <ItemIcon defId={stack.defId} />
-                    {stack.count > 1 ? <small>{stack.count}</small> : null}
-                  </div>
-                );
-              })}
-              {state.inventory.stacks.length === 0 ? <p className={styles.empty}>Empty.</p> : null}
-            </div>
-          </section>
+          {openPile ? <Container sim={sim} pile={openPile} onClose={() => setOpenPileId(null)} /> : null}
+
+          {!openPile && reachablePile ? (
+            <section className={styles.panel}>
+              <div className={styles.panelHead}>Ground</div>
+              <button type="button" className={styles.takeAll} onClick={() => setOpenPileId(reachablePile.id)}>
+                Open {reachablePile.corpseOf ? `dead ${reachablePile.corpseOf}` : "the pile"}
+              </button>
+            </section>
+          ) : null}
+
+          <Equipment sim={sim} />
+          <Backpack sim={sim} />
 
           <section className={styles.panel}>
             <div className={styles.panelHead}>Party</div>
@@ -174,14 +188,33 @@ export default function GameClient() {
         </p>
       </footer>
 
+      {sim.catchUpProgress !== null ? (
+        <div className={styles.overlay} role="status" aria-live="polite">
+          <div className={styles.overlayCard}>
+            <span>WELCOME BACK</span>
+            <h2>Simulating the hunt you missed.</h2>
+            <p>
+              Your time away is replayed through the same combat rules you play with, not estimated — so this takes
+              a moment.
+            </p>
+            <span className={`${styles.bar} ${styles.bar_exp}`}>
+              <i style={{ width: `${Math.round(sim.catchUpProgress * 100)}%` }} />
+            </span>
+          </div>
+        </div>
+      ) : null}
+
       {sim.offlineTicks > 0 ? (
         <div className={styles.overlay} role="dialog" aria-modal="true">
           <div className={styles.overlayCard}>
             <span>WELCOME BACK</span>
             <h2>Your caravan kept hunting.</h2>
             <p>
-              {Math.round((sim.offlineTicks * 100) / 1000 / 60)} minutes were simulated with the same combat rules you
-              play with — not an estimate.
+              {Math.round((sim.offlineTicks * 100) / 1000 / 60)} minutes of hunting were replayed through the same
+              combat rules you play with — not an estimate.
+              {sim.awaySeconds > sim.offlineTicks * 0.1 + 60
+                ? " After that your caravan made camp, so the rest of your time away earned nothing."
+                : ""}
             </p>
             <button type="button" autoFocus onClick={sim.dismissOffline}>Continue</button>
           </div>

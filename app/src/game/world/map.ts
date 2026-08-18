@@ -1,5 +1,5 @@
 import { createWorldMap, isWalkable, tileAt, type WorldMap } from "@/utils/world-engine";
-import type { GridPoint } from "../core/grid";
+import { key, type GridPoint } from "../core/grid";
 import type { Entity } from "../core/types";
 
 /**
@@ -13,21 +13,56 @@ import type { Entity } from "../core/types";
 export { createWorldMap, isWalkable, tileAt };
 export type { WorldMap };
 
-/** A tile a creature may stand on: walkable terrain with nobody alive on it. */
-export function isFree(map: WorldMap, entities: readonly Entity[], point: GridPoint, ignoreId?: string): boolean {
-  if (!isWalkable(map, point)) return false;
-  return !entities.some(
-    (entity) =>
-      entity.id !== ignoreId &&
-      entity.state !== "dead" &&
-      entity.x === point.x &&
-      entity.y === point.y,
-  );
+/**
+ * Which tiles are occupied, indexed by tile key.
+ *
+ * This exists because the naive test — scan every entity for every candidate
+ * tile — is quadratic in the worst place possible: A* consults it once per
+ * expanded node, so a single 900-node path over two dozen creatures did more
+ * than twenty thousand comparisons, and every monster re-paths several times a
+ * second. Building the index once per tick and mutating it as creatures step
+ * turns each lookup into a single hash probe.
+ */
+export class Occupancy {
+  private readonly tiles = new Map<string, string>();
+
+  constructor(entities: readonly Entity[]) {
+    for (const entity of entities) {
+      if (entity.state === "dead") continue;
+      this.tiles.set(key(entity), entity.id);
+    }
+  }
+
+  /** Who is standing here, if anyone. */
+  at(point: GridPoint): string | undefined {
+    return this.tiles.get(key(point));
+  }
+
+  /** Record a creature's step, so later lookups this tick see it. */
+  move(id: string, from: GridPoint, to: GridPoint): void {
+    if (this.tiles.get(key(from)) === id) this.tiles.delete(key(from));
+    this.tiles.set(key(to), id);
+  }
+
+  add(id: string, point: GridPoint): void {
+    this.tiles.set(key(point), id);
+  }
+
+  remove(point: GridPoint): void {
+    this.tiles.delete(key(point));
+  }
 }
 
-/** Occupancy test used by pathfinding, where the mover ignores itself. */
-export function walkableFor(map: WorldMap, entities: readonly Entity[], moverId: string) {
-  return (point: GridPoint) => isFree(map, entities, point, moverId);
+/** A tile a creature may stand on: walkable terrain with nobody alive on it. */
+export function isFree(map: WorldMap, occupancy: Occupancy, point: GridPoint, moverId?: string): boolean {
+  if (!isWalkable(map, point)) return false;
+  const holder = occupancy.at(point);
+  return holder === undefined || holder === moverId;
+}
+
+/** Occupancy test for pathfinding, where the mover ignores itself. */
+export function walkableFor(map: WorldMap, occupancy: Occupancy, moverId: string) {
+  return (point: GridPoint) => isFree(map, occupancy, point, moverId);
 }
 
 /**

@@ -2,7 +2,7 @@ import { directionTowards, distance, samePoint } from "../core/grid";
 import { nextFloat } from "../core/rng";
 import { TICK_MS, type CombatEvent, type Entity, type GameState, type ItemStack, type SkillId } from "../core/types";
 import { nearestWalkable } from "../core/pathfind";
-import { isFree, type WorldMap } from "../world/map";
+import { Occupancy, isFree, type WorldMap } from "../world/map";
 import { addToStacks, findStack, itemDef, removeFromStacks } from "../world/items";
 import { monsterTemplate } from "../world/monsters";
 import { planAutoHunt, planCompanion, planMonster } from "./ai";
@@ -134,7 +134,7 @@ function killPlayer(state: GameState, player: Entity, events: CombatEvent[]): vo
   events.push({ type: "say", tick: state.tick, text: `You are dead. You lose ${lost} experience.` });
 }
 
-function respawnMonsters(state: GameState, map: WorldMap): CombatEvent[] {
+function respawnMonsters(state: GameState, map: WorldMap, occupancy: Occupancy): CombatEvent[] {
   const events: CombatEvent[] = [];
   const rng = state;
   state.spawns = state.spawns.map((spawn) => {
@@ -152,7 +152,7 @@ function respawnMonsters(state: GameState, map: WorldMap): CombatEvent[] {
         x: spawn.x + Math.round((nextFloat(rng) * 2 - 1) * spawn.radius),
         y: spawn.y + Math.round((nextFloat(rng) * 2 - 1) * spawn.radius),
       };
-      if (isFree(map, state.entities, candidate)) placed = candidate;
+      if (isFree(map, occupancy, candidate)) placed = candidate;
     }
     if (!placed) return spawn;
 
@@ -162,6 +162,7 @@ function respawnMonsters(state: GameState, map: WorldMap): CombatEvent[] {
     state.nextEntitySerial += 1;
     const monster = makeMonster(template, placed, state.nextEntitySerial, spawn.id);
     state.entities = [...state.entities, monster];
+    occupancy.add(monster.id, monster);
     events.push({ type: "spawn", tick: state.tick, targetId: monster.id, at: placed });
     return { ...spawn, nextSpawnTick: state.tick + spawn.respawnTicks };
   });
@@ -219,12 +220,16 @@ function narrate(state: GameState, events: CombatEvent[]): void {
 function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, events: CombatEvent[]): void {
   state.tick += 1;
 
+  // One occupancy index per tick, mutated as creatures step. Rebuilding it per
+  // lookup made every A* expansion scan the whole entity list.
+  const occupancy = new Occupancy(state.entities);
+
   // Corpses rot away, keeping the ground readable during long sessions.
   if (state.ground.length) {
     state.ground = state.ground.filter((pile) => pile.decayTick > state.tick && (pile.items.length > 0 || pile.corpseOf));
   }
 
-  for (const event of respawnMonsters(state, map)) events.push(event);
+  for (const event of respawnMonsters(state, map, occupancy)) events.push(event);
 
   const player = playerOf(state);
   const overloaded = isOverloaded(state);
@@ -245,7 +250,7 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
   // good: they are the collection, not consumables.
   for (const entity of state.entities) {
     if (entity.kind !== "companion" || entity.state !== "dead" || entity.stateTicks > 0) continue;
-    const spot = nearestWalkable({ x: player.x, y: player.y }, (point) => isFree(map, state.entities, point, entity.id), 4);
+    const spot = nearestWalkable({ x: player.x, y: player.y }, (point) => isFree(map, occupancy, point, entity.id), 4);
     if (!spot) continue;
     entity.hp = Math.max(1, Math.round(entity.maxHp * 0.5));
     entity.state = "idle";
@@ -261,6 +266,7 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
   if (fallen.length) {
     for (const victim of fallen) {
       if (victim.kind === "monster") {
+        occupancy.remove(victim);
         state.killSerial += 1;
         state.kills += 1;
         state.ground = [...state.ground, makeCorpse(state, victim, state.killSerial)];
@@ -301,13 +307,13 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
   }
 
   // --- planning -----------------------------------------------------------
-  if (state.settings.autoHunt && !options.manualControl) planAutoHunt(state, map, state.tick);
+  if (state.settings.autoHunt && !options.manualControl) planAutoHunt(state, map, occupancy, state.tick);
 
   let companionIndex = 0;
   for (const entity of state.entities) {
     if (!isAlive(entity)) continue;
-    if (entity.kind === "monster") planMonster(state, map, entity, state.tick);
-    else if (entity.kind === "companion") planCompanion(state, map, entity, companionIndex++, state.tick);
+    if (entity.kind === "monster") planMonster(state, map, occupancy, entity, state.tick);
+    else if (entity.kind === "companion") planCompanion(state, map, occupancy, entity, companionIndex++, state.tick);
   }
 
   // --- execution ----------------------------------------------------------
@@ -371,13 +377,14 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
       continue;
     }
     const next = entity.path[0];
-    if (!isFree(map, state.entities, next, entity.id)) {
+    if (!isFree(map, occupancy, next, entity.id)) {
       // Something moved into the way; drop the stale route and re-plan next tick.
       entity.path = [];
       continue;
     }
     entity.path = entity.path.slice(1);
     entity.direction = directionTowards(entity, next);
+    occupancy.move(entity.id, entity, next);
     entity.x = next.x;
     entity.y = next.y;
     entity.state = "walking";

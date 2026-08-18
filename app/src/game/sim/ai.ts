@@ -1,7 +1,7 @@
 import { distance, directionTowards, hasLineOfSight, type GridPoint } from "../core/grid";
 import { findPath } from "../core/pathfind";
 import type { Entity, GameState } from "../core/types";
-import { isFree, sightBlocked, walkableFor, type WorldMap } from "../world/map";
+import { isFree, sightBlocked, walkableFor, type Occupancy, type WorldMap } from "../world/map";
 import { monsterTemplate } from "../world/monsters";
 import { isAlive } from "./combat";
 import { PLAYER_ID, playerOf } from "./state";
@@ -63,7 +63,7 @@ function home(state: GameState, monster: Entity): GridPoint | null {
  * Decide what a monster wants this tick. Movement and attacks are executed by
  * the tick reducer; this only sets `targetId` and `path`.
  */
-export function planMonster(state: GameState, map: WorldMap, monster: Entity, tick: number): void {
+export function planMonster(state: GameState, map: WorldMap, occupancy: Occupancy, monster: Entity, tick: number): void {
   const template = monster.templateId ? monsterTemplate(monster.templateId) : null;
   const vision = template?.vision ?? 6;
   const leash = monster.leash ?? 12;
@@ -102,7 +102,7 @@ export function planMonster(state: GameState, map: WorldMap, monster: Entity, ti
     }
     if (monster.path.length === 0 || repathDue(monster, tick)) {
       monster.path = findPath(monster, target, {
-        walkable: walkableFor(map, state.entities, monster.id),
+        walkable: walkableFor(map, occupancy, monster.id),
         maxNodes: 900,
         stopAdjacent: true,
       });
@@ -115,7 +115,7 @@ export function planMonster(state: GameState, map: WorldMap, monster: Entity, ti
   if (base && distance(monster, base) > 2) {
     if (monster.path.length === 0 || repathDue(monster, tick)) {
       monster.path = findPath(monster, base, {
-        walkable: walkableFor(map, state.entities, monster.id),
+        walkable: walkableFor(map, occupancy, monster.id),
         maxNodes: 700,
       });
     }
@@ -123,7 +123,7 @@ export function planMonster(state: GameState, map: WorldMap, monster: Entity, ti
   }
   if (monster.path.length === 0 && (tick + monster.id.length) % 40 === 0) {
     const drift = { x: monster.x + ((tick % 3) - 1), y: monster.y + (((tick >> 2) % 3) - 1) };
-    if (isFree(map, state.entities, drift, monster.id)) monster.path = [drift];
+    if (isFree(map, occupancy, drift, monster.id)) monster.path = [drift];
   }
 }
 
@@ -132,7 +132,7 @@ export function planMonster(state: GameState, map: WorldMap, monster: Entity, ti
  * never wander off, so the party reads as a caravan rather than three
  * independent creatures.
  */
-export function planCompanion(state: GameState, map: WorldMap, companion: Entity, index: number, tick: number): void {
+export function planCompanion(state: GameState, map: WorldMap, occupancy: Occupancy, companion: Entity, index: number, tick: number): void {
   const player = playerOf(state);
   const playerTarget = state.entities.find((entity) => entity.id === player.targetId);
 
@@ -158,7 +158,7 @@ export function planCompanion(state: GameState, map: WorldMap, companion: Entity
     }
     if (companion.path.length === 0 || repathDue(companion, tick)) {
       companion.path = findPath(companion, target, {
-        walkable: walkableFor(map, state.entities, companion.id),
+        walkable: walkableFor(map, occupancy, companion.id),
         maxNodes: 800,
         stopAdjacent: true,
       });
@@ -177,7 +177,7 @@ export function planCompanion(state: GameState, map: WorldMap, companion: Entity
   }
   if (companion.path.length === 0 || repathDue(companion, tick)) {
     companion.path = findPath(companion, spot, {
-      walkable: walkableFor(map, state.entities, companion.id),
+      walkable: walkableFor(map, occupancy, companion.id),
       maxNodes: 500,
       stopAdjacent: true,
     });
@@ -190,7 +190,7 @@ export function planCompanion(state: GameState, map: WorldMap, companion: Entity
  * loot rules apply. Manual control always wins — the caller skips this while
  * the player is steering.
  */
-export function planAutoHunt(state: GameState, map: WorldMap, tick: number): void {
+export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupancy, tick: number): void {
   const player = playerOf(state);
   if (!isAlive(player)) return;
 
@@ -203,7 +203,7 @@ export function planAutoHunt(state: GameState, map: WorldMap, tick: number): voi
     }
     if (player.path.length === 0 || repathDue(player, tick)) {
       player.path = findPath(player, target, {
-        walkable: walkableFor(map, state.entities, PLAYER_ID),
+        walkable: walkableFor(map, occupancy, PLAYER_ID),
         maxNodes: 1600,
         stopAdjacent: true,
       });
@@ -225,7 +225,7 @@ export function planAutoHunt(state: GameState, map: WorldMap, tick: number): voi
   }
   player.targetId = next.id;
   player.path = findPath(player, next, {
-    walkable: walkableFor(map, state.entities, PLAYER_ID),
+    walkable: walkableFor(map, occupancy, PLAYER_ID),
     maxNodes: 1600,
     stopAdjacent: true,
   });

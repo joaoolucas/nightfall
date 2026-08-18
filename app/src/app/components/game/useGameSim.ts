@@ -5,10 +5,20 @@ import type { Species } from "@/utils/portage";
 import { distance, type GridPoint } from "@/game/core/grid";
 import { findPath } from "@/game/core/pathfind";
 import { TICK_MS, type CombatEvent, type GameState } from "@/game/core/types";
-import { createWorldMap, walkableFor, type WorldMap } from "@/game/world/map";
+import { Occupancy, createWorldMap, walkableFor, type WorldMap } from "@/game/world/map";
 import { advance } from "@/game/sim/tick";
 import { PLAYER_ID, createInitialState, playerOf } from "@/game/sim/state";
-import { hydrate, persist } from "@/game/sim/save";
+import { catchUp, hydrate, persist } from "@/game/sim/save";
+import {
+  dropStack,
+  equipStack,
+  putIntoPile,
+  takeAllFromPile,
+  takeFromPile,
+  unequipSlot,
+  useStack,
+} from "@/game/sim/actions";
+import type { EquipSlot } from "@/game/core/types";
 
 /**
  * Bridges the headless simulation to React.
@@ -29,12 +39,24 @@ export interface GameSim {
   hydrated: boolean;
   manual: boolean;
   saveFailed: boolean;
+  /** Ticks the caravan hunted while away, once the catch-up has finished. */
   offlineTicks: number;
+  /** Real seconds the player was gone, which may exceed what was hunted. */
+  awaySeconds: number;
+  /** 0..1 while the catch-up runs; null when it is not running. */
+  catchUpProgress: number | null;
   dismissOffline: () => void;
   walkTo: (goal: GridPoint) => void;
   step: (delta: GridPoint) => void;
   setTarget: (entityId: string | null) => void;
   toggleSetting: (key: keyof GameState["settings"]) => void;
+  takeItem: (pileId: string, instanceId: string) => void;
+  takeAll: (pileId: string) => void;
+  putItem: (instanceId: string, pileId: string) => void;
+  equip: (instanceId: string) => void;
+  unequip: (slot: EquipSlot) => void;
+  use: (instanceId: string) => void;
+  drop: (instanceId: string) => void;
   changeZone: (zone: Species) => void;
   reset: () => void;
 }
@@ -44,6 +66,8 @@ export function useGameSim(): GameSim {
   const [hydrated, setHydrated] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const [offlineTicks, setOfflineTicks] = useState(0);
+  const [catchUpProgress, setCatchUpProgress] = useState<number | null>(null);
+  const [awaySeconds, setAwaySeconds] = useState(0);
   const [events, setEvents] = useState<CombatEvent[]>([]);
   const [manual, setManual] = useState(false);
 
@@ -57,16 +81,41 @@ export function useGameSim(): GameSim {
   useEffect(() => { mapRef.current = map; }, [map]);
   useEffect(() => { stateRef.current = state; }, [state]);
 
-  // Load the save and run the offline catch-up through the real rules.
+  // Load the save, then run the offline catch-up through the real rules.
+  //
+  // The catch-up is deliberately not part of first paint: eight hours is
+  // 288,000 ticks and measures at about sixteen seconds, which froze the tab
+  // when it ran synchronously. The world appears immediately and the simulation
+  // fills in behind a progress bar.
   useEffect(() => {
+    let cancelled = false;
     const now = Date.now();
     const result = hydrate(now);
     stateRef.current = result.state;
     setState(result.state);
-    setOfflineTicks(result.offlineTicks);
     setSaveFailed(result.failed);
-    setHydrated(true);
-    lastFrameRef.current = performance.now();
+
+    if (result.offlineTicks <= 0) {
+      setHydrated(true);
+      lastFrameRef.current = performance.now();
+      return;
+    }
+
+    setCatchUpProgress(0);
+    void catchUp(result.state, result.offlineTicks, (done, total) => {
+      if (!cancelled) setCatchUpProgress(done / total);
+    }).then((caught) => {
+      if (cancelled) return;
+      stateRef.current = caught;
+      setState(caught);
+      setCatchUpProgress(null);
+      setOfflineTicks(result.offlineTicks);
+      setAwaySeconds(result.awaySeconds);
+      setHydrated(true);
+      lastFrameRef.current = performance.now();
+    });
+
+    return () => { cancelled = true; };
   }, []);
 
   // The clock. One interval drives the simulation at a fixed timestep; the
@@ -119,7 +168,7 @@ export function useGameSim(): GameSim {
     const current = stateRef.current;
     const player = playerOf(current);
     const path = findPath(player, goal, {
-      walkable: walkableFor(mapRef.current, current.entities, PLAYER_ID),
+      walkable: walkableFor(mapRef.current, new Occupancy(current.entities), PLAYER_ID),
       maxNodes: 3000,
     });
     if (!path.length) return;
@@ -136,7 +185,7 @@ export function useGameSim(): GameSim {
     const current = stateRef.current;
     const player = playerOf(current);
     const goal = { x: player.x + delta.x, y: player.y + delta.y };
-    if (!walkableFor(mapRef.current, current.entities, PLAYER_ID)(goal)) return;
+    if (!walkableFor(mapRef.current, new Occupancy(current.entities), PLAYER_ID)(goal)) return;
     const next = {
       ...current,
       entities: current.entities.map((entity) => (entity.id === PLAYER_ID ? { ...entity, path: [goal] } : entity)),
@@ -153,7 +202,7 @@ export function useGameSim(): GameSim {
     const target = current.entities.find((entity) => entity.id === entityId);
     const path = target && distance(player, target) > 1
       ? findPath(player, target, {
-          walkable: walkableFor(mapRef.current, current.entities, PLAYER_ID),
+          walkable: walkableFor(mapRef.current, new Occupancy(current.entities), PLAYER_ID),
           maxNodes: 3000,
           stopAdjacent: true,
         })
@@ -169,6 +218,18 @@ export function useGameSim(): GameSim {
   const toggleSetting = useCallback((key: keyof GameState["settings"]) => {
     setState((current) => {
       const next = { ...current, settings: { ...current.settings, [key]: !current.settings[key] } };
+      stateRef.current = next;
+      return next;
+    });
+  }, []);
+
+  /**
+   * Inventory actions are pure transitions, so the hook only has to apply one
+   * and keep its ref in step with the tick loop's view of the world.
+   */
+  const applyAction = useCallback((transform: (current: GameState) => GameState) => {
+    setState((current) => {
+      const next = transform(current);
       stateRef.current = next;
       return next;
     });
@@ -210,8 +271,17 @@ export function useGameSim(): GameSim {
   }, []);
 
   return {
+    takeItem: (pileId, instanceId) => applyAction((current) => takeFromPile(current, pileId, instanceId)),
+    takeAll: (pileId) => applyAction((current) => takeAllFromPile(current, pileId)),
+    putItem: (instanceId, pileId) => applyAction((current) => putIntoPile(current, instanceId, pileId)),
+    equip: (instanceId) => applyAction((current) => equipStack(current, instanceId)),
+    unequip: (slot) => applyAction((current) => unequipSlot(current, slot)),
+    use: (instanceId) => applyAction((current) => useStack(current, instanceId)),
+    drop: (instanceId) => applyAction((current) => dropStack(current, instanceId)),
     state,
     map,
+    catchUpProgress,
+    awaySeconds,
     events,
     hydrated,
     manual,

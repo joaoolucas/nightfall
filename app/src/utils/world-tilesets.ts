@@ -5,7 +5,6 @@ export interface WangTile {
   id: string;
   name: string;
   corners: { NW: "lower" | "upper"; NE: "lower" | "upper"; SW: "lower" | "upper"; SE: "lower" | "upper" };
-  imagePath: string;
 }
 
 export interface TilesetData {
@@ -52,7 +51,6 @@ const CORNER_LOOKUP: Record<string, string> = {
 };
 
 const tilesetCache: Map<Species, TilesetData> = new Map();
-const imageCache: Map<string, HTMLImageElement> = new Map();
 /** In-flight loads, so concurrent callers share one request rather than racing. */
 const tilesetPending: Map<Species, Promise<TilesetData>> = new Map();
 
@@ -75,7 +73,6 @@ async function fetchTileset(zoneId: Species): Promise<TilesetData> {
     id: tile.id,
     name: tile.name,
     corners: tile.corners,
-    imagePath: `/game-assets/world/tilesets/${zoneId}/wang_${tile.id}.png`,
   }));
 
   const tileset: TilesetData = {
@@ -86,26 +83,9 @@ async function fetchTileset(zoneId: Species): Promise<TilesetData> {
 
   tilesetCache.set(zoneId, tileset);
 
-  // Sixteen tiles in parallel rather than one after another: loading them
-  // sequentially made first paint of the ground wait on a full round-trip
-  // chain, which is barely noticeable locally and very noticeable over a
-  // real network.
-  await Promise.all(
-    tiles.map((tile) =>
-      new Promise<void>((resolve) => {
-        const image = new Image();
-        image.onload = () => { imageCache.set(tile.imagePath, image); resolve(); };
-        image.onerror = () => resolve();
-        image.src = tile.imagePath;
-      }),
-    ),
-  );
-
+  // The tile images themselves live in the biome's packed atlas, loaded by the
+  // renderer. This call only needs the corner metadata that drives autotiling.
   return tileset;
-}
-
-export function getTileImage(path: string): HTMLImageElement | undefined {
-  return imageCache.get(path);
 }
 
 export function selectWangTile(
