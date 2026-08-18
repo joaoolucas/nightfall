@@ -7,7 +7,7 @@ import { derive, nextFloat } from "../core/rng";
 import type { GameState } from "../core/types";
 import { Occupancy, createWorldMap, isWalkable, walkableFor } from "../world/map";
 import { monsterTemplate, monstersOfZone, wardenOfZone } from "../world/monsters";
-import { itemDef } from "../world/items";
+import { capacity, inventoryWeight, itemDef } from "../world/items";
 import { rollLoot } from "./loot";
 import { rollSwing } from "./combat";
 import { MAX_ACTIVE_COMPANIONS, createInitialState, makeMonster, playerOf, PLAYER_ID } from "./state";
@@ -374,4 +374,54 @@ test("entity occupancy blocks pathing through another creature", () => {
   const forMonster = walkableFor(MAP, new Occupancy(state.entities), blocker.id);
   assert.equal(forMonster({ x: player.x, y: player.y }), false, "the Porter blocks other creatures");
   assert.equal(forMonster({ x: blocker.x, y: blocker.y }), true);
+});
+
+test("auto-loot never carries the Porter past their capacity", () => {
+  let state = freshState();
+  const player = playerOf(state);
+  const plate = itemDef("porter-mail");
+
+  // Fill the pack to the brim, then drop a corpse underfoot holding gold and
+  // one more plate than there is room for.
+  const room = capacity(state.progress.level) - inventoryWeight(state.inventory);
+  state = {
+    ...state,
+    inventory: {
+      ...state.inventory,
+      stacks: [
+        ...state.inventory.stacks,
+        ...Array.from({ length: Math.floor(room / plate.weight) }, (_, index) => ({
+          instanceId: `plate-${index}`,
+          defId: "porter-mail",
+          count: 1,
+        })),
+      ],
+    },
+    ground: [
+      ...state.ground,
+      {
+        id: "corpse:full",
+        x: player.x,
+        y: player.y,
+        items: [
+          { instanceId: "g", defId: "gold", count: 5 },
+          { instanceId: "heavy", defId: "porter-mail", count: 1 },
+        ],
+        corpseOf: "ash mite",
+        decayTick: 10_000,
+      },
+    ],
+  };
+
+  const gold = state.inventory.gold;
+  const { state: after } = advance(state, MAP, 1, { manualControl: true });
+
+  assert.equal(after.inventory.gold, gold + 5, "currency is always taken");
+  const pile = after.ground.find((candidate) => candidate.id === "corpse:full")!;
+  assert.equal(pile.items.length, 1, "what does not fit stays on the corpse");
+  assert.equal(pile.items[0].defId, "porter-mail");
+  assert.ok(
+    inventoryWeight(after.inventory) <= capacity(after.progress.level),
+    `auto-loot must respect capacity, carried ${inventoryWeight(after.inventory)}`,
+  );
 });

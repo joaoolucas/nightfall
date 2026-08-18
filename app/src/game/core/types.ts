@@ -143,7 +143,7 @@ export interface Companion {
 
 export type CombatEventType =
   | "hit" | "miss" | "block" | "heal" | "death"
-  | "loot" | "levelUp" | "skillUp" | "spawn" | "say";
+  | "loot" | "refused" | "levelUp" | "skillUp" | "spawn" | "say";
 
 export interface CombatEvent {
   type: CombatEventType;

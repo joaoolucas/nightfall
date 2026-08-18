@@ -3,7 +3,7 @@ import { nextFloat } from "../core/rng";
 import { TICK_MS, type CombatEvent, type Entity, type GameState, type ItemStack, type SkillId } from "../core/types";
 import { nearestWalkable } from "../core/pathfind";
 import { Occupancy, isFree, type WorldMap } from "../world/map";
-import { addToStacks, findStack, itemDef, removeFromStacks } from "../world/items";
+import { addToStacks, capacity, findStack, inventoryWeight, itemDef, removeFromStacks } from "../world/items";
 import { monsterTemplate } from "../world/monsters";
 import { planAutoHunt, planCompanion, planMonster } from "./ai";
 import { ATTACK_WINDUP, applyDamage, canAct, isAlive, rollSwing } from "./combat";
@@ -105,17 +105,46 @@ function grantExp(state: GameState, amount: number, events: CombatEvent[]): void
   });
 }
 
-function pickUp(state: GameState, stacks: ItemStack[], events: CombatEvent[]): void {
+/**
+ * Take what fits, and report what does not.
+ *
+ * Currency is always taken: it is the point of hunting and it has no slot to
+ * fill. Everything else has to pass the same capacity check the player faces
+ * when looting a corpse by hand — without it, auto-loot hauled the Porter to
+ * three times their capacity and the capacity bar stopped meaning anything.
+ */
+function pickUp(state: GameState, stacks: ItemStack[], events: CombatEvent[]): ItemStack[] {
+  const refused: ItemStack[] = [];
+  let took = false;
+
   for (const stack of stacks) {
     if (stack.defId === "gold") {
       state.inventory = { ...state.inventory, gold: state.inventory.gold + stack.count };
     } else if (stack.defId === "shard") {
       state.inventory = { ...state.inventory, shards: state.inventory.shards + stack.count };
     } else {
+      const def = itemDef(stack.defId);
+      const room = capacity(state.progress.level) - inventoryWeight(state.inventory);
+      if (def.weight * stack.count > room) {
+        refused.push(stack);
+        continue;
+      }
       state.inventory = { ...state.inventory, stacks: addToStacks(state.inventory.stacks, stack) };
     }
+    took = true;
     events.push({ type: "loot", tick: state.tick, amount: stack.count, text: itemDef(stack.defId).name });
   }
+
+  // The refusal is only worth saying on the pass that emptied the rest of the
+  // pile. The Porter keeps standing on what they could not lift, so announcing
+  // it every tick would bury the log ten lines a second.
+  if (took) {
+    for (const stack of refused) {
+      events.push({ type: "refused", tick: state.tick, amount: stack.count, text: itemDef(stack.defId).name });
+    }
+  }
+
+  return refused;
 }
 
 /** Drink the potion the Porter chose, if they are carrying any. */
@@ -196,6 +225,8 @@ function narrate(state: GameState, events: CombatEvent[]): void {
     } else if (event.type === "loot") {
       if (event.text === "gold coin") lootedGold += event.amount ?? 0;
       else lines.push({ text: `You found ${event.amount} ${event.text}.`, tone: "loot" });
+    } else if (event.type === "refused") {
+      lines.push({ text: `You cannot carry ${event.text}: your pack is full.`, tone: "system" });
     } else if (event.type === "levelUp") {
       lines.push({ text: `You advanced to level ${event.amount}.`, tone: "level" });
     } else if (event.type === "skillUp") {
@@ -407,9 +438,9 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
     (candidate) => distance(player, candidate) <= 1 && candidate.items.length > 0,
   );
   if (underfoot) {
-    pickUp(state, underfoot.items, events);
+    const refused = pickUp(state, underfoot.items, events);
     state.ground = state.ground.map((candidate) =>
-      candidate.id === underfoot.id ? { ...candidate, items: [] } : candidate,
+      candidate.id === underfoot.id ? { ...candidate, items: refused } : candidate,
     );
   }
 

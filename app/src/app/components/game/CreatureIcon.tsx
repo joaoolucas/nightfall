@@ -46,6 +46,8 @@ export default function CreatureIcon({
         width: size,
         height: size,
         backgroundImage: `url(${atlasUrl(atlas)})`,
+        backgroundRepeat: "no-repeat",
+        flex: "none",
         backgroundPosition: `-${sprite.x * scale}px -${sprite.y * scale}px`,
         backgroundSize: `${sprite.image.naturalWidth * scale}px ${sprite.image.naturalHeight * scale}px`,
         imageRendering: "pixelated",

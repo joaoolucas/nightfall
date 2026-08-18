@@ -2,15 +2,18 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { ZONES, zoneFor } from "@/game/world/zones";
+import { zoneFor } from "@/game/world/zones";
 import { battleList } from "@/game/sim/ai";
-import { PLAYER_ID, companionAttack, expForLevel, handlingBonus, playerDefense, playerOf } from "@/game/sim/state";
+import { PLAYER_ID, companionAttack, expForLevel, playerDefense, playerOf } from "@/game/sim/state";
 import { capacity, inventoryWeight } from "@/game/world/items";
 import { distance } from "@/game/core/grid";
 import { canReach } from "@/game/sim/actions";
 import BattleLog from "./BattleLog";
 import CreatureIcon from "./CreatureIcon";
-import { Backpack, Container, PotionChoice } from "./Inventory";
+import { BackpackIcon, MapIcon, SkillsIcon } from "./Icons";
+import { BackpackWindow, Container, PotionChoice } from "./Inventory";
+import MapWindow from "./MapWindow";
+import SkillsWindow from "./SkillsWindow";
 import Viewport from "./Viewport";
 import { useGameSim } from "./useGameSim";
 import styles from "./client.module.css";
@@ -18,11 +21,14 @@ import styles from "./client.module.css";
 /**
  * The game client.
  *
- * Everything is on screen at once: the rail never scrolls and the log floats
- * over the world instead of taking a band beneath it. What made that fit was
- * removing panels rather than shrinking them — hunting and looting stopped
- * being switches, and equipment went entirely.
+ * The rail used to hold everything at once, so everything was small. It now
+ * holds only what you watch while a fight is happening — your health, what is
+ * coming for you, who is fighting, what you drink — at a size you can read
+ * without leaning in. Skills, the backpack and the route map are consulted, not
+ * watched, so they moved behind the icon bar and open as windows over the world.
  */
+
+type WindowId = "map" | "skills" | "backpack";
 
 function Bar({ value, max, tone }: { value: number; max: number; tone: "hp" | "exp" | "cap" }) {
   const pct = max <= 0 ? 0 : Math.max(0, Math.min(100, (value / max) * 100));
@@ -40,6 +46,7 @@ export default function GameClient() {
   const targets = useMemo(() => battleList(state), [state]);
   const active = state.entities.find((entity) => entity.kind === "companion");
 
+  const [openWindow, setOpenWindow] = useState<WindowId | null>(null);
   const [openPileId, setOpenPileId] = useState<string | null>(null);
   const openPile = state.ground.find((pile) => pile.id === openPileId) ?? null;
 
@@ -53,32 +60,49 @@ export default function GameClient() {
   const weight = inventoryWeight(state.inventory);
   const maxWeight = capacity(state.progress.level);
   const zone = zoneFor(state.zoneId);
+  const toggle = (id: WindowId) => setOpenWindow((current) => (current === id ? null : id));
 
   return (
     <div className={styles.client}>
       <header className={styles.topbar}>
         <div className={styles.brand}>
-          <Image src="/game-assets/brand/logo.png" alt="" width={26} height={26} className={styles.pixel} />
+          <Image src="/game-assets/brand/logo.png" alt="" width={30} height={30} className={styles.pixel} />
           <span><b>PORTAGE</b><small>.FUN</small></span>
         </div>
-        <nav className={styles.zoneNav} aria-label="Routes">
-          {ZONES.map((candidate, index) => {
-            const locked = state.progress.level < candidate.requiredLevel;
-            return (
-              <button
-                key={candidate.id}
-                type="button"
-                disabled={locked}
-                aria-current={candidate.id === state.zoneId ? "page" : undefined}
-                className={candidate.id === state.zoneId ? styles.zoneActive : ""}
-                onClick={() => sim.changeZone(candidate.id)}
-                title={locked ? `Unlocks at level ${candidate.requiredLevel}` : candidate.subtitle}
-              >
-                {String(index + 1).padStart(2, "0")} {candidate.name}
-              </button>
-            );
-          })}
+
+        <nav className={styles.iconBar} aria-label="Client windows">
+          <button
+            type="button"
+            className={openWindow === "map" ? styles.iconActive : ""}
+            aria-pressed={openWindow === "map"}
+            onClick={() => toggle("map")}
+            title="Hunting grounds — choose where to hunt"
+          >
+            <MapIcon />
+            <span>{zone.name}</span>
+          </button>
+          <button
+            type="button"
+            className={openWindow === "skills" ? styles.iconActive : ""}
+            aria-pressed={openWindow === "skills"}
+            onClick={() => toggle("skills")}
+            title="Skills"
+          >
+            <SkillsIcon />
+            <span>Skills</span>
+          </button>
+          <button
+            type="button"
+            className={openWindow === "backpack" ? styles.iconActive : ""}
+            aria-pressed={openWindow === "backpack"}
+            onClick={() => toggle("backpack")}
+            title="Backpack"
+          >
+            <BackpackIcon />
+            <span>Backpack</span>
+          </button>
         </nav>
+
         <div className={styles.saveState}>
           <span className={sim.saveFailed ? styles.dotError : styles.dotLive} />
           {sim.saveFailed ? "SAVE FAILED" : sim.hydrated ? "SAVED" : "LOADING"}
@@ -89,6 +113,9 @@ export default function GameClient() {
         <div className={styles.viewportWrap}>
           <Viewport sim={sim} />
           <BattleLog log={state.log} />
+          {openWindow === "map" ? <MapWindow sim={sim} onClose={() => setOpenWindow(null)} /> : null}
+          {openWindow === "skills" ? <SkillsWindow sim={sim} onClose={() => setOpenWindow(null)} /> : null}
+          {openWindow === "backpack" ? <BackpackWindow sim={sim} onClose={() => setOpenWindow(null)} /> : null}
         </div>
 
         <aside className={styles.rail}>
@@ -129,21 +156,7 @@ export default function GameClient() {
             </div>
           </section>
 
-          <section className={styles.panel}>
-            <div className={styles.panelHead}>Skills</div>
-            <div className={styles.skills}>
-              {(["melee", "shielding", "vitality"] as const).map((skill) => (
-                <div key={skill}>
-                  {/* The stored id stays "melee" so old saves keep working; the
-                      Porter commands rather than swings, so the label does not. */}
-                  <span>{skill === "melee" ? "handling" : skill}</span>
-                  <b>{state.progress.skills[skill]}</b>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className={styles.panel}>
+          <section className={`${styles.panel} ${styles.panelFill}`}>
             <div className={styles.panelHead}>Creatures <small>1 in field</small></div>
             <div className={styles.party}>
               {state.companions.map((companion) => {
@@ -157,19 +170,15 @@ export default function GameClient() {
                     disabled={inField}
                     title={inField ? `${companion.name} is in the field` : `Send ${companion.name} out`}
                   >
-                    <CreatureIcon species={companion.species} stage={companion.stage} size={24} />
-                    <span><b>{companion.name}</b><small>Lv. {companion.level}</small></span>
+                    <CreatureIcon species={companion.species} stage={companion.stage} size={34} />
+                    <span className={styles.partyText}><b>{companion.name}</b><small>Lv. {companion.level}</small></span>
                   </button>
                 );
               })}
             </div>
-            <p className={styles.hint}>
-              You direct and take the blows; handling adds {Math.round(handlingBonus(state))} to its attack.
-            </p>
           </section>
 
           <PotionChoice sim={sim} />
-          <Backpack sim={sim} />
           {openPile ? <Container sim={sim} pile={openPile} onClose={() => setOpenPileId(null)} /> : null}
         </aside>
       </div>

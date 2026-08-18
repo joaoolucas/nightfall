@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { GroundPile, ItemStack } from "@/game/core/types";
-import { carriedPotions, itemDef } from "@/game/world/items";
+import { capacity, carriedPotions, inventoryWeight, itemDef } from "@/game/world/items";
+import GameWindow from "./GameWindow";
 import ItemIcon from "./ItemIcon";
 import type { GameSim } from "./useGameSim";
 import styles from "./client.module.css";
@@ -30,11 +31,12 @@ function decode(event: React.DragEvent): Source | null {
   }
 }
 
-function Slot({ stack, source, onActivate, title }: {
+function Slot({ stack, source, onActivate, title, size = 26 }: {
   stack: ItemStack;
   source: Source;
   onActivate?: () => void;
   title: string;
+  size?: number;
 }) {
   return (
     <div
@@ -56,7 +58,7 @@ function Slot({ stack, source, onActivate, title }: {
         }
       }}
     >
-      <ItemIcon defId={stack.defId} size={22} />
+      <ItemIcon defId={stack.defId} size={size} />
       {stack.count > 1 ? <small>{stack.count}</small> : null}
     </div>
   );
@@ -124,7 +126,7 @@ export function PotionChoice({ sim }: { sim: GameSim }) {
               onClick={() => sim.choosePotion(stack.defId)}
               title={`${def.name} — heals ${Math.round((def.heal ?? 0) * 100)}%`}
             >
-              <ItemIcon defId={stack.defId} size={20} />
+              <ItemIcon defId={stack.defId} size={24} />
               <span>{stack.count}</span>
             </button>
           );
@@ -135,13 +137,28 @@ export function PotionChoice({ sim }: { sim: GameSim }) {
   );
 }
 
-export function Backpack({ sim }: { sim: GameSim }) {
-  const { stacks } = sim.state.inventory;
+export function BackpackWindow({ sim, onClose }: { sim: GameSim; onClose: () => void }) {
+  const { stacks, gold, shards } = sim.state.inventory;
+  const weight = inventoryWeight(sim.state.inventory);
+  const maxWeight = capacity(sim.state.progress.level);
+
   return (
-    <section className={styles.panel}>
-      <div className={styles.panelHead}>Backpack <small>{stacks.length}</small></div>
+    <GameWindow title="Backpack" subtitle={`${stacks.length} stacks`} onClose={onClose}>
+      <div className={styles.packStats}>
+        <div><span>Gold</span><b>{gold.toLocaleString()}</b></div>
+        <div><span>Shards</span><b>{shards.toLocaleString()}</b></div>
+      </div>
+      <div className={styles.skillRow}>
+        <div className={styles.skillHead}>
+          <b>Capacity</b>
+          <span>{weight} / {maxWeight} oz</span>
+        </div>
+        <span className={`${styles.bar} ${styles.bar_cap}`}>
+          <i style={{ width: `${Math.min(100, (weight / maxWeight) * 100)}%` }} />
+        </span>
+      </div>
       <DropZone
-        className={styles.backpack}
+        className={styles.packGrid}
         label="Backpack"
         onDropSource={(source) => {
           if (source.from === "container") sim.takeItem(source.pileId, source.instanceId);
@@ -153,6 +170,7 @@ export function Backpack({ sim }: { sim: GameSim }) {
             <Slot
               key={stack.instanceId}
               stack={stack}
+              size={34}
               source={{ from: "backpack", instanceId: stack.instanceId }}
               onActivate={() => (def.heal ? sim.use(stack.instanceId) : sim.drop(stack.instanceId))}
               title={`${def.name} · ${def.weight} oz · ${def.value} gold — double-click to ${def.heal ? "drink" : "drop"}`}
@@ -161,7 +179,7 @@ export function Backpack({ sim }: { sim: GameSim }) {
         })}
         {stacks.length === 0 ? <p className={styles.empty}>Empty.</p> : null}
       </DropZone>
-    </section>
+    </GameWindow>
   );
 }
 
