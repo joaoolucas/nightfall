@@ -99,3 +99,31 @@ export function findStack(stacks: readonly ItemStack[], defId: string): ItemStac
 export function carriedPotions(inventory: Inventory): ItemStack[] {
   return inventory.stacks.filter((stack) => (itemDef(stack.defId).heal ?? 0) > 0);
 }
+
+/**
+ * What the trading post pays, and what it charges.
+ *
+ * A trader who paid what they charge would be a bank, not a market: you could
+ * buy and sell the same tonic forever without gaining or losing anything, and
+ * the catalogue's `value` would stop meaning anything. They pay half and sell
+ * at full, so a haul is worth carrying home and a potion is worth spending on.
+ */
+export const SELL_RATE = 0.5;
+
+export function sellPrice(defId: string, count = 1): number {
+  return Math.max(1, Math.floor(itemDef(defId).value * SELL_RATE)) * count;
+}
+
+export function buyPrice(defId: string, count = 1): number {
+  return itemDef(defId).value * count;
+}
+
+/**
+ * What the post keeps in stock.
+ *
+ * Only supplies. Weapons and armour are what you hunt for, and being able to
+ * buy the good ones outright would make the hunt pointless — but running out
+ * of potions with a pack full of trophies and no way to trade them was the
+ * hole this closes.
+ */
+export const MARKET_STOCK: readonly string[] = ["tonic", "greater-tonic"];

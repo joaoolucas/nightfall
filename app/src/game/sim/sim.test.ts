@@ -10,7 +10,8 @@ import { monsterTemplate, monstersOfZone, wardenOfZone } from "../world/monsters
 import { capacity, inventoryWeight, itemDef } from "../world/items";
 import { rollLoot } from "./loot";
 import { rollSwing } from "./combat";
-import { MAX_ACTIVE_COMPANIONS, createInitialState, makeMonster, playerOf, PLAYER_ID } from "./state";
+import { summonCompanion } from "./actions";
+import { MAX_ACTIVE_COMPANIONS, createInitialState, makeMonster, playerOf, travelTo, PLAYER_ID } from "./state";
 import { advance } from "./tick";
 
 const MAP = createWorldMap("ember");
@@ -424,4 +425,118 @@ test("auto-loot never carries the Porter past their capacity", () => {
     inventoryWeight(after.inventory) <= capacity(after.progress.level),
     `auto-loot must respect capacity, carried ${inventoryWeight(after.inventory)}`,
   );
+});
+
+/**
+ * The Porter stops dead without a creature.
+ *
+ * This is the shape of a real regression: with the roster naming a creature
+ * that had no entity on the map, auto-hunt walked the Porter to three tiles
+ * from a monster and held them there forever, because nothing could land the
+ * kill that would release the target. The game looked broken in the only way
+ * an idle game can be — it stopped being idle, and only moved when clicked.
+ */
+test("a roster naming a creature with no entity puts that creature back in the field", () => {
+  const state = freshState();
+  const stranded: GameState = {
+    ...state,
+    activeCompanionIds: ["ripple"],
+    entities: state.entities.filter((entity) => entity.kind !== "companion"),
+  };
+
+  const { state: after } = advance(stranded, MAP, 1);
+  const field = after.entities.filter((entity) => entity.kind === "companion");
+  assert.equal(field.length, 1, "the named creature must be put back out");
+  assert.equal(field[0].id, "companion:ripple", "and it must be the one the roster names");
+  assert.ok(distance(playerOf(after), field[0]) <= 5, "beside the Porter, not across the map");
+});
+
+test("a creature in the field that the roster does not name is recalled", () => {
+  const state = freshState();
+  const mismatched: GameState = { ...state, activeCompanionIds: ["wisp"] };
+
+  const { state: after } = advance(mismatched, MAP, 1);
+  const field = after.entities.filter((entity) => entity.kind === "companion");
+  assert.equal(field.length, MAX_ACTIVE_COMPANIONS);
+  assert.equal(field[0].id, "companion:wisp");
+});
+
+test("the Porter keeps hunting on their own — the world moves without a click", () => {
+  let state = freshState();
+  const start = playerOf(state);
+  let moved = 0;
+  let previous = { x: start.x, y: start.y };
+
+  // Long enough to cross the standoff, kill something and move on, but short
+  // enough that a stalled Porter cannot fake it by drifting.
+  for (let tick = 0; tick < 1200; tick += 1) {
+    state = advance(state, MAP, 1).state;
+    const player = playerOf(state);
+    if (player.x !== previous.x || player.y !== previous.y) moved += 1;
+    previous = { x: player.x, y: player.y };
+  }
+
+  assert.ok(moved > 60, `the Porter must hunt unattended, only stepped ${moved} times in 1200 ticks`);
+  assert.ok(state.kills > 0, "and their creature must actually be killing things");
+});
+
+test("travelling to another zone brings the creature you had out with you", () => {
+  const state = freshState();
+  const withWisp = summonCompanion(state, "wisp");
+  assert.deepEqual(withWisp.activeCompanionIds, ["wisp"]);
+
+  const travelled = travelTo(withWisp, "creek", 0);
+  const field = travelled.entities.filter((entity) => entity.kind === "companion");
+  assert.equal(travelled.zoneId, "creek");
+  assert.equal(field.length, 1, "the Porter does not arrive alone");
+  assert.equal(field[0].id, "companion:wisp", "and not with a creature the roster never named");
+  assert.equal(travelled.inventory.gold, state.inventory.gold, "the pack travels with them");
+  assert.equal(travelled.progress.level, state.progress.level, "and so does who they are");
+});
+
+/**
+ * The other way the hunt used to stop.
+ *
+ * Auto-hunt holds the Porter still while there is loot underfoot, which is
+ * right until they are too loaded to lift it: auto-loot then refuses the items,
+ * the items stay on the corpse, and the Porter waits beside a body they can
+ * never empty. An overloaded Porter has to keep hunting, not stand guard over
+ * loot they cannot take.
+ */
+test("an overloaded Porter does not stand guard over loot they cannot lift", () => {
+  const state = freshState();
+  const player = playerOf(state);
+  const laden: GameState = {
+    ...state,
+    // Well past capacity, so nothing further can possibly be picked up.
+    inventory: {
+      ...state.inventory,
+      stacks: [...state.inventory.stacks, { instanceId: "ballast", defId: "warden-plate", count: 20 }],
+    },
+    ground: [
+      {
+        id: "corpse:immovable",
+        x: player.x,
+        y: player.y,
+        items: [{ instanceId: "heavy", defId: "porter-mail", count: 1 }],
+        corpseOf: "ash mite",
+        decayTick: 10_000,
+      },
+    ],
+  };
+  assert.ok(inventoryWeight(laden.inventory) > capacity(laden.progress.level), "the fixture must be overloaded");
+
+  let after = laden;
+  let moved = 0;
+  let previous = { x: player.x, y: player.y };
+  for (let tick = 0; tick < 400; tick += 1) {
+    after = advance(after, MAP, 1).state;
+    const now = playerOf(after);
+    if (now.x !== previous.x || now.y !== previous.y) moved += 1;
+    previous = { x: now.x, y: now.y };
+  }
+
+  assert.ok(moved > 0, "the Porter must walk away and keep hunting rather than wait for a body to rot");
+  const pile = after.ground.find((candidate) => candidate.id === "corpse:immovable");
+  if (pile) assert.equal(pile.items.length, 1, "and the loot they could not carry is still there");
 });

@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { GameState, GroundPile } from "../core/types";
-import { capacity, inventoryWeight, itemDef } from "../world/items";
+import { SELL_RATE, capacity, inventoryWeight, itemDef } from "../world/items";
 import {
+  buyItem,
   canReach,
   choosePotion,
   dropStack,
   putIntoPile,
+  sellStack,
   takeAllFromPile,
   takeFromPile,
   useStack,
@@ -196,4 +198,81 @@ test("the Porter drinks the potion they chose, and nothing when they choose none
 test("hunting and looting are not settings any more", () => {
   const state = createInitialState("ember", 0);
   assert.deepEqual(Object.keys(state.settings), ["potionId"], "the only choice left is which potion");
+});
+
+
+test("the trading post pays half of what a thing is worth", () => {
+  const state = baseState();
+  const carrying: GameState = {
+    ...state,
+    inventory: {
+      ...state.inventory,
+      stacks: [...state.inventory.stacks, { instanceId: "t1", defId: "veil-dust", count: 3 }],
+    },
+  };
+
+  const sold = sellStack(carrying, "t1");
+  const paid = itemDef("veil-dust").value * SELL_RATE * 3;
+  assert.equal(sold.inventory.gold, carrying.inventory.gold + paid);
+  assert.ok(!sold.inventory.stacks.some((stack) => stack.instanceId === "t1"), "and takes the whole stack");
+});
+
+test("a market, not a bank: buying something back always costs more than selling it earned", () => {
+  const state = baseState();
+  const bought = buyItem(state, "tonic");
+  assert.equal(bought.inventory.gold, state.inventory.gold - itemDef("tonic").value, "supplies cost full price");
+
+  const restocked = bought.inventory.stacks.find((stack) => stack.defId === "tonic")!;
+  const backAgain = sellStack(bought, restocked.instanceId, 1);
+  assert.ok(
+    backAgain.inventory.gold < state.inventory.gold,
+    "buying and selling the same tonic must lose money, or gold is free",
+  );
+});
+
+test("the post sells supplies and nothing else", () => {
+  const state: GameState = { ...baseState(), inventory: { ...baseState().inventory, gold: 5_000 } };
+  const refused = buyItem(state, "warden-glaive");
+  assert.equal(refused, state, "gear is what the hunt is for; it is not on the counter");
+  assert.equal(refused.inventory.gold, 5_000);
+});
+
+test("the post will not sell you what you cannot afford", () => {
+  const state = baseState();
+  const broke: GameState = { ...state, inventory: { ...state.inventory, gold: 1 } };
+  const refused = buyItem(broke, "greater-tonic");
+  assert.equal(refused.inventory.gold, 1, "no gold changes hands");
+  assert.ok(!refused.inventory.stacks.some((stack) => stack.defId === "greater-tonic"), "and nothing is delivered");
+});
+
+test("gold cannot buy past the pack", () => {
+  // Coins weigh, so a Porter this rich is already nearly full: what is left is
+  // room for one greater tonic, and no amount of gold makes room for five.
+  const state = baseState();
+  const laden: GameState = { ...state, inventory: { ...state.inventory, gold: 4_000 } };
+  const room = capacity(laden.progress.level) - inventoryWeight(laden.inventory);
+  assert.ok(room > itemDef("greater-tonic").weight && room < itemDef("greater-tonic").weight * 5, `room was ${room}`);
+
+  const one = buyItem(laden, "greater-tonic", 1);
+  assert.ok(one.inventory.stacks.some((stack) => stack.defId === "greater-tonic"), "what fits is sold");
+
+  const five = buyItem(laden, "greater-tonic", 5);
+  assert.equal(five.inventory.gold, 4_000, "what does not fit is refused, however rich you are");
+  assert.ok(
+    inventoryWeight(five.inventory) <= capacity(five.progress.level),
+    "the pack is still the pack",
+  );
+});
+
+test("gold is not merchandise", () => {
+  const state = baseState();
+  const withGold: GameState = {
+    ...state,
+    inventory: {
+      ...state.inventory,
+      stacks: [...state.inventory.stacks, { instanceId: "gg", defId: "gold", count: 50 }],
+    },
+  };
+  const after = sellStack(withGold, "gg");
+  assert.equal(after.inventory.gold, withGold.inventory.gold, "selling coins for coins is refused");
 });

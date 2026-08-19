@@ -2,7 +2,16 @@ import { distance } from "../core/grid";
 import { nearestWalkable } from "../core/pathfind";
 import { Occupancy, createWorldMap, isFree } from "../world/map";
 import type { GameState, GroundPile, ItemStack } from "../core/types";
-import { addToStacks, capacity, inventoryWeight, itemDef, removeFromStacks } from "../world/items";
+import {
+  MARKET_STOCK,
+  addToStacks,
+  buyPrice,
+  capacity,
+  inventoryWeight,
+  itemDef,
+  removeFromStacks,
+  sellPrice,
+} from "../world/items";
 import { PLAYER_ID, makeCompanion, playerOf } from "./state";
 
 /**
@@ -201,4 +210,68 @@ export function summonCompanion(state: GameState, companionId: string): GameStat
 /** Choose which potion the Porter reaches for when hurt. */
 export function choosePotion(state: GameState, defId: string | null): GameState {
   return { ...state, settings: { ...state.settings, potionId: defId } };
+}
+
+/**
+ * Sell a carried stack at the trading post.
+ *
+ * Gold is refused rather than exchanged for itself, and shards are kept out of
+ * it too: they are a currency the portal work will spend, not loot to be melted
+ * down the moment a Porter is short of coin.
+ */
+export function sellStack(state: GameState, instanceId: string, count?: number): GameState {
+  const stack = state.inventory.stacks.find((candidate) => candidate.instanceId === instanceId);
+  if (!stack) return state;
+  const def = itemDef(stack.defId);
+  if (def.kind === "gold") return state;
+
+  const sold = Math.max(1, Math.min(count ?? stack.count, stack.count));
+  const paid = sellPrice(def.id, sold);
+  return log(
+    {
+      ...state,
+      inventory: {
+        ...state.inventory,
+        gold: state.inventory.gold + paid,
+        stacks: removeFromStacks(state.inventory.stacks, instanceId, sold),
+      },
+    },
+    `You sell ${sold > 1 ? `${sold} ` : ""}${def.name} for ${paid} gold.`,
+    "loot",
+  );
+}
+
+/**
+ * Buy supplies. The Porter has to be able to afford it *and* carry it: a market
+ * that ignored capacity would be a way around the pack, not a use for it.
+ */
+export function buyItem(state: GameState, defId: string, count = 1): GameState {
+  // What the post stocks is a rule, not a detail of how the window is drawn.
+  // Left to the view, a caller could buy a warden glaive over the counter and
+  // skip the hunt that is supposed to earn it.
+  if (!MARKET_STOCK.includes(defId)) return state;
+  const def = itemDef(defId);
+  const wanted = Math.max(1, count);
+  const cost = buyPrice(defId, wanted);
+  if (state.inventory.gold < cost) {
+    return log(state, `You cannot afford ${def.name}: it costs ${cost} gold.`, "system");
+  }
+  if (def.weight * wanted > remainingCapacity(state)) {
+    return log(state, `You cannot carry ${def.name}: your pack is full.`, "system");
+  }
+
+  const bought: ItemStack = { instanceId: `buy:${state.nextInstance}`, defId, count: wanted };
+  return log(
+    {
+      ...state,
+      nextInstance: state.nextInstance + 1,
+      inventory: {
+        ...state.inventory,
+        gold: state.inventory.gold - cost,
+        stacks: addToStacks(state.inventory.stacks, bought),
+      },
+    },
+    `You buy ${wanted > 1 ? `${wanted} ` : ""}${def.name} for ${cost} gold.`,
+    "loot",
+  );
 }

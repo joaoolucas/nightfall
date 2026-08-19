@@ -1,7 +1,8 @@
 import { distance, directionTowards, hasLineOfSight, type GridPoint } from "../core/grid";
 import { findPath } from "../core/pathfind";
-import type { Entity, GameState } from "../core/types";
+import type { Entity, GameState, ItemStack } from "../core/types";
 import { isFree, sightBlocked, walkableFor, type Occupancy, type WorldMap } from "../world/map";
+import { capacity, inventoryWeight, itemDef } from "../world/items";
 import { monsterTemplate } from "../world/monsters";
 import { isAlive } from "./combat";
 import { PLAYER_ID, playerOf } from "./state";
@@ -199,6 +200,19 @@ export function planCompanion(state: GameState, map: WorldMap, occupancy: Occupa
  */
 const HANDLER_STANDOFF = 3;
 
+/**
+ * Whether the Porter could take this stack if they tried.
+ *
+ * Currency always: it is the point of hunting and weighs against capacity only
+ * as coin. Everything else has to fit, by the same measure the tick reducer
+ * uses when it picks loot up.
+ */
+function canLift(state: GameState, stack: ItemStack): boolean {
+  if (stack.defId === "gold" || stack.defId === "shard") return true;
+  const room = capacity(state.progress.level) - inventoryWeight(state.inventory);
+  return itemDef(stack.defId).weight * stack.count <= room;
+}
+
 export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupancy, tick: number): void {
   const player = playerOf(state);
   if (!isAlive(player)) return;
@@ -221,7 +235,15 @@ export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupan
   }
 
   // Loot first: an unopened corpse underfoot is worth more than the next kill.
-  const pile = state.ground.find((candidate) => distance(player, candidate) <= 1 && candidate.items.length > 0);
+  //
+  // Only loot the Porter can actually lift counts. An overloaded Porter can
+  // never empty the corpse they are standing on, and waiting for it was a
+  // deadlock: auto-loot refused the items, this held the Porter still because
+  // items remained, and the hunt stopped until the body rotted. What they
+  // cannot carry is not a reason to stand there.
+  const pile = state.ground.find(
+    (candidate) => distance(player, candidate) <= 1 && candidate.items.some((stack) => canLift(state, stack)),
+  );
   if (pile) {
     player.path = [];
     return;

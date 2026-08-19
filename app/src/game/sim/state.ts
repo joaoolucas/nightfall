@@ -12,6 +12,7 @@ import type {
   SpawnPoint,
 } from "../core/types";
 import { createWorldMap, type WorldMap } from "../world/map";
+import { zoneFor } from "../world/zones";
 import { monsterTemplate, monstersOfZone, wardenOfZone, type MonsterTemplate } from "../world/monsters";
 import { capacity, inventoryWeight } from "../world/items";
 
@@ -240,6 +241,50 @@ export function createInitialState(zoneId: Species = "ember", now = 0): GameStat
     lastUpdatedAt: now,
     chain: { checkpointedTick: 0, pendingActions: [] },
   };
+}
+
+/**
+ * Travel to another hunting ground.
+ *
+ * A new biome is a new world — its own map, its own spawns, nothing of the old
+ * one's corpses — but it is the same Porter arriving, with the same roster,
+ * pack and progress. Building it out of `createInitialState` alone was subtly
+ * wrong: that seeds the field with the starter creature, so a Porter who had
+ * sent out anyone else arrived with a creature the roster did not name, and the
+ * next save dropped it as stale — leaving nobody to fight and a Porter who
+ * stood still. The field is built from the roster here instead.
+ */
+export function travelTo(state: GameState, zoneId: Species, now = Date.now()): GameState {
+  if (state.zoneId === zoneId) return state;
+  const seeded = createInitialState(zoneId, now);
+  const arrival = playerOf(seeded);
+  const start = { x: arrival.x, y: arrival.y };
+  const player = makePlayer(state.progress, start);
+  const entities: Entity[] = [player];
+  state.activeCompanionIds.slice(0, MAX_ACTIVE_COMPANIONS).forEach((id, index) => {
+    const companion = state.companions.find((candidate) => candidate.id === id);
+    if (companion) entities.push(makeCompanion(companion, { x: start.x - 1 - index, y: start.y + 1 }, index));
+  });
+
+  return addLog({
+    ...seeded,
+    entities,
+    seed: state.seed,
+    killSerial: state.killSerial,
+    progress: state.progress,
+    companions: state.companions,
+    activeCompanionIds: state.activeCompanionIds,
+    inventory: state.inventory,
+    settings: state.settings,
+    kills: state.kills,
+    deaths: state.deaths,
+    playSeconds: state.playSeconds,
+    log: state.log,
+    nextLogId: state.nextLogId,
+    nextInstance: state.nextInstance,
+    nextEntitySerial: state.nextEntitySerial,
+    chain: state.chain,
+  }, `You enter ${zoneFor(zoneId).name}. The hunt continues.`, "system");
 }
 
 export function playerOf(state: GameState): Entity {

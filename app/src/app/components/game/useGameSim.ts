@@ -7,12 +7,14 @@ import { findPath } from "@/game/core/pathfind";
 import { TICK_MS, type CombatEvent, type GameState } from "@/game/core/types";
 import { Occupancy, createWorldMap, walkableFor, type WorldMap } from "@/game/world/map";
 import { advance } from "@/game/sim/tick";
-import { PLAYER_ID, createInitialState, playerOf } from "@/game/sim/state";
+import { PLAYER_ID, createInitialState, playerOf, travelTo } from "@/game/sim/state";
 import { catchUp, hydrate, persist } from "@/game/sim/save";
 import {
+  buyItem,
   choosePotion as choosePotionAction,
   dropStack,
   putIntoPile,
+  sellStack,
   summonCompanion,
   takeAllFromPile,
   takeFromPile,
@@ -54,6 +56,8 @@ export interface GameSim {
   putItem: (instanceId: string, pileId: string) => void;
   use: (instanceId: string) => void;
   drop: (instanceId: string) => void;
+  sell: (instanceId: string, count?: number) => void;
+  buy: (defId: string, count?: number) => void;
   summon: (companionId: string) => void;
   changeZone: (zone: Species) => void;
   reset: () => void;
@@ -227,26 +231,9 @@ export function useGameSim(): GameSim {
 
   const changeZone = useCallback((zone: Species) => {
     setState((current) => {
-      if (current.zoneId === zone) return current;
-      // A fresh world for the new biome, carrying progression and inventory.
-      const seeded = createInitialState(zone, Date.now());
-      const next: GameState = {
-        ...seeded,
-        seed: current.seed,
-        killSerial: current.killSerial,
-        progress: current.progress,
-        companions: current.companions,
-        activeCompanionIds: current.activeCompanionIds,
-        inventory: current.inventory,
-        settings: current.settings,
-        kills: current.kills,
-        deaths: current.deaths,
-        playSeconds: current.playSeconds,
-        log: current.log,
-        nextLogId: current.nextLogId,
-        nextEntitySerial: current.nextEntitySerial,
-        chain: current.chain,
-      };
+      // A fresh world for the new biome, carrying the Porter, their roster and
+      // their pack across into it.
+      const next = travelTo(current, zone, Date.now());
       stateRef.current = next;
       return next;
     });
@@ -267,6 +254,8 @@ export function useGameSim(): GameSim {
     use: (instanceId) => applyAction((current) => useStack(current, instanceId)),
     choosePotion: (defId) => applyAction((current) => choosePotionAction(current, defId)),
     drop: (instanceId) => applyAction((current) => dropStack(current, instanceId)),
+    sell: (instanceId, count) => applyAction((current) => sellStack(current, instanceId, count)),
+    buy: (defId, count) => applyAction((current) => buyItem(current, defId, count)),
     summon: (companionId) => applyAction((current) => summonCompanion(current, companionId)),
     state,
     map,

@@ -88,7 +88,17 @@ function validate(value: unknown): GameState | null {
 
   // A save from before the one-creature rule may list a whole party; keep the
   // first and leave the rest on the roster rather than in the field.
-  state.activeCompanionIds = state.activeCompanionIds.slice(0, MAX_ACTIVE_COMPANIONS);
+  //
+  // A save naming nobody is corrected here rather than loaded as-is. The Porter
+  // does not fight, so arriving with an empty field is arriving unable to play:
+  // they would walk up to a monster and stand there. The tick reducer then
+  // puts whoever is named back on the map.
+  state.activeCompanionIds = state.activeCompanionIds
+    .filter((id) => state.companions.some((companion) => companion.id === id))
+    .slice(0, MAX_ACTIVE_COMPANIONS);
+  if (state.activeCompanionIds.length === 0 && state.companions.length > 0) {
+    state.activeCompanionIds = [state.companions[0].id];
+  }
   const allowed = new Set(state.activeCompanionIds.map((id) => `companion:${id}`));
   state.entities = state.entities.filter((entity) => entity.kind !== "companion" || allowed.has(entity.id));
 

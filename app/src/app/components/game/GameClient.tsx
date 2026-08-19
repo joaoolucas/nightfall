@@ -1,19 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { zoneFor } from "@/game/world/zones";
-import { battleList } from "@/game/sim/ai";
 import { PLAYER_ID, companionAttack, expForLevel, playerDefense, playerOf } from "@/game/sim/state";
 import { capacity, inventoryWeight } from "@/game/world/items";
-import { distance, type GridPoint } from "@/game/core/grid";
 import { canReach } from "@/game/sim/actions";
 import BattleLog from "./BattleLog";
-import CreatureIcon, { SpriteIcon } from "./CreatureIcon";
+import CreatureIcon from "./CreatureIcon";
 import ItemIcon from "./ItemIcon";
 import UiIcon, { type UiIconName } from "./UiIcon";
 import { BackpackWindow, Container, PotionChoice } from "./Inventory";
 import MapWindow from "./MapWindow";
+import MarketWindow from "./MarketWindow";
 import SkillsWindow from "./SkillsWindow";
 import Viewport from "./Viewport";
 import { useGameSim } from "./useGameSim";
@@ -23,12 +22,12 @@ import styles from "./client.module.css";
  * The game client.
  *
  * The rail holds only what you watch while a fight is happening — your health,
- * what is coming for you, who is fighting, what you drink. Skills, the backpack
- * and the route map are consulted rather than watched, so they open as windows
- * over the world from the icon bar.
+ * who is fighting, what you drink. Skills, the backpack, the trading post and
+ * the route map are consulted rather than watched, so they open as windows over
+ * the world from the icon bar.
  */
 
-type WindowId = "map" | "skills" | "backpack";
+type WindowId = "map" | "market" | "skills" | "backpack";
 
 /** A reading with its icon and bar: the shape every measure in the rail takes. */
 function Gauge({ icon, label, reading, value, max, tone }: {
@@ -60,12 +59,6 @@ export default function GameClient() {
   const sim = useGameSim();
   const { state } = sim;
   const player = useMemo(() => state.entities.find((entity) => entity.id === PLAYER_ID) ?? playerOf(state), [state]);
-  // What the viewport reaches, in tiles, reported by the canvas as it resizes.
-  const [view, setView] = useState<GridPoint>({ x: 9, y: 9 });
-  const onView = useCallback((half: GridPoint) => {
-    setView((current) => (current.x === half.x && current.y === half.y ? current : half));
-  }, []);
-  const targets = useMemo(() => battleList(state, view), [state, view]);
   const active = state.entities.find((entity) => entity.kind === "companion");
 
   const [openWindow, setOpenWindow] = useState<WindowId | null>(null);
@@ -85,10 +78,14 @@ export default function GameClient() {
   const zone = zoneFor(state.zoneId);
   const toggle = (id: WindowId) => setOpenWindow((current) => (current === id ? null : id));
 
-  const tabs: { id: WindowId; icon: UiIconName; label: string; title: string }[] = [
-    { id: "map", icon: "map", label: zone.name, title: "Choose where to hunt" },
-    { id: "skills", icon: "ledger", label: "Skills", title: "Your skills and your tally" },
-    { id: "backpack", icon: "pack", label: "Backpack", title: "What you are carrying" },
+  // The map tab used to be labelled with the zone you were standing in, which
+  // named the one place you could not travel to. It says what it opens now; the
+  // zone you are in is on the panel below, where a reading belongs.
+  const tabs: { id: WindowId; icon: React.ReactNode; label: string; title: string }[] = [
+    { id: "map", icon: <UiIcon name="map" />, label: "Map", title: "Choose where to hunt" },
+    { id: "market", icon: <ItemIcon defId="gold" />, label: "Market", title: "Sell your haul and buy supplies" },
+    { id: "skills", icon: <UiIcon name="ledger" />, label: "Skills", title: "Your skills and your tally" },
+    { id: "backpack", icon: <UiIcon name="pack" />, label: "Backpack", title: "What you are carrying" },
   ];
 
   return (
@@ -109,7 +106,7 @@ export default function GameClient() {
               onClick={() => toggle(tab.id)}
               title={tab.title}
             >
-              <UiIcon name={tab.icon} />
+              {tab.icon}
               <span>{tab.label}</span>
             </button>
           ))}
@@ -123,7 +120,7 @@ export default function GameClient() {
 
       <div className={styles.stage}>
         <div className={styles.viewportWrap}>
-          <Viewport sim={sim} onView={onView} />
+          <Viewport sim={sim} />
           <BattleLog log={state.log} />
           {openWindow ? (
             <button
@@ -134,6 +131,7 @@ export default function GameClient() {
             />
           ) : null}
           {openWindow === "map" ? <MapWindow sim={sim} onClose={() => setOpenWindow(null)} /> : null}
+          {openWindow === "market" ? <MarketWindow sim={sim} onClose={() => setOpenWindow(null)} /> : null}
           {openWindow === "skills" ? <SkillsWindow sim={sim} onClose={() => setOpenWindow(null)} /> : null}
           {openWindow === "backpack" ? <BackpackWindow sim={sim} onClose={() => setOpenWindow(null)} /> : null}
         </div>
@@ -182,29 +180,6 @@ export default function GameClient() {
                 <ItemIcon defId="shard" />
                 <span>Shards<b>{state.inventory.shards.toLocaleString()}</b></span>
               </div>
-            </div>
-          </section>
-
-          <section className={styles.panel}>
-            <div className={styles.panelHead}>Battle list <small>{targets.length}</small></div>
-            <div className={styles.battleList}>
-              {targets.length === 0 ? <p className={styles.empty}>Nothing in sight.</p> : null}
-              {targets.slice(0, 4).map((entity) => (
-                <button
-                  key={entity.id}
-                  type="button"
-                  className={entity.id === player.targetId ? styles.battleActive : ""}
-                  onClick={() => sim.setTarget(entity.id)}
-                  title={`Send your creature at ${entity.name}`}
-                >
-                  <SpriteIcon charId={entity.charId} />
-                  <span className={styles.battleText}>
-                    <b>{entity.name}</b>
-                    <i><em style={{ width: `${Math.max(0, (entity.hp / entity.maxHp) * 100)}%` }} /></i>
-                  </span>
-                  <em className={styles.range}>{distance(player, entity)}</em>
-                </button>
-              ))}
             </div>
           </section>
 

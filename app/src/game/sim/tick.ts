@@ -9,12 +9,14 @@ import { planAutoHunt, planCompanion, planMonster } from "./ai";
 import { ATTACK_WINDUP, applyDamage, canAct, isAlive, rollSwing } from "./combat";
 import { makeCorpse, pileAt } from "./loot";
 import {
+  MAX_ACTIVE_COMPANIONS,
   PLAYER_ID,
   addLog,
   createInitialState,
   expForCompanionLevel,
   expForLevel,
   isOverloaded,
+  makeCompanion,
   makeMonster,
   companionAttack,
   playerDefense,
@@ -170,6 +172,71 @@ function killPlayer(state: GameState, player: Entity, events: CombatEvent[]): vo
   events.push({ type: "say", tick: state.tick, text: `You are dead. You lose ${lost} experience.` });
 }
 
+/**
+ * Keep the roster and the field in agreement.
+ *
+ * This is an invariant, not a convenience. The Porter cannot swing: everything
+ * that dies is killed by the creature they sent out. So a roster that names a
+ * creature with no entity on the map does not degrade the game, it stops it —
+ * auto-hunt walks the Porter to within three tiles of a monster and holds them
+ * there, waiting for a kill that nothing can deliver, until the player clicks.
+ *
+ * Two paths used to produce exactly that: travelling to another zone rebuilt
+ * the world with the starter creature while the roster still named whichever
+ * one you had sent out, and loading that save then dropped the mismatched
+ * entity as stale. Both are fixed at their source; this stands behind them so
+ * no future path can strand the Porter alone again.
+ *
+ * A roster that names nobody is left alone: it is consistent — nothing chosen,
+ * nothing out — and repairing it belongs to whoever produced it. A save that
+ * arrives that way is corrected on load instead.
+ */
+function ensureFieldCreature(
+  state: GameState,
+  map: WorldMap,
+  occupancy: Occupancy,
+  player: Entity,
+  events: CombatEvent[],
+): void {
+  const chosen = state.activeCompanionIds
+    .filter((id) => state.companions.some((companion) => companion.id === id))
+    .slice(0, MAX_ACTIVE_COMPANIONS);
+  const wanted = new Set(chosen.map((id) => `companion:${id}`));
+  const present = new Set(
+    state.entities.filter((entity) => entity.kind === "companion").map((entity) => entity.id),
+  );
+
+  const sameRoster = chosen.length === state.activeCompanionIds.length
+    && chosen.every((id, index) => id === state.activeCompanionIds[index]);
+  const sameField = present.size === wanted.size && [...wanted].every((id) => present.has(id));
+  if (sameRoster && sameField) return;
+
+  state.activeCompanionIds = chosen;
+  for (const entity of state.entities) {
+    if (entity.kind === "companion" && !wanted.has(entity.id)) occupancy.remove(entity);
+  }
+  state.entities = state.entities.filter(
+    (entity) => entity.kind !== "companion" || wanted.has(entity.id),
+  );
+
+  for (const id of chosen) {
+    if (present.has(`companion:${id}`)) continue;
+    const companion = state.companions.find((candidate) => candidate.id === id);
+    if (!companion) continue;
+    // Beside the Porter if there is room, and on their tile if there is not:
+    // a creature standing awkwardly is recoverable, a missing one is not.
+    const spot = nearestWalkable(
+      { x: player.x, y: player.y },
+      (point) => isFree(map, occupancy, point, `companion:${id}`),
+      5,
+    ) ?? { x: player.x, y: player.y };
+    const entity = makeCompanion(companion, spot, 0);
+    state.entities = [...state.entities, entity];
+    occupancy.add(entity.id, entity);
+    events.push({ type: "say", tick: state.tick, text: `${companion.name} steps forward.`, targetId: entity.id });
+  }
+}
+
 function respawnMonsters(state: GameState, map: WorldMap, occupancy: Occupancy): CombatEvent[] {
   const events: CombatEvent[] = [];
   const rng = state;
@@ -298,6 +365,9 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
     entity.y = spot.y;
     events.push({ type: "say", tick: state.tick, text: `${entity.name} recovers and rejoins you.`, targetId: entity.id });
   }
+
+  // Whatever else happened, the Porter is not left standing alone.
+  ensureFieldCreature(state, map, occupancy, player, events);
 
   // Bodies become corpses once the death clip has played.
   const fallen = state.entities.filter((entity) => entity.state === "dead" && entity.stateTicks <= 0);
