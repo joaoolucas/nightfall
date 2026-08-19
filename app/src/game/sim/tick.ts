@@ -38,18 +38,14 @@ const PLAYER_ATTACK_TICKS = 20;
 /**
  * Ticks between the Porter's steps, and the toll for hauling too much.
  *
- * Three ticks is a third of a second a tile. Four felt like wading, and two is
- * measurably too fast: the Porter pulls up to eleven tiles clear of their
- * creature, past the eight it will engage a fight within, so it breaks off and
- * trails them instead of fighting. At three the creature stays about two tiles
- * behind and never loses its target.
- *
- * Overloaded is twice the cost rather than nearly three times it. Now that
- * coins are weightless it is a real choice about what to haul, not a state a
- * Porter is trapped in for good.
+ * Four ticks — four tenths of a second a tile. Three was tried and reads as
+ * scurrying: at that pace a step lands before the eye has finished the last
+ * one, and the walk stops looking like travel and starts looking like a
+ * glitch. The speed the game actually gained came from coins no longer
+ * weighing, which is what had every real save pinned at the overloaded rate.
  */
-const PLAYER_STEP_TICKS = 3;
-const OVERLOADED_STEP_TICKS = 6;
+const PLAYER_STEP_TICKS = 4;
+const OVERLOADED_STEP_TICKS = 8;
 /** Below this fraction of health, auto-potion drinks. */
 const AUTO_POTION_AT = 0.35;
 /** Ticks the Porter is out of action after dying. */

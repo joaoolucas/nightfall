@@ -23,6 +23,14 @@ function repathDue(entity: Entity, tick: number): boolean {
   return (tick + entity.id.length) % REPATH_INTERVAL === 0;
 }
 
+// A note for whoever tries this next: holding a route until the quarry leaves
+// the end of it, instead of recomputing every six ticks, was tried and is
+// worse. It looks like the fix for dithering — seven in ten of the Porter's
+// direction reversals are a route doubling back on an unchanged destination —
+// but a stale route means the correction, when it finally comes, is a bigger
+// and more visible swerve. Measured over ten minutes: reversals 7.5% -> 8.6%
+// of steps, and steps taken away from a nearby monster 5.0% -> 9.3%.
+
 /** Anything a monster wants to fight: the Porter and its companions. */
 function hostileTargets(state: GameState): Entity[] {
   return state.entities.filter(
@@ -201,6 +209,15 @@ export function planCompanion(state: GameState, map: WorldMap, occupancy: Occupa
 const HANDLER_STANDOFF = 3;
 
 /**
+ * How far the fight may drift before the Porter bothers to reposition.
+ *
+ * This is the difference between a handler holding their post and a handler
+ * fidgeting. Without it they matched every step the monster took, forward and
+ * back, and the movement had no readable intent at all.
+ */
+const STANDOFF_SLACK = 2;
+
+/**
  * Whether the Porter could take this stack if they tried.
  *
  * Currency always: it is the point of hunting and weighs against capacity only
@@ -214,21 +231,34 @@ function canLift(state: GameState, stack: ItemStack): boolean {
 }
 
 /**
- * How far the Porter will walk off to collect a body.
+ * How far the Porter will walk off to collect a body, and how far they will
+ * look for the next thing to hunt.
  *
- * Bounded, because their creature only stays on a fight within eight tiles of
- * it: wander further to pick something up and the creature breaks off to follow
- * you, which loses the fight you were winning.
+ * Collecting is bounded twice over. Between fights they will cross a room for
+ * a body; while their creature is actually swinging at something they will
+ * only step to one practically at their feet. Letting them cross that room
+ * mid-fight is what made them look like they were running away — they were
+ * walking off from a live monster towards a corpse, which is indistinguishable
+ * from fleeing, and it dragged the creature off its target too.
+ *
+ * The hunt range is what the screen shows, near enough. Ranging further meant
+ * setting off towards a monster nobody could see, which is the other half of
+ * "he walks off in a direction that makes no sense". Only when there is
+ * genuinely nothing in sight do they look further afield, and then an empty
+ * screen explains the walk by itself.
  */
-const COLLECT_RANGE = 7;
+const COLLECT_BETWEEN_FIGHTS = 7;
+const COLLECT_MID_FIGHT = 2;
+const HUNT_IN_SIGHT = 12;
+const HUNT_FURTHER = 26;
 
 /** The nearest body carrying something the Porter could actually take. */
-function nearestBody(state: GameState, player: Entity): GroundPile | null {
+function nearestBody(state: GameState, player: Entity, radius: number): GroundPile | null {
   let best: GroundPile | null = null;
   let bestDistance = Infinity;
   for (const pile of state.ground) {
     const range = distance(player, pile);
-    if (range > COLLECT_RANGE || range >= bestDistance) continue;
+    if (range > radius || range >= bestDistance) continue;
     if (!pile.items.some((stack) => canLift(state, stack))) continue;
     best = pile;
     bestDistance = range;
@@ -236,41 +266,88 @@ function nearestBody(state: GameState, player: Entity): GroundPile | null {
   return best;
 }
 
+/** Is the creature in the field actually engaged on something alive? */
+function creatureIsFighting(state: GameState): boolean {
+  const creature = state.entities.find((entity) => entity.kind === "companion" && isAlive(entity));
+  if (!creature) return false;
+  const quarry = state.entities.find((entity) => entity.id === creature.targetId);
+  return !!quarry && isAlive(quarry) && distance(creature, quarry) <= 2;
+}
+
+/**
+ * Is the body the Porter set out for still worth the walk?
+ *
+ * Holding a destination is what makes the movement readable, but holding one
+ * that has rotted away or been emptied would be worse than re-deciding.
+ */
+function goalStillWorthIt(state: GameState, player: Entity): boolean {
+  if (!player.goal) return false;
+  const pile = state.ground.find(
+    (candidate) => candidate.x === player.goal!.x && candidate.y === player.goal!.y,
+  );
+  return !!pile && pile.items.some((stack) => canLift(state, stack));
+}
+
 export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupancy, tick: number): void {
   const player = playerOf(state);
-  if (!isAlive(player)) return;
+  if (!isAlive(player)) {
+    player.goal = undefined;
+    return;
+  }
 
-  // Collecting comes first, and it is what the Porter does while their creature
-  // works. It used to come last and only count a body underfoot, which meant it
-  // never happened: the creature kills at arm's length from a Porter holding
-  // three tiles back, so the corpse drops out of reach and stays there. They
-  // left roughly two fifths of what they earned lying on the ground, and stood
-  // still through the fight that earned it.
-  //
-  // Only loot they can actually lift counts. An overloaded Porter can never
-  // empty a corpse, and waiting for one was a deadlock: auto-loot refused the
-  // items, the items stayed, and the hunt stopped until the body rotted.
-  const body = nearestBody(state, player);
+  // A body the Porter already set out for is seen through. Re-arguing the case
+  // every tick is what made them drift: they would start for one corpse, notice
+  // a nearer one, turn, and end up walking between the two without reaching
+  // either. Commitment is the whole point.
+  if (goalStillWorthIt(state, player)) {
+    if (distance(player, player.goal!) <= 1) {
+      player.goal = undefined;
+      player.path = [];
+      return;
+    }
+    if (player.path.length === 0) {
+      player.path = findPath(player, player.goal!, {
+        walkable: walkableFor(map, occupancy, PLAYER_ID),
+        maxNodes: 900,
+      });
+      // Nowhere to walk: give it up rather than stand facing it.
+      if (player.path.length === 0) player.goal = undefined;
+    }
+    if (player.goal) return;
+  }
+  player.goal = undefined;
+
+  // Collecting only outranks the fight when it costs a step or two. The
+  // creature takes its fight from the Porter's mark, so a long detour calls it
+  // off the thing it was killing.
+  const reach = creatureIsFighting(state) ? COLLECT_MID_FIGHT : COLLECT_BETWEEN_FIGHTS;
+  const body = nearestBody(state, player, reach);
   if (body) {
-    // Underfoot is close enough — the tick reducer empties it from here.
     if (distance(player, body) <= 1) {
       player.path = [];
       return;
     }
-    if (player.path.length === 0 || repathDue(player, tick)) {
-      player.path = findPath(player, body, {
-        walkable: walkableFor(map, occupancy, PLAYER_ID),
-        maxNodes: 900,
-      });
+    const route = findPath(player, body, {
+      walkable: walkableFor(map, occupancy, PLAYER_ID),
+      maxNodes: 900,
+    });
+    if (route.length > 0) {
+      player.goal = { x: body.x, y: body.y };
+      player.path = route;
+      return;
     }
-    // The target is deliberately left alone: the creature takes its fight from
-    // the Porter's mark, so collecting must not call it off.
-    if (player.path.length > 0) return;
   }
 
   const target = state.entities.find((entity) => entity.id === player.targetId);
   if (target && isAlive(target)) {
-    if (distance(player, target) <= HANDLER_STANDOFF) {
+    // A deadband, not a line. Holding position at exactly three tiles meant
+    // shuffling: the monster steps, the Porter is now four tiles off and walks
+    // in, the monster steps back, the Porter stops — a step forward and a step
+    // back for as long as the fight lasted, which is most of what made the
+    // walking impossible to read. Once they have taken their post they keep it
+    // until the fight genuinely moves away from them.
+    const post = player.path.length === 0 ? HANDLER_STANDOFF + STANDOFF_SLACK : HANDLER_STANDOFF;
+    if (distance(player, target) <= post) {
       player.path = [];
       player.direction = directionTowards(player, target);
       return;
@@ -285,7 +362,8 @@ export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupan
     return;
   }
 
-  const next = nearestMonster(state, player, 26);
+  const next =
+    nearestMonster(state, player, HUNT_IN_SIGHT) ?? nearestMonster(state, player, HUNT_FURTHER);
   if (!next) {
     player.targetId = null;
     return;

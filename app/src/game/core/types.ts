@@ -47,6 +47,16 @@ export interface Entity extends GridPoint {
 
   path: GridPoint[];
   targetId: string | null;
+  /**
+   * Where the Porter has decided to walk, held until they arrive or it stops
+   * being worth walking to.
+   *
+   * Without it, auto-hunt re-argued the case from scratch every tick and the
+   * character read as aimless: it would set off for a body, notice a nearer
+   * one, turn, notice the first again, and drift between them. A destination
+   * you can see them commit to is what makes the walking legible.
+   */
+  goal?: GridPoint;
   /** Where a monster returns to, and what respawns it. */
   spawnId?: string;
   /** Monster template this entity was built from; drives loot and exp. */

@@ -611,3 +611,80 @@ test("the Porter walks to bodies rather than leaving what their creature killed"
   const { state: after } = advance(withBody, MAP, 60);
   assert.ok(after.inventory.gold >= before + 25, "the Porter must go and collect it");
 });
+
+/**
+ * Walking away from a live monster is indistinguishable from running from it.
+ *
+ * Collecting was briefly given priority over everything, which meant that with
+ * a body seven tiles off the Porter would turn and walk out of a fight their
+ * creature was in the middle of. It read as fleeing, and it dragged the
+ * creature off its target as well, since the creature takes its fight from the
+ * Porter's mark. Between fights they range; mid-fight they hold their post.
+ */
+test("the Porter does not walk out of a fight to collect a body", () => {
+  const state = freshState();
+  const player = playerOf(state);
+  const creature = state.entities.find((entity) => entity.kind === "companion")!;
+  const template = monsterTemplate("coalback");
+  // A monster the creature is already toe to toe with, right beside the Porter.
+  const quarry = makeMonster(template, { x: creature.x + 1, y: creature.y }, 42, UNLEASHED);
+
+  const fighting: GameState = {
+    ...state,
+    entities: [
+      ...state.entities.map((entity) =>
+        entity.kind === "companion" ? { ...entity, targetId: quarry.id } : entity,
+      ),
+      quarry,
+    ],
+    ground: [
+      {
+        id: "corpse:far",
+        x: player.x + 6,
+        y: player.y,
+        items: [{ instanceId: "coins", defId: "gold", count: 50 }],
+        corpseOf: "ash mite",
+        decayTick: 10_000,
+      },
+    ],
+  };
+  const startedAway = distance(playerOf(fighting), { x: player.x + 6, y: player.y });
+
+  const { state: after } = advance(fighting, MAP, 12);
+  const moved = playerOf(after);
+  assert.ok(
+    distance(moved, { x: player.x + 6, y: player.y }) >= startedAway - 1,
+    "the Porter must hold their post rather than set off across the field for loot",
+  );
+});
+
+test("between fights the Porter ranges for a body, and commits to the one they chose", () => {
+  const state = freshState();
+  const player = playerOf(state);
+  // Nothing alive anywhere, so there is no fight to hold: only a body to fetch.
+  const quiet: GameState = {
+    ...state,
+    entities: state.entities.filter((entity) => entity.kind !== "monster"),
+    spawns: [],
+    ground: [
+      {
+        id: "corpse:away",
+        x: player.x + 5,
+        y: player.y,
+        items: [{ instanceId: "coins", defId: "gold", count: 30 }],
+        corpseOf: "ash mite",
+        decayTick: 10_000,
+      },
+    ],
+  };
+
+  const { state: afterOne } = advance(quiet, MAP, 1);
+  assert.deepEqual(
+    playerOf(afterOne).goal,
+    { x: player.x + 5, y: player.y },
+    "they commit to a destination rather than re-deciding every tick",
+  );
+
+  const { state: arrived } = advance(quiet, MAP, 60);
+  assert.equal(arrived.inventory.gold, quiet.inventory.gold + 30, "and they see the walk through");
+});
