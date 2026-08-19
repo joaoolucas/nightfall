@@ -1,5 +1,7 @@
 # Portage.fun
 
+*Este repositório está atualizado.*
+
 **Live demo:** https://portage-topaz.vercel.app
 
 ![Portage kickoff](docs/screenshots/kickoff.png)
