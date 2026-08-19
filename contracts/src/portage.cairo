@@ -10,17 +10,33 @@
 //! `r = poseidon(seed, count)` picks rarity by weight, and
 //! `poseidon(seed, count, 1) mod 6` picks species.
 //!
-//! VERIFIABLE IS NOT THE SAME AS FAIR, and this contract is only the first.
-//! `hatch` takes its seed from the caller, so the person who benefits from the
-//! outcome chooses the input to it: a seed can be ground off-chain until it
-//! rolls Mythic and only that one submitted. Nothing here is manipulation
-//! resistant — there is no commitment, no reveal and no entropy the caller
-//! cannot see in advance. The global `hatch_count` shifts the roll when someone
-//! else hatches first, which is a race and a front-running surface rather than
-//! a fairness mechanism.
+//! Verifiable is not the same as fair, and the seed is where the difference
+//! lives. `hatch(seed)` used to take it straight from the caller, which let the
+//! person who benefits from the outcome choose the input to it: grind seeds
+//! off-chain until one rolls Mythic, submit only that one. Every roll was
+//! checkable and none of them was fair.
 //!
-//! Do not describe this as provably fair anywhere it will be read as a promise.
-//! Replacing it with commit-reveal is Phase 3 of STRK20_INTEGRATION_PLAN.md.
+//! Hatching is therefore two steps, and neither party holds both halves of the
+//! entropy:
+//!
+//!   1. `commit_hatch(poseidon(secret, caller))` publishes a sealed promise.
+//!      The secret stays with the player, so the sequencer cannot see it.
+//!   2. `reveal_hatch(secret)`, at least `REVEAL_DELAY` blocks later, rolls
+//!      from `poseidon(secret, block_hash(commit_block), commit_block)`. That
+//!      block hash did not exist when the promise was made, so the player
+//!      cannot grind it; and it is mixed with a secret the sequencer never saw,
+//!      so choosing block contents does not steer the result either.
+//!
+//! What this does not do is make walking away free to punish. A player can
+//! always decline to reveal and commit again, and the honest deterrent is that
+//! doing so costs them the commitment — which bites properly once hatching is
+//! paid for. One open commitment per address stops the cheaper version of that
+//! attack, where a grinder holds several promises at once and redeems only the
+//! one that landed well.
+//!
+//! `Hatched` publishes the secret, the block hash and the commit block
+//! alongside the mixed seed, so the whole derivation can be recomputed from
+//! outside and not merely the final roll.
 //!
 //! Marketplace settlement note (v0): there is no ERC-20 in the repo yet, so
 //! `buy` records the sale on-chain (seller/buyer/price/rake/proceeds in the
@@ -131,13 +147,48 @@ pub struct Listing {
     pub price: u128,
 }
 
+/// An open hatch commitment: what was promised, and the block it was made in.
+#[derive(Copy, Drop, Serde, PartialEq, Debug, Default, starknet::Store)]
+pub struct Commitment {
+    /// `poseidon(secret, caller)`. Zero means no open commitment.
+    pub digest: felt252,
+    /// Block the commitment was mined in; its hash is half of the entropy.
+    pub block: u64,
+}
+
+// ---------------------------------------------------------------------------
+// Commit-reveal timing
+// ---------------------------------------------------------------------------
+
+/// Blocks that must pass before a commitment can be revealed.
+///
+/// `get_block_hash_syscall` only answers for blocks at least 10 behind the
+/// current one, so this is the protocol's floor and not a tuning choice.
+pub const REVEAL_DELAY: u64 = 10;
+
+/// Blocks after which a commitment can no longer be revealed.
+///
+/// The syscall stops answering beyond 1024 blocks, which would strand a
+/// commitment with no way to resolve it. Expiring first, with margin, means an
+/// abandoned commitment frees the slot instead of bricking the account — and
+/// it makes walking away from a bad-looking roll cost the commit, which is what
+/// keeps reveal-or-retry from being free.
+pub const REVEAL_WINDOW: u64 = 1000;
+
 // ---------------------------------------------------------------------------
 // External interface
 // ---------------------------------------------------------------------------
 
 #[starknet::interface]
 pub trait IPortage<TState> {
-    fn hatch(ref self: TState, seed: felt252) -> u256;
+    /// Promise a hatch. `digest` must be `poseidon(secret, caller)`.
+    fn commit_hatch(ref self: TState, digest: felt252);
+    /// Redeem a promise made at least `REVEAL_DELAY` blocks ago.
+    fn reveal_hatch(ref self: TState, secret: felt252) -> u256;
+    /// The caller's open commitment, or a zero digest when there is none.
+    fn get_commitment(self: @TState, who: ContractAddress) -> (felt252, u64);
+    /// The mixed entropy a reveal would use, so a client can show its own work.
+    fn preview_entropy(self: @TState, secret: felt252, commit_block: u64) -> felt252;
     fn owner_of(self: @TState, token_id: u256) -> ContractAddress;
     fn transfer_from(ref self: TState, to: ContractAddress, token_id: u256);
     fn get_creature(
@@ -165,12 +216,16 @@ pub mod Portage {
         Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
         StoragePointerWriteAccess,
     };
-    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
+    use starknet::{
+        ContractAddress, get_caller_address, get_block_timestamp, get_block_number,
+    };
+    use starknet::syscalls::get_block_hash_syscall;
     use core::poseidon::poseidon_hash_span;
     use super::{
-        Creature, Listing, Rarity, Species, Stage, Stats, IPortage, WEIGHT_COMMON,
+        Commitment, Creature, Listing, Rarity, Species, Stage, Stats, IPortage, WEIGHT_COMMON,
         WEIGHT_UNCOMMON, WEIGHT_RARE, WEIGHT_EPIC, WEIGHT_LEGENDARY, WEIGHT_MYTHIC, TOTAL_WEIGHT,
         RAKE_BPS, BPS_DENOMINATOR, SPECIES_COUNT, EXP_TO_ADULT, EXP_TO_LEGEND, EXPEDITION_COOLDOWN,
+        REVEAL_DELAY, REVEAL_WINDOW,
     };
 
     mod errors {
@@ -181,6 +236,12 @@ pub mod Portage {
         pub const NOT_FOUND: felt252 = 'NOT_FOUND';
         pub const NOT_READY: felt252 = 'NOT_READY';
         pub const ON_COOLDOWN: felt252 = 'ON_COOLDOWN';
+        pub const COMMIT_OPEN: felt252 = 'COMMIT_OPEN';
+        pub const NO_COMMIT: felt252 = 'NO_COMMIT';
+        pub const BAD_SECRET: felt252 = 'BAD_SECRET';
+        pub const TOO_EARLY: felt252 = 'TOO_EARLY';
+        pub const COMMIT_EXPIRED: felt252 = 'COMMIT_EXPIRED';
+        pub const ZERO_DIGEST: felt252 = 'ZERO_DIGEST';
     }
 
     #[storage]
@@ -188,6 +249,9 @@ pub mod Portage {
         creatures: Map<u256, Creature>,
         listings: Map<u256, Listing>,
         last_expedition: Map<u256, u64>,
+        /// One open hatch promise per address, so a grinder cannot keep a
+        /// spread of commitments open and reveal only the one that landed well.
+        commitments: Map<ContractAddress, Commitment>,
         hatch_count: u64,
         total_supply: u256,
     }
@@ -195,6 +259,7 @@ pub mod Portage {
     #[event]
     #[derive(Copy, Drop, PartialEq, Debug, starknet::Event)]
     pub enum Event {
+        Committed: Committed,
         Hatched: Hatched,
         Listed: Listed,
         Sold: Sold,
@@ -203,6 +268,22 @@ pub mod Portage {
         Evolved: Evolved,
     }
 
+    /// A promise made. Published so the wait is visible and so anyone can later
+    /// check the reveal against the digest that was standing at this block.
+    #[derive(Copy, Drop, PartialEq, Debug, starknet::Event)]
+    pub struct Committed {
+        #[key]
+        pub who: ContractAddress,
+        pub digest: felt252,
+        pub commit_block: u64,
+    }
+
+    /// A hatch, with every input needed to recompute it from outside.
+    ///
+    /// `seed` is the mixed entropy the rolls actually consumed, so the existing
+    /// `roll_rarity(seed, count)` check still works unchanged. The three
+    /// components are published alongside it so the mixing itself is checkable
+    /// too, rather than having to be taken on trust.
     #[derive(Copy, Drop, PartialEq, Debug, starknet::Event)]
     pub struct Hatched {
         #[key]
@@ -210,6 +291,9 @@ pub mod Portage {
         pub species: Species,
         pub rarity: Rarity,
         pub seed: felt252,
+        pub secret: felt252,
+        pub block_hash: felt252,
+        pub commit_block: u64,
         pub owner: ContractAddress,
     }
 
@@ -259,6 +343,51 @@ pub mod Portage {
     // Pure roll helpers. Public so off-chain verifiers and tests can recompute
     // the exact same result from (seed, hatch_count).
     // -----------------------------------------------------------------------
+
+    /// Mint a creature from an already-decided seed.
+    ///
+    /// Test-only, and `#[cfg(test)]` so it is compiled out of every build that
+    /// is not the test binary — it cannot exist in the class that goes on
+    /// chain. It exists because `reveal_hatch` needs a real block hash, and
+    /// `cairo_test` has no chain behind it: `get_block_hash_syscall` returns an
+    /// error there, so every test that merely needs a creature to exist in
+    /// order to test expeditions, evolution or the marketplace would otherwise
+    /// be unable to make one. The commit-reveal path itself is covered by its
+    /// pure functions and its guards below, and end to end on Sepolia.
+    #[cfg(test)]
+    pub fn mint_for_testing(ref self: ContractState, seed: felt252) -> u256 {
+        let owner = get_caller_address();
+        let count = self.hatch_count.read();
+        let rarity = roll_rarity(seed, count);
+        let species = roll_species(seed, count);
+        let token_id: u256 = count.into();
+        let creature = Creature { owner, species, rarity, stage: Stage::Hatchling, exp: 0 };
+        self.creatures.write(token_id, creature);
+        self.hatch_count.write(count + 1);
+        self.total_supply.write(self.total_supply.read() + 1);
+        token_id
+    }
+
+    /// The digest a player must publish to open a hatch.
+    ///
+    /// Binding the caller into it means a secret observed in the mempool during
+    /// someone else's reveal cannot be replayed by whoever saw it: the digest
+    /// it hashes to belongs to an address they do not control.
+    pub fn commitment_digest(secret: felt252, who: ContractAddress) -> felt252 {
+        poseidon_hash_span(array![secret, who.into()].span())
+    }
+
+    /// The seed a hatch actually rolls from.
+    ///
+    /// Two halves, and neither party holds both. The player picks `secret` and
+    /// is bound to it by their commitment before the block hash exists. The
+    /// block hash is fixed by the chain after that commitment is already
+    /// mined, so the player cannot grind it — and because it is mixed with a
+    /// secret the sequencer never sees, the sequencer cannot steer the outcome
+    /// by choosing block contents either.
+    pub fn mix_entropy(secret: felt252, block_hash: felt252, commit_block: u64) -> felt252 {
+        poseidon_hash_span(array![secret, block_hash, commit_block.into()].span())
+    }
 
     /// Rarity roll: `poseidon(seed, hatch_count) mod 100` mapped onto the fixed
     /// weight table.
@@ -370,20 +499,73 @@ pub mod Portage {
 
     #[abi(embed_v0)]
     pub impl PortageImpl of IPortage<ContractState> {
-        fn hatch(ref self: ContractState, seed: felt252) -> u256 {
+        fn commit_hatch(ref self: ContractState, digest: felt252) {
+            // A zero digest is the "no commitment" marker in storage, so it can
+            // never be a real one.
+            assert(digest != 0, errors::ZERO_DIGEST);
+            let who = get_caller_address();
+            let current = get_block_number();
+            let open = self.commitments.read(who);
+
+            // An expired promise is not in the way — it can no longer be
+            // revealed, so the slot is free. A live one is: allowing a second
+            // would let a grinder hold several and redeem only the best.
+            if open.digest != 0 {
+                assert(current > open.block + REVEAL_WINDOW, errors::COMMIT_OPEN);
+            }
+
+            self.commitments.write(who, Commitment { digest, block: current });
+            self.emit(Committed { who, digest, commit_block: current });
+        }
+
+        fn reveal_hatch(ref self: ContractState, secret: felt252) -> u256 {
+            let owner = get_caller_address();
+            let open = self.commitments.read(owner);
+            assert(open.digest != 0, errors::NO_COMMIT);
+            assert(commitment_digest(secret, owner) == open.digest, errors::BAD_SECRET);
+
+            // The wait is what makes this fair, so it is enforced rather than
+            // assumed: the block hash below does not exist yet before it.
+            let current = get_block_number();
+            assert(current >= open.block + REVEAL_DELAY, errors::TOO_EARLY);
+            assert(current <= open.block + REVEAL_WINDOW, errors::COMMIT_EXPIRED);
+
+            let block_hash = get_block_hash_syscall(open.block).unwrap();
+            let seed = mix_entropy(secret, block_hash, open.block);
+
             let count = self.hatch_count.read();
             let rarity = roll_rarity(seed, count);
             let species = roll_species(seed, count);
-            let owner = get_caller_address();
             let token_id: u256 = count.into();
+
+            // Spend the commitment before minting, so a reveal can never be
+            // replayed against the same promise.
+            self.commitments.write(owner, Commitment { digest: 0, block: 0 });
 
             let creature = Creature { owner, species, rarity, stage: Stage::Hatchling, exp: 0 };
             self.creatures.write(token_id, creature);
             self.hatch_count.write(count + 1);
             self.total_supply.write(self.total_supply.read() + 1);
 
-            self.emit(Hatched { token_id, species, rarity, seed, owner });
+            self.emit(
+                Hatched {
+                    token_id, species, rarity, seed, secret, block_hash,
+                    commit_block: open.block, owner,
+                },
+            );
             token_id
+        }
+
+        fn get_commitment(self: @ContractState, who: ContractAddress) -> (felt252, u64) {
+            let open = self.commitments.read(who);
+            (open.digest, open.block)
+        }
+
+        fn preview_entropy(
+            self: @ContractState, secret: felt252, commit_block: u64,
+        ) -> felt252 {
+            let block_hash = get_block_hash_syscall(commit_block).unwrap();
+            mix_entropy(secret, block_hash, commit_block)
         }
 
         fn owner_of(self: @ContractState, token_id: u256) -> ContractAddress {

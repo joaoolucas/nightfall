@@ -10,7 +10,7 @@
 // the mock/demo data in `utils/creatures.ts` — the build stays green with no
 // live contract.
 
-import { Contract, num, type Abi, type AccountInterface, type ProviderInterface, type InvokeFunctionResponse } from "starknet";
+import { Contract, hash, num, type Abi, type AccountInterface, type ProviderInterface, type InvokeFunctionResponse } from "starknet";
 import portageAbi from "@/abis/portage.abi.json";
 import type { Creature } from "./creatures";
 import { creatureStats, type CreatureStats, type Species, type Rarity, type Stage } from "./portage";
@@ -128,10 +128,36 @@ export class PortageClient {
     return res.slice(1, 1 + len).map((w) => Number(num.toBigInt(w)));
   }
 
-  /** `hatch(seed)` — mint a new creature from a client-random felt252 seed. */
-  hatch(account: AccountInterface, seed: string): Promise<InvokeFunctionResponse> {
-    const call = this.contract.populate("hatch", [seed]);
+  /**
+   * `commit_hatch(digest)` — promise a hatch.
+   *
+   * The secret never leaves the client until the reveal, and the digest binds
+   * it to the caller's address, so a secret observed in the mempool cannot be
+   * redeemed by whoever saw it. Keep the secret: without it the commitment can
+   * never be revealed and the hatch is lost.
+   */
+  commitHatch(account: AccountInterface, digest: string): Promise<InvokeFunctionResponse> {
+    const call = this.contract.populate("commit_hatch", [digest]);
     return account.execute([call]);
+  }
+
+  /**
+   * `reveal_hatch(secret)` — redeem a promise and mint.
+   *
+   * Only valid between REVEAL_DELAY and REVEAL_WINDOW blocks after the commit;
+   * the contract reverts as TOO_EARLY or COMMIT_EXPIRED outside that band.
+   */
+  revealHatch(account: AccountInterface, secret: string): Promise<InvokeFunctionResponse> {
+    const call = this.contract.populate("reveal_hatch", [secret]);
+    return account.execute([call]);
+  }
+
+  /** `get_commitment(who)` → the open `[digest, commitBlock]`, zeroed when none. */
+  async getCommitment(who: string): Promise<{ digest: bigint; commitBlock: bigint }> {
+    const res = (await this.contract.call("get_commitment", [who], {
+      parseResponse: false,
+    })) as string[];
+    return { digest: num.toBigInt(res[0]), commitBlock: num.toBigInt(res[1]) };
   }
 
   /** `list(token_id, price)` — list a creature for `price` (u128, small ints only for now). */
@@ -167,6 +193,37 @@ export class PortageClient {
     return account.execute([call]);
   }
 }
+
+/**
+ * The digest to publish when committing a hatch.
+ *
+ * Must match `commitment_digest` in portage.cairo exactly — it is
+ * `poseidon(secret, caller)`. A mismatch here is not a compile error on either
+ * side; it is a reveal that reverts as BAD_SECRET with the hatch already paid
+ * for, so `npm run verify:hatch -- --offline` cross-checks the two
+ * implementations against vectors the Cairo tests pin.
+ */
+export function hatchDigest(secret: string, caller: string): string {
+  return hash.computePoseidonHashOnElements([num.toBigInt(secret), num.toBigInt(caller)]);
+}
+
+/**
+ * The seed a reveal will roll from: `poseidon(secret, blockHash, commitBlock)`.
+ * Mirrors `mix_entropy`, and lets a client show its own working rather than
+ * asking the player to trust the result.
+ */
+export function mixEntropy(secret: string, blockHash: string, commitBlock: number | bigint): string {
+  return hash.computePoseidonHashOnElements([
+    num.toBigInt(secret),
+    num.toBigInt(blockHash),
+    BigInt(commitBlock),
+  ]);
+}
+
+/** Blocks that must pass before a commitment can be revealed. Mirrors REVEAL_DELAY. */
+export const REVEAL_DELAY = 10;
+/** Blocks after which a commitment can no longer be revealed. Mirrors REVEAL_WINDOW. */
+export const REVEAL_WINDOW = 1000;
 
 /** Generate a client-random seed masked to fit a felt252 (< 2^251 < felt prime). */
 export function randomFeltSeed(): string {

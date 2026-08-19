@@ -6,14 +6,20 @@
 //! `starknet::testing::set_caller_address`.
 
 use crate::portage::Portage::PortageImpl;
-use crate::portage::Portage::{roll_rarity, roll_species, base_stats, creature_stats, exp_yield};
+use crate::portage::Portage::{
+    roll_rarity, roll_species, base_stats, creature_stats, exp_yield, commitment_digest,
+    mix_entropy,
+};
 use crate::portage::{
     Portage, Rarity, Species, Stage, WEIGHT_COMMON, WEIGHT_UNCOMMON, WEIGHT_RARE,
     WEIGHT_EPIC, WEIGHT_LEGENDARY, WEIGHT_MYTHIC, TOTAL_WEIGHT, RAKE_BPS, BPS_DENOMINATOR,
-    SPECIES_COUNT, EXP_TO_ADULT, EXP_TO_LEGEND, EXPEDITION_COOLDOWN,
+    SPECIES_COUNT, EXP_TO_ADULT, EXP_TO_LEGEND, EXPEDITION_COOLDOWN, REVEAL_DELAY,
+    REVEAL_WINDOW,
 };
 use starknet::ContractAddress;
-use starknet::testing::{set_caller_address, set_contract_address, set_block_timestamp};
+use starknet::testing::{
+    set_caller_address, set_contract_address, set_block_timestamp, set_block_number,
+};
 
 /// Helper: a deterministic `ContractAddress` from a short string.
 fn addr(short: felt252) -> ContractAddress {
@@ -142,7 +148,7 @@ fn test_hatch_mints_to_caller_and_increments() {
     set_caller_address(alice);
 
     let seed: felt252 = 0xABCD;
-    let token_id = PortageImpl::hatch(ref state, seed);
+    let token_id = Portage::mint_for_testing(ref state, seed);
 
     assert_eq!(token_id, 0);
     assert_eq!(PortageImpl::get_hatch_count(@state), 1);
@@ -164,8 +170,8 @@ fn test_hatch_uses_hatch_count_in_rng() {
     set_caller_address(alice);
 
     let seed: felt252 = 0x42;
-    let t0 = PortageImpl::hatch(ref state, seed);
-    let t1 = PortageImpl::hatch(ref state, seed);
+    let t0 = Portage::mint_for_testing(ref state, seed);
+    let t1 = Portage::mint_for_testing(ref state, seed);
 
     assert_eq!(t0, 0);
     assert_eq!(t1, 1);
@@ -180,32 +186,191 @@ fn test_hatch_uses_hatch_count_in_rng() {
     assert_eq!(s1, roll_species(seed, 1));
 }
 
+// ---------------------------------------------------------------------------
+// Commit-reveal
+//
+// The reveal itself cannot run here: it reads a real block hash, and
+// `cairo_test` has no chain behind it — `get_block_hash_syscall` returns an
+// error in this VM. What is covered here is everything that decides whether a
+// reveal is allowed to happen at all, plus the pure entropy functions anyone
+// verifying a hatch off-chain will recompute. The happy path is verified end to
+// end on Sepolia by scripts/verify-hatch.mjs.
+// ---------------------------------------------------------------------------
+
 #[test]
-fn test_hatch_emits_event() {
+fn test_commitment_digest_binds_the_caller() {
+    let alice = addr('ALICE');
+    let bob = addr('BOB');
+    let secret: felt252 = 0xC0FFEE;
+
+    assert_eq!(commitment_digest(secret, alice), commitment_digest(secret, alice));
+    assert(
+        commitment_digest(secret, alice) != commitment_digest(secret, bob),
+        'DIGEST_NOT_BOUND',
+    );
+    // A secret seen in the mempool is useless to whoever saw it: it hashes to
+    // a digest belonging to an address they do not control.
+    assert(commitment_digest(0x1, alice) != commitment_digest(0x2, alice), 'DIGEST_COLLISION');
+}
+
+#[test]
+fn test_mix_entropy_needs_both_halves() {
+    let base = mix_entropy(0xAAA, 0xBBB, 7);
+    assert_eq!(base, mix_entropy(0xAAA, 0xBBB, 7));
+    // Neither half alone decides the outcome, which is the whole point: the
+    // player cannot pick the block hash and the sequencer cannot see the secret.
+    assert(base != mix_entropy(0xAAB, 0xBBB, 7), 'SECRET_IGNORED');
+    assert(base != mix_entropy(0xAAA, 0xBBC, 7), 'BLOCKHASH_IGNORED');
+    assert(base != mix_entropy(0xAAA, 0xBBB, 8), 'BLOCK_IGNORED');
+}
+
+#[test]
+fn test_commit_stores_and_emits() {
     let alice = addr('ALICE');
     let portage = addr('PORTAGE');
     let mut state = Portage::contract_state_for_testing();
     set_contract_address(portage);
     set_caller_address(alice);
+    set_block_number(500);
 
-    let seed: felt252 = 0xBEEF;
-    let token_id = PortageImpl::hatch(ref state, seed);
+    let digest = commitment_digest(0xC0FFEE, alice);
+    PortageImpl::commit_hatch(ref state, digest);
 
-    let hatched: Option<Portage::Event> = starknet::testing::pop_log(portage);
+    let (stored, block) = PortageImpl::get_commitment(@state, alice);
+    assert_eq!(stored, digest);
+    assert_eq!(block, 500);
+
+    let committed: Option<Portage::Event> = starknet::testing::pop_log(portage);
     assert_eq!(
-        hatched,
+        committed,
         Option::Some(
-            Portage::Event::Hatched(
-                Portage::Hatched {
-                    token_id,
-                    species: roll_species(seed, 0),
-                    rarity: roll_rarity(seed, 0),
-                    seed,
-                    owner: alice,
-                },
+            Portage::Event::Committed(
+                Portage::Committed { who: alice, digest, commit_block: 500 },
             ),
         ),
     );
+}
+
+#[test]
+#[should_panic(expected: ('COMMIT_OPEN', ))]
+fn test_second_commit_while_one_is_open_reverts() {
+    // Otherwise a grinder holds a spread of commitments and reveals only the
+    // one that landed well, which is the attack commit-reveal exists to stop.
+    let alice = addr('ALICE');
+    let mut state = Portage::contract_state_for_testing();
+    set_caller_address(alice);
+    set_block_number(500);
+
+    PortageImpl::commit_hatch(ref state, commitment_digest(0x1, alice));
+    set_block_number(505);
+    PortageImpl::commit_hatch(ref state, commitment_digest(0x2, alice));
+}
+
+#[test]
+fn test_commit_again_once_the_last_one_expired() {
+    let alice = addr('ALICE');
+    let mut state = Portage::contract_state_for_testing();
+    set_caller_address(alice);
+    set_block_number(500);
+    PortageImpl::commit_hatch(ref state, commitment_digest(0x1, alice));
+
+    // Past the window the old promise can never be revealed, so it is not in
+    // the way — but reaching here cost the player the first commitment.
+    set_block_number(500 + REVEAL_WINDOW + 1);
+    let fresh = commitment_digest(0x2, alice);
+    PortageImpl::commit_hatch(ref state, fresh);
+
+    let (stored, block) = PortageImpl::get_commitment(@state, alice);
+    assert_eq!(stored, fresh);
+    assert_eq!(block, 500 + REVEAL_WINDOW + 1);
+}
+
+#[test]
+#[should_panic(expected: ('ZERO_DIGEST', ))]
+fn test_zero_digest_is_rejected() {
+    // Zero is the "no commitment" marker, so it must never be a real one.
+    let mut state = Portage::contract_state_for_testing();
+    set_caller_address(addr('ALICE'));
+    PortageImpl::commit_hatch(ref state, 0);
+}
+
+#[test]
+#[should_panic(expected: ('NO_COMMIT', ))]
+fn test_reveal_without_a_commitment_reverts() {
+    let mut state = Portage::contract_state_for_testing();
+    set_caller_address(addr('ALICE'));
+    set_block_number(600);
+    PortageImpl::reveal_hatch(ref state, 0xC0FFEE);
+}
+
+#[test]
+#[should_panic(expected: ('BAD_SECRET', ))]
+fn test_reveal_with_the_wrong_secret_reverts() {
+    let alice = addr('ALICE');
+    let mut state = Portage::contract_state_for_testing();
+    set_caller_address(alice);
+    set_block_number(500);
+    PortageImpl::commit_hatch(ref state, commitment_digest(0xC0FFEE, alice));
+
+    set_block_number(500 + REVEAL_DELAY);
+    PortageImpl::reveal_hatch(ref state, 0xDECAF);
+}
+
+#[test]
+#[should_panic(expected: ('BAD_SECRET', ))]
+fn test_someone_elses_secret_does_not_open_your_commitment() {
+    // Bob watches Alice's reveal in the mempool and tries the secret himself.
+    let alice = addr('ALICE');
+    let bob = addr('BOB');
+    let secret: felt252 = 0xC0FFEE;
+    let mut state = Portage::contract_state_for_testing();
+
+    set_caller_address(bob);
+    set_block_number(500);
+    PortageImpl::commit_hatch(ref state, commitment_digest(0xB0B, bob));
+
+    set_block_number(500 + REVEAL_DELAY);
+    // The digest Bob stored is his own; Alice's secret cannot satisfy it.
+    let _ = alice;
+    PortageImpl::reveal_hatch(ref state, secret);
+}
+
+#[test]
+#[should_panic(expected: ('TOO_EARLY', ))]
+fn test_reveal_before_the_delay_reverts() {
+    // The wait is what makes the roll unknowable at commit time, so it is
+    // enforced rather than assumed.
+    let alice = addr('ALICE');
+    let mut state = Portage::contract_state_for_testing();
+    set_caller_address(alice);
+    set_block_number(500);
+    PortageImpl::commit_hatch(ref state, commitment_digest(0xC0FFEE, alice));
+
+    set_block_number(500 + REVEAL_DELAY - 1);
+    PortageImpl::reveal_hatch(ref state, 0xC0FFEE);
+}
+
+#[test]
+#[should_panic(expected: ('COMMIT_EXPIRED', ))]
+fn test_reveal_after_the_window_reverts() {
+    let alice = addr('ALICE');
+    let mut state = Portage::contract_state_for_testing();
+    set_caller_address(alice);
+    set_block_number(500);
+    PortageImpl::commit_hatch(ref state, commitment_digest(0xC0FFEE, alice));
+
+    set_block_number(500 + REVEAL_WINDOW + 1);
+    PortageImpl::reveal_hatch(ref state, 0xC0FFEE);
+}
+
+#[test]
+fn test_reveal_delay_is_within_the_block_hash_window() {
+    // `get_block_hash_syscall` answers for blocks 10..1024 behind the head.
+    // A delay under 10 would make every reveal fail; a window over 1024 would
+    // strand a commitment with no way to resolve it.
+    assert(REVEAL_DELAY >= 10, 'DELAY_TOO_SHORT');
+    assert(REVEAL_WINDOW <= 1024, 'WINDOW_TOO_LONG');
+    assert(REVEAL_DELAY < REVEAL_WINDOW, 'WINDOW_INVERTED');
 }
 
 // ---------------------------------------------------------------------------
@@ -219,7 +384,7 @@ fn test_transfer_to_new_owner() {
     let mut state = Portage::contract_state_for_testing();
 
     set_caller_address(alice);
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
     assert_eq!(PortageImpl::owner_of(@state, token_id), alice);
 
     set_caller_address(alice);
@@ -239,7 +404,7 @@ fn test_transfer_reverts_for_non_owner() {
     let mut state = Portage::contract_state_for_testing();
 
     set_caller_address(alice);
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
 
     // Bob is not the owner -> must revert.
     set_caller_address(bob);
@@ -260,7 +425,7 @@ fn test_list_buy_settles_and_applies_rake() {
 
     let seed: felt252 = 0x123;
     set_caller_address(alice);
-    let token_id = PortageImpl::hatch(ref state, seed);
+    let token_id = Portage::mint_for_testing(ref state, seed);
     PortageImpl::list(ref state, token_id, 1000);
 
     set_caller_address(bob);
@@ -274,23 +439,9 @@ fn test_list_buy_settles_and_applies_rake() {
     assert_eq!(seller, 0.try_into().unwrap());
     assert_eq!(price, 0);
 
-    // Events, in emission order: Hatched, Listed, Sold.
-    let hatched: Option<Portage::Event> = starknet::testing::pop_log(portage);
-    assert_eq!(
-        hatched,
-        Option::Some(
-            Portage::Event::Hatched(
-                Portage::Hatched {
-                    token_id,
-                    species: roll_species(seed, 0),
-                    rarity: roll_rarity(seed, 0),
-                    seed,
-                    owner: alice,
-                },
-            ),
-        ),
-    );
-
+    // Events, in emission order: Listed, Sold. The mint helper is deliberately
+    // silent — `Hatched` belongs to `reveal_hatch`, which needs a real block
+    // hash and so is exercised on Sepolia rather than here.
     let listed: Option<Portage::Event> = starknet::testing::pop_log(portage);
     assert_eq!(
         listed,
@@ -321,7 +472,7 @@ fn test_cancel_removes_listing() {
     let mut state = Portage::contract_state_for_testing();
 
     set_caller_address(alice);
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
     PortageImpl::list(ref state, token_id, 500);
 
     let (seller, price) = PortageImpl::get_listing(@state, token_id);
@@ -343,7 +494,7 @@ fn test_buy_non_listed_reverts() {
     let mut state = Portage::contract_state_for_testing();
 
     set_caller_address(alice);
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
 
     // Never listed -> buy must revert.
     set_caller_address(bob);
@@ -428,7 +579,7 @@ fn test_get_creature_stats_view() {
     set_caller_address(alice);
 
     let seed: felt252 = 0x123;
-    let token_id = PortageImpl::hatch(ref state, seed);
+    let token_id = Portage::mint_for_testing(ref state, seed);
 
     let species = roll_species(seed, 0);
     let rarity = roll_rarity(seed, 0);
@@ -458,7 +609,7 @@ fn test_expedition_accumulates_and_emits_event() {
     set_contract_address(portage);
     set_caller_address(alice);
 
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
     let (_, _, rarity, _, _) = PortageImpl::get_creature(@state, token_id);
     let yield_amount: u128 = exp_yield(rarity);
 
@@ -495,7 +646,7 @@ fn test_expedition_reverts_on_cooldown() {
     let mut state = Portage::contract_state_for_testing();
 
     set_caller_address(alice);
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
     PortageImpl::expedition(ref state, token_id);
 
     // Same timestamp -> still on cooldown -> revert.
@@ -510,7 +661,7 @@ fn test_expedition_reverts_for_non_owner() {
     let mut state = Portage::contract_state_for_testing();
 
     set_caller_address(alice);
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
 
     // Bob is not the owner -> must revert.
     set_caller_address(bob);
@@ -525,7 +676,7 @@ fn test_evolve_hatchling_to_adult_at_100() {
     set_contract_address(portage);
     set_caller_address(alice);
 
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
     grant_exp(ref state, token_id, EXP_TO_ADULT);
     PortageImpl::evolve(ref state, token_id);
 
@@ -541,7 +692,7 @@ fn test_evolve_reverts_below_threshold() {
     let mut state = Portage::contract_state_for_testing();
 
     set_caller_address(alice);
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
     // No exp -> evolve must revert.
     PortageImpl::evolve(ref state, token_id);
 }
@@ -552,7 +703,7 @@ fn test_evolve_adult_to_legend_at_500() {
     let mut state = Portage::contract_state_for_testing();
 
     set_caller_address(alice);
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
 
     grant_exp(ref state, token_id, EXP_TO_LEGEND);
     PortageImpl::evolve(ref state, token_id); // Hatchling -> Adult
@@ -570,7 +721,7 @@ fn test_evolve_reverts_at_legend() {
     let mut state = Portage::contract_state_for_testing();
 
     set_caller_address(alice);
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
 
     grant_exp(ref state, token_id, EXP_TO_LEGEND);
     PortageImpl::evolve(ref state, token_id); // Hatchling -> Adult
@@ -586,10 +737,32 @@ fn test_evolve_reverts_for_non_owner() {
     let mut state = Portage::contract_state_for_testing();
 
     set_caller_address(alice);
-    let token_id = PortageImpl::hatch(ref state, 0x1);
+    let token_id = Portage::mint_for_testing(ref state, 0x1);
     grant_exp(ref state, token_id, EXP_TO_ADULT);
 
     // Bob is not the owner -> must revert.
     set_caller_address(bob);
     PortageImpl::evolve(ref state, token_id);
+}
+
+/// Cross-language vectors, pinned against starknet.js.
+///
+/// The client computes the digest it commits and the entropy it previews with
+/// `hash.computePoseidonHashOnElements`; the contract computes them with
+/// `poseidon_hash_span`. Nothing makes those two agree except that they do, and
+/// a divergence is not a compile error on either side — it is a reveal that
+/// reverts as BAD_SECRET *after* the commit has been paid for and the roll
+/// already fixed. So the agreement is pinned here, in the language that decides
+/// who owns what, and `npm run verify:hatch -- --offline` checks the TypeScript
+/// against these same numbers.
+#[test]
+fn test_poseidon_matches_starknet_js() {
+    assert_eq!(
+        commitment_digest(0xC0FFEE, addr('ALICE')),
+        0x750a5391ab75d5e231e6b3da71f9d953b5495a3d075f9bf9b43e9895249f0f8,
+    );
+    assert_eq!(
+        mix_entropy(0xAAA, 0xBBB, 7),
+        0x540c972064a535bfd9adf553e25192c00ea5f47dee634f17609cd7a33b4f206,
+    );
 }

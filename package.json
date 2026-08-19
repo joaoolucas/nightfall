@@ -10,6 +10,7 @@
     "test:contracts": "bash -lc \"cd contracts && scarb test\"",
     "export-abi": "node scripts/export-abi.mjs",
     "deploy": "node scripts/deploy.mjs",
+    "verify:hatch": "node scripts/verify-hatch.mjs",
     "validate:submission": "node scripts/validate-strk20.mjs",
     "validate:submission:final": "node scripts/validate-strk20.mjs --final --online"
   },

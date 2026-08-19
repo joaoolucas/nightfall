@@ -134,10 +134,22 @@
     "items": [
       {
         "type": "function",
-        "name": "hatch",
+        "name": "commit_hatch",
         "inputs": [
           {
-            "name": "seed",
+            "name": "digest",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "reveal_hatch",
+        "inputs": [
+          {
+            "name": "secret",
             "type": "core::felt252"
           }
         ],
@@ -147,6 +159,42 @@
           }
         ],
         "state_mutability": "external"
+      },
+      {
+        "type": "function",
+        "name": "get_commitment",
+        "inputs": [
+          {
+            "name": "who",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::felt252, core::integer::u64)"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "preview_entropy",
+        "inputs": [
+          {
+            "name": "secret",
+            "type": "core::felt252"
+          },
+          {
+            "name": "commit_block",
+            "type": "core::integer::u64"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
       },
       {
         "type": "function",
@@ -329,6 +377,28 @@
   },
   {
     "type": "event",
+    "name": "strk20_invoke_helper::portage::Portage::Committed",
+    "kind": "struct",
+    "members": [
+      {
+        "name": "who",
+        "type": "core::starknet::contract_address::ContractAddress",
+        "kind": "key"
+      },
+      {
+        "name": "digest",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "commit_block",
+        "type": "core::integer::u64",
+        "kind": "data"
+      }
+    ]
+  },
+  {
+    "type": "event",
     "name": "strk20_invoke_helper::portage::Portage::Hatched",
     "kind": "struct",
     "members": [
@@ -350,6 +420,21 @@
       {
         "name": "seed",
         "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "secret",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "block_hash",
+        "type": "core::felt252",
+        "kind": "data"
+      },
+      {
+        "name": "commit_block",
+        "type": "core::integer::u64",
         "kind": "data"
       },
       {
@@ -484,6 +569,11 @@
     "name": "strk20_invoke_helper::portage::Portage::Event",
     "kind": "enum",
     "variants": [
+      {
+        "name": "Committed",
+        "type": "strk20_invoke_helper::portage::Portage::Committed",
+        "kind": "nested"
+      },
       {
         "name": "Hatched",
         "type": "strk20_invoke_helper::portage::Portage::Hatched",
