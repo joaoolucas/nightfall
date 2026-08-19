@@ -246,22 +246,45 @@ test("the post will not sell you what you cannot afford", () => {
 });
 
 test("gold cannot buy past the pack", () => {
-  // Coins weigh, so a Porter this rich is already nearly full: what is left is
-  // room for one greater tonic, and no amount of gold makes room for five.
+  // Nearly full of armour — not of coins, which weigh nothing. What is left is
+  // room for a tonic or two, and no amount of gold makes room for a hundred.
   const state = baseState();
-  const laden: GameState = { ...state, inventory: { ...state.inventory, gold: 4_000 } };
+  const laden: GameState = {
+    ...state,
+    inventory: {
+      ...state.inventory,
+      gold: 100_000,
+      stacks: [...state.inventory.stacks, { instanceId: "ballast", defId: "warden-plate", count: 4 }],
+    },
+  };
   const room = capacity(laden.progress.level) - inventoryWeight(laden.inventory);
-  assert.ok(room > itemDef("greater-tonic").weight && room < itemDef("greater-tonic").weight * 5, `room was ${room}`);
+  const tonic = itemDef("greater-tonic").weight;
+  assert.ok(room > tonic, `the fixture must leave room for at least one, had ${room}`);
 
   const one = buyItem(laden, "greater-tonic", 1);
   assert.ok(one.inventory.stacks.some((stack) => stack.defId === "greater-tonic"), "what fits is sold");
 
-  const five = buyItem(laden, "greater-tonic", 5);
-  assert.equal(five.inventory.gold, 4_000, "what does not fit is refused, however rich you are");
+  const tooMany = Math.ceil(room / tonic) + 1;
+  const refused = buyItem(laden, "greater-tonic", tooMany);
+  assert.equal(refused.inventory.gold, 100_000, "what does not fit is refused, however rich you are");
   assert.ok(
-    inventoryWeight(five.inventory) <= capacity(five.progress.level),
+    inventoryWeight(refused.inventory) <= capacity(refused.progress.level),
     "the pack is still the pack",
   );
+});
+
+test("coins weigh nothing, so wealth never slows the Porter down", () => {
+  // A Porter used to go permanently overloaded on coins alone around level
+  // fifteen, and there is no bank to put them in: the better you played, the
+  // slower you walked, for good.
+  const state = baseState();
+  const rich: GameState = { ...state, inventory: { ...state.inventory, gold: 1_000_000, shards: 50_000 } };
+  assert.equal(
+    inventoryWeight(rich.inventory),
+    inventoryWeight(state.inventory),
+    "currency is a counter, not something in the pack",
+  );
+  assert.ok(inventoryWeight(rich.inventory) <= capacity(rich.progress.level), "and it cannot overload anyone");
 });
 
 test("gold is not merchandise", () => {

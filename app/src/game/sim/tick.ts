@@ -35,8 +35,21 @@ import {
 
 /** Ticks between the player's swings — a deliberate rhythm, not a damage rate. */
 const PLAYER_ATTACK_TICKS = 20;
-const PLAYER_STEP_TICKS = 4;
-const OVERLOADED_STEP_TICKS = 8;
+/**
+ * Ticks between the Porter's steps, and the toll for hauling too much.
+ *
+ * Three ticks is a third of a second a tile. Four felt like wading, and two is
+ * measurably too fast: the Porter pulls up to eleven tiles clear of their
+ * creature, past the eight it will engage a fight within, so it breaks off and
+ * trails them instead of fighting. At three the creature stays about two tiles
+ * behind and never loses its target.
+ *
+ * Overloaded is twice the cost rather than nearly three times it. Now that
+ * coins are weightless it is a real choice about what to haul, not a state a
+ * Porter is trapped in for good.
+ */
+const PLAYER_STEP_TICKS = 3;
+const OVERLOADED_STEP_TICKS = 6;
 /** Below this fraction of health, auto-potion drinks. */
 const AUTO_POTION_AT = 0.35;
 /** Ticks the Porter is out of action after dying. */
@@ -504,13 +517,19 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
 
   // Loot underfoot is always picked up: walking over a corpse and leaving the
   // gold behind was never a decision anyone wanted to make.
-  const underfoot = state.ground.find(
+  //
+  // Every body in reach, not the first one found. Taking only the first was a
+  // deadlock waiting for a full pack: standing between a corpse holding armour
+  // too heavy to lift and one holding loose coins, the Porter would try the
+  // armour, fail, and never reach the coins — and since auto-hunt holds them
+  // still while there is loot they can take, they held there for good.
+  const reachable = state.ground.filter(
     (candidate) => distance(player, candidate) <= 1 && candidate.items.length > 0,
   );
-  if (underfoot) {
-    const refused = pickUp(state, underfoot.items, events);
+  if (reachable.length) {
+    const left = new Map(reachable.map((pile) => [pile.id, pickUp(state, pile.items, events)]));
     state.ground = state.ground.map((candidate) =>
-      candidate.id === underfoot.id ? { ...candidate, items: refused } : candidate,
+      left.has(candidate.id) ? { ...candidate, items: left.get(candidate.id)! } : candidate,
     );
   }
 

@@ -1,6 +1,6 @@
 import { distance, directionTowards, hasLineOfSight, type GridPoint } from "../core/grid";
 import { findPath } from "../core/pathfind";
-import type { Entity, GameState, ItemStack } from "../core/types";
+import type { Entity, GameState, GroundPile, ItemStack } from "../core/types";
 import { isFree, sightBlocked, walkableFor, type Occupancy, type WorldMap } from "../world/map";
 import { capacity, inventoryWeight, itemDef } from "../world/items";
 import { monsterTemplate } from "../world/monsters";
@@ -213,9 +213,60 @@ function canLift(state: GameState, stack: ItemStack): boolean {
   return itemDef(stack.defId).weight * stack.count <= room;
 }
 
+/**
+ * How far the Porter will walk off to collect a body.
+ *
+ * Bounded, because their creature only stays on a fight within eight tiles of
+ * it: wander further to pick something up and the creature breaks off to follow
+ * you, which loses the fight you were winning.
+ */
+const COLLECT_RANGE = 7;
+
+/** The nearest body carrying something the Porter could actually take. */
+function nearestBody(state: GameState, player: Entity): GroundPile | null {
+  let best: GroundPile | null = null;
+  let bestDistance = Infinity;
+  for (const pile of state.ground) {
+    const range = distance(player, pile);
+    if (range > COLLECT_RANGE || range >= bestDistance) continue;
+    if (!pile.items.some((stack) => canLift(state, stack))) continue;
+    best = pile;
+    bestDistance = range;
+  }
+  return best;
+}
+
 export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupancy, tick: number): void {
   const player = playerOf(state);
   if (!isAlive(player)) return;
+
+  // Collecting comes first, and it is what the Porter does while their creature
+  // works. It used to come last and only count a body underfoot, which meant it
+  // never happened: the creature kills at arm's length from a Porter holding
+  // three tiles back, so the corpse drops out of reach and stays there. They
+  // left roughly two fifths of what they earned lying on the ground, and stood
+  // still through the fight that earned it.
+  //
+  // Only loot they can actually lift counts. An overloaded Porter can never
+  // empty a corpse, and waiting for one was a deadlock: auto-loot refused the
+  // items, the items stayed, and the hunt stopped until the body rotted.
+  const body = nearestBody(state, player);
+  if (body) {
+    // Underfoot is close enough — the tick reducer empties it from here.
+    if (distance(player, body) <= 1) {
+      player.path = [];
+      return;
+    }
+    if (player.path.length === 0 || repathDue(player, tick)) {
+      player.path = findPath(player, body, {
+        walkable: walkableFor(map, occupancy, PLAYER_ID),
+        maxNodes: 900,
+      });
+    }
+    // The target is deliberately left alone: the creature takes its fight from
+    // the Porter's mark, so collecting must not call it off.
+    if (player.path.length > 0) return;
+  }
 
   const target = state.entities.find((entity) => entity.id === player.targetId);
   if (target && isAlive(target)) {
@@ -231,21 +282,6 @@ export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupan
         stopAdjacent: true,
       });
     }
-    return;
-  }
-
-  // Loot first: an unopened corpse underfoot is worth more than the next kill.
-  //
-  // Only loot the Porter can actually lift counts. An overloaded Porter can
-  // never empty the corpse they are standing on, and waiting for it was a
-  // deadlock: auto-loot refused the items, this held the Porter still because
-  // items remained, and the hunt stopped until the body rotted. What they
-  // cannot carry is not a reason to stand there.
-  const pile = state.ground.find(
-    (candidate) => distance(player, candidate) <= 1 && candidate.items.some((stack) => canLift(state, stack)),
-  );
-  if (pile) {
-    player.path = [];
     return;
   }
 

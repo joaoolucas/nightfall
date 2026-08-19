@@ -55,10 +55,23 @@ export function itemAtlasFrame(defId: string): string {
   return itemDef(defId).sprite;
 }
 
-/** Total weight carried. */
+/**
+ * Total weight carried.
+ *
+ * Coins do not count against it, and that is a correction rather than a mercy.
+ * Gold and shards are both counters rather than things in the pack, but only
+ * gold was charged weight — and gold has no ceiling and nowhere to be put down.
+ * There is no bank here, so at 0.1 oz a coin the pack fills with money on its
+ * own: around level fifteen a Porter is over capacity on coins alone, and stays
+ * there forever, walking at half speed with nothing they can do about it. The
+ * better you played, the slower you moved.
+ *
+ * Capacity now measures what a Porter actually chooses to haul — trophies and
+ * gear — which is the decision it was there to make.
+ */
 export function inventoryWeight(inventory: Inventory): number {
   const carried = inventory.stacks.reduce((sum, stack) => sum + itemDef(stack.defId).weight * stack.count, 0);
-  return Math.round((carried + inventory.gold * 0.1) * 10) / 10;
+  return Math.round(carried * 10) / 10;
 }
 
 /** Capacity grows with level, so a stronger Porter hauls more loot home. */

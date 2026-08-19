@@ -540,3 +540,74 @@ test("an overloaded Porter does not stand guard over loot they cannot lift", () 
   const pile = after.ground.find((candidate) => candidate.id === "corpse:immovable");
   if (pile) assert.equal(pile.items.length, 1, "and the loot they could not carry is still there");
 });
+
+/**
+ * Two bodies, one reachable pile of coins, one load of armour too heavy.
+ *
+ * Auto-loot took only the first body it found within reach. Standing between a
+ * corpse holding armour it could not lift and one holding loose coins, the
+ * Porter tried the armour, failed, and never reached the coins — and because
+ * auto-hunt holds them still while there is loot they *can* take, they held
+ * there permanently. Measured at a 118-second freeze before this was fixed.
+ */
+test("the Porter empties every body in reach, not just the first one", () => {
+  const state = freshState();
+  const player = playerOf(state);
+  const laden: GameState = {
+    ...state,
+    inventory: {
+      ...state.inventory,
+      // Enough ballast that the armour below can never be lifted.
+      stacks: [...state.inventory.stacks, { instanceId: "ballast", defId: "warden-plate", count: 4 }],
+    },
+    ground: [
+      {
+        id: "corpse:heavy",
+        x: player.x - 1,
+        y: player.y,
+        items: [{ instanceId: "plate", defId: "warden-plate", count: 1 }],
+        corpseOf: "ash mite",
+        decayTick: 10_000,
+      },
+      {
+        id: "corpse:coins",
+        x: player.x,
+        y: player.y,
+        items: [{ instanceId: "coins", defId: "gold", count: 40 }],
+        corpseOf: "coalback",
+        decayTick: 10_000,
+      },
+    ],
+  };
+  const before = laden.inventory.gold;
+
+  const { state: after } = advance(laden, MAP, 1, { manualControl: true });
+
+  assert.equal(after.inventory.gold, before + 40, "the coins must be taken even though the other body is too heavy");
+  const heavy = after.ground.find((pile) => pile.id === "corpse:heavy");
+  assert.equal(heavy?.items.length, 1, "and the armour they cannot lift is left where it fell");
+});
+
+test("the Porter walks to bodies rather than leaving what their creature killed", () => {
+  const state = freshState();
+  const player = playerOf(state);
+  // A body four tiles off — where a creature fighting at arm's length from a
+  // Porter holding three tiles back actually drops one.
+  const withBody: GameState = {
+    ...state,
+    ground: [
+      {
+        id: "corpse:away",
+        x: player.x + 4,
+        y: player.y,
+        items: [{ instanceId: "coins", defId: "gold", count: 25 }],
+        corpseOf: "ash mite",
+        decayTick: 10_000,
+      },
+    ],
+  };
+  const before = withBody.inventory.gold;
+
+  const { state: after } = advance(withBody, MAP, 60);
+  assert.ok(after.inventory.gold >= before + 25, "the Porter must go and collect it");
+});
