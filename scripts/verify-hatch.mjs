@@ -19,8 +19,11 @@
  *
  * Usage:
  *   node scripts/verify-hatch.mjs --offline
- *   PORTAGE_ADDRESS=0x… PORTAGE_RPC_URL=https://… \
- *   PORTAGE_ACCOUNT=0x… PORTAGE_PRIVATE_KEY=0x… node scripts/verify-hatch.mjs
+ *   PORTAGE_RPC_URL=… DEPLOYER_ADDRESS=… DEPLOYER_PRIVATE_KEY=… \
+ *     node scripts/verify-hatch.mjs
+ *
+ * The contract address comes from contracts/deployments/<network>.json, which
+ * the deploy script writes, unless PORTAGE_ADDRESS overrides it.
  *
  * Sepolia is the intended target. The script refuses Mainnet unless told
  * explicitly, because a Mainnet hatch is a permanent public artifact and should
@@ -139,13 +142,31 @@ function runOffline() {
 // ---------------------------------------------------------------------------
 
 async function runOnline() {
-  const address = process.env.PORTAGE_ADDRESS?.trim();
+  const network = (process.env.PORTAGE_NETWORK ?? "sepolia").trim().toLowerCase();
   const rpcUrl = process.env.PORTAGE_RPC_URL?.trim();
-  const accountAddress = process.env.PORTAGE_ACCOUNT?.trim();
-  const privateKey = process.env.PORTAGE_PRIVATE_KEY?.trim();
-  if (!address) fail("PORTAGE_ADDRESS is required");
+  // Same names the deploy script uses, so one set of variables covers both.
+  const accountAddress = (process.env.DEPLOYER_ADDRESS ?? process.env.PORTAGE_ACCOUNT)?.trim();
+  const privateKey = (process.env.DEPLOYER_PRIVATE_KEY ?? process.env.PORTAGE_PRIVATE_KEY)?.trim();
+
+  // The deploy writes the address down; read it rather than making someone
+  // copy a hex string between two commands and get it subtly wrong.
+  let address = process.env.PORTAGE_ADDRESS?.trim();
+  if (!address) {
+    const recorded = join(HERE, "..", "contracts", "deployments", `${network}.json`);
+    try {
+      address = JSON.parse(readFileSync(recorded, "utf8")).address;
+      console.log(`contract: read from ${network}.json`);
+    } catch {
+      fail(
+        `PORTAGE_ADDRESS is unset and ${recorded} does not exist — deploy first, ` +
+          "or pass the address explicitly.",
+      );
+    }
+  }
   if (!rpcUrl) fail("PORTAGE_RPC_URL is required");
-  if (!accountAddress || !privateKey) fail("PORTAGE_ACCOUNT and PORTAGE_PRIVATE_KEY are required");
+  if (!accountAddress || !privateKey) {
+    fail("DEPLOYER_ADDRESS and DEPLOYER_PRIVATE_KEY are required via the environment only");
+  }
 
   const provider = new RpcProvider({ nodeUrl: rpcUrl });
   const chainId = await provider.getChainId();
