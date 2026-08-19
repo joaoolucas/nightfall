@@ -15,11 +15,22 @@ if (network === "mainnet" && process.env.CONFIRM_PORTAGE_MAINNET !== "DEPLOY_POR
   throw new Error("Mainnet guard: set CONFIRM_PORTAGE_MAINNET=DEPLOY_PORTAGE_MAINNET after review.");
 }
 
-const defaultSepoliaRpc = "https://starknet-sepolia.public.blastapi.io/rpc/v0_8";
-const rpcUrl = process.env.PORTAGE_RPC_URL?.trim() || (network === "sepolia" ? defaultSepoliaRpc : "");
+// Sepolia used to default to `starknet-sepolia.public.blastapi.io`, which is
+// decommissioned — it now answers every request with "Blast API is no longer
+// available. Please update your integration to use Alchemy's API instead". A
+// default that always fails is worse than no default, because the failure
+// looks like a network problem rather than a missing setting. No keyless
+// public endpoint replaced it: Nethermind's free RPC and Lava's testnet
+// gateway were both checked and neither answers reliably.
+const rpcUrl = process.env.PORTAGE_RPC_URL?.trim();
 const address = process.env.DEPLOYER_ADDRESS?.trim();
 const privateKey = process.env.DEPLOYER_PRIVATE_KEY?.trim();
-if (!rpcUrl) throw new Error("PORTAGE_RPC_URL is required for Mainnet.");
+if (!rpcUrl) {
+  throw new Error(
+    "PORTAGE_RPC_URL is required. An Alchemy key works for both networks — the " +
+      "same URL with the host swapped between starknet-mainnet and starknet-sepolia.",
+  );
+}
 if (!address || !privateKey) {
   throw new Error("DEPLOYER_ADDRESS and DEPLOYER_PRIVATE_KEY are required via the environment only.");
 }
