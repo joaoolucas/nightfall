@@ -48,7 +48,8 @@ const sierraPath = join(root, "contracts", "target", "dev", "strk20_invoke_helpe
 const casmPath = join(root, "contracts", "target", "dev", "strk20_invoke_helper_Portage.compiled_contract_class.json");
 const sierra = JSON.parse(readFileSync(sierraPath, "utf8"));
 const casm = JSON.parse(readFileSync(casmPath, "utf8"));
-const account = new Account(provider, address, privateKey);
+// starknet.js >= 9 took (provider, address, privateKey); v10 takes a single options object.
+const account = new Account({ provider, address, signer: privateKey });
 
 console.log(`Network  : ${network}`);
 console.log(`Chain ID : ${actualChainId}`);

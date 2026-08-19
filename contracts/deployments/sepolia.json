@@ -1,0 +1,10 @@
+{
+  "network": "sepolia",
+  "chain_id": "0x534e5f5345504f4c4941",
+  "contract": "Portage",
+  "class_hash": "0x473b6e15bfa5996235e8d863dc2ec3c5e3a0eb28c475491ea64c709ada4b2ab",
+  "address": "0x57b47dbee5ddce2afae2dccac55236e3b2ad1b8ad296d0742c17e5800d73d53",
+  "declare_tx": "0x1276467cf1c582364017dec1dc399881e4bfeeae4f4931ea60159b2f987d381",
+  "deploy_tx": "0x93b8b2a253e4037377a37d165a8e3c1426af11b6c4afcc90485daf4ab89647",
+  "deployed_at": "2026-08-19T20:37:43.357Z"
+}

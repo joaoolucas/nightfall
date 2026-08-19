@@ -182,8 +182,9 @@ async function runOnline() {
   const abi = JSON.parse(
     readFileSync(join(HERE, "..", "app", "src", "abis", "portage.abi.json"), "utf8"),
   );
-  const account = new Account(provider, accountAddress, privateKey);
-  const contract = new Contract(abi, address, provider);
+  // starknet.js >= 9 took (provider, address, privateKey); v10 takes a single options object.
+  const account = new Account({ provider, address: accountAddress, signer: privateKey });
+  const contract = new Contract({ abi, address, provider });
 
   // A secret nobody else has seen. It never leaves this process before the
   // reveal, which is the property the whole scheme rests on.
