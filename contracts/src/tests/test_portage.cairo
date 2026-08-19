@@ -365,11 +365,12 @@ fn test_reveal_after_the_window_reverts() {
 
 #[test]
 fn test_reveal_delay_is_within_the_block_hash_window() {
-    // `get_block_hash_syscall` answers for blocks 10..1024 behind the head.
-    // A delay under 10 would make every reveal fail; a window over 1024 would
-    // strand a commitment with no way to resolve it.
+    // `get_block_hash_syscall` answers for `[first_v0_12_0_block,
+    // current_block - 10]`. Only the lower bound binds us: a delay under 10
+    // would make every reveal fail with "Block number out of range". There is
+    // no upper age limit — an old block's hash stays retrievable — so the
+    // window is our policy and only has to leave room to actually reveal in.
     assert(REVEAL_DELAY >= 10, 'DELAY_TOO_SHORT');
-    assert(REVEAL_WINDOW <= 1024, 'WINDOW_TOO_LONG');
     assert(REVEAL_DELAY < REVEAL_WINDOW, 'WINDOW_INVERTED');
 }
 

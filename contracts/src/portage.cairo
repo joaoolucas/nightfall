@@ -168,11 +168,17 @@ pub const REVEAL_DELAY: u64 = 10;
 
 /// Blocks after which a commitment can no longer be revealed.
 ///
-/// The syscall stops answering beyond 1024 blocks, which would strand a
-/// commitment with no way to resolve it. Expiring first, with margin, means an
-/// abandoned commitment frees the slot instead of bricking the account — and
-/// it makes walking away from a bad-looking roll cost the commit, which is what
-/// keeps reveal-or-retry from being free.
+/// This is a policy, not a protocol limit — worth being exact about, because
+/// it was first written down as one. `get_block_hash_syscall` answers for
+/// `[first_v0_12_0_block, current_block - 10]`: only the lower bound is real,
+/// and an old block's hash stays retrievable indefinitely. Nothing forces a
+/// commitment to expire.
+///
+/// It expires anyway, because an open promise that never dies is a slot that
+/// never frees, and because walking away from a roll should cost something.
+/// A player who dislikes what they are about to reveal can always decline and
+/// commit again; the deterrent is that doing so forfeits this commitment,
+/// which bites properly once hatching is paid for.
 pub const REVEAL_WINDOW: u64 = 1000;
 
 // ---------------------------------------------------------------------------
