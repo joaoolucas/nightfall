@@ -1,13 +1,26 @@
 //! Portage.fun core contract (v0).
 //!
 //! Implements the three pillars of the v0 game loop:
-//!   1. a provably-fair `hatch` (rarity/species RNG committed on-chain),
+//!   1. a `hatch` whose rarity/species roll is publicly verifiable,
 //!   2. the creature NFT (mint, own, transfer) with rarity + species + stage,
 //!   3. a minimal marketplace (list / buy / cancel) with a 2.5% rake.
 //!
 //! Rarity odds are a FIXED public table (see the `WEIGHT_*` constants below) so
-//! anyone can recompute and verify a hatch was fair: `r = poseidon(seed, count)`
-//! picks rarity by weight, `poseidon(seed, count, 1) mod 6` picks species.
+//! anyone can recompute a hatch and confirm the contract followed it:
+//! `r = poseidon(seed, count)` picks rarity by weight, and
+//! `poseidon(seed, count, 1) mod 6` picks species.
+//!
+//! VERIFIABLE IS NOT THE SAME AS FAIR, and this contract is only the first.
+//! `hatch` takes its seed from the caller, so the person who benefits from the
+//! outcome chooses the input to it: a seed can be ground off-chain until it
+//! rolls Mythic and only that one submitted. Nothing here is manipulation
+//! resistant — there is no commitment, no reveal and no entropy the caller
+//! cannot see in advance. The global `hatch_count` shifts the roll when someone
+//! else hatches first, which is a race and a front-running surface rather than
+//! a fairness mechanism.
+//!
+//! Do not describe this as provably fair anywhere it will be read as a promise.
+//! Replacing it with commit-reveal is Phase 3 of STRK20_INTEGRATION_PLAN.md.
 //!
 //! Marketplace settlement note (v0): there is no ERC-20 in the repo yet, so
 //! `buy` records the sale on-chain (seller/buyer/price/rake/proceeds in the

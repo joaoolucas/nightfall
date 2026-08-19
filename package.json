@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Portage.fun — provably verifiable creature collecting with private STRK payments on Starknet.",
+  "description": "Portage.fun — an idle creature-collecting RPG, with publicly verifiable hatches and STRK20 private-payment integration in progress on Starknet.",
   "scripts": {
     "build:app": "npm --prefix app run build",
     "build:contracts": "bash -lc \"cd contracts && scarb build\"",

@@ -24,7 +24,10 @@ const silkscreen = Silkscreen({
 
 export const metadata: Metadata = {
   title: 'Portage.fun — Creature collecting on Starknet',
-  description: 'An idle creature-collecting prototype on Starknet with deterministic hatch previews, ownable creatures, expeditions, and STRK20 private STRK controls.',
+  // Describes what the deployed page actually does. The STRK20 privacy work and
+  // the Cairo contracts are real but are not reachable from this client yet, so
+  // they do not belong in the description a search result shows.
+  description: 'A cozy idle creature-collecting RPG: hunt, haul and trade in a hand-drawn pixel world that keeps playing while you are away.',
 }
 
 export default function RootLayout({

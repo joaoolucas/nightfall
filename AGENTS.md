@@ -3,8 +3,13 @@
 ## Project: Portage.fun
 
 **What we build** (north star = `docs/SPEC.md`): an idle creature-collecting
-game on Starknet with provably-fair on-chain hatches, ownable creatures, and a
-player-driven marketplace, using STRK20 privacy.
+game on Starknet with on-chain hatches, ownable creatures, and a player-driven
+marketplace, using STRK20 privacy.
+
+Hatches are publicly *verifiable* today, not fair: `hatch` takes its seed from
+the caller, so the outcome is chosen by whoever benefits from it. Provably fair
+is the target once commit-reveal lands (Phase 3 of the integration plan), and
+until then it must not be claimed in anything a user or judge will read.
 
 **Components**:
 

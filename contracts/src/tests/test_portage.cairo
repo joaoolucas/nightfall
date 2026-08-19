@@ -63,7 +63,10 @@ fn test_rarity_weights_getter() {
 }
 
 // ---------------------------------------------------------------------------
-// Provably-fair rolls
+// Publicly verifiable rolls
+//
+// These prove the roll is reproducible from (seed, count) — not that it is
+// fair. The caller supplies the seed, so a grinder picks their own outcome.
 // ---------------------------------------------------------------------------
 
 #[test]

@@ -21,11 +21,18 @@ local-first hunt loop; the Starknet contracts remain in the repository for later
 - See [`docs/IDLE_GAME.md`](docs/IDLE_GAME.md) for mechanics, balance rules and architecture.
 - Creature minting, stats, evolution, expeditions and listing logic are implemented in Cairo.
 - The Next.js app supports mock mode and a configured Portage contract.
-- Ready-compatible wallets can shield, privately transfer, unshield and explicitly share
-  shielded balances through `WalletAccountV6`; the app never handles viewing keys or proofs.
-- **Mainnet is intentionally gated:** the current caller-seeded hatch is deterministic but
-  grindable, and marketplace `buy` does not yet transfer STRK. Commit/reveal and an audited
-  Portage anonymizer/settlement flow are required before production deployment.
+- **The deployed game is local-first and touches no chain.** The client at the demo URL runs
+  the simulation in the browser and saves to `localStorage`; no wallet, contract or STRK20
+  call is reachable from it. The privacy code below is written and typechecked but is not
+  yet surfaced in any screen.
+- Shield, private transfer, unshield and explicit shielded-balance sharing are implemented
+  against `WalletAccountV6` in `app/src/utils/strk20.ts`, with capability detection and
+  explicit consent; the app never handles viewing keys or proofs. No Mainnet run has been
+  performed and `strk20.json` carries no transaction evidence yet.
+- **Mainnet is intentionally gated:** the current caller-seeded hatch is verifiable but
+  grindable — the caller picks the seed, so it must not be called provably fair — and
+  marketplace `buy` does not yet transfer STRK. Commit/reveal and an audited Portage
+  anonymizer/settlement flow are required before production deployment.
 
 ## What stays private?
 
