@@ -446,49 +446,58 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
         : target.kind === "monster");
 
     if (hostile && distance(entity, target) <= 1) {
-      entity.path = [];
       entity.direction = directionTowards(entity, target);
-      // The Porter is a handler: they hold the target and take the blows, but
-      // the killing is the creature's. Facing the enemy is as far as it goes.
-      if (entity.kind === "player") continue;
-      if (entity.attackCooldown > 0) continue;
-      entity.state = "attacking";
-      entity.stateTicks = ATTACK_WINDUP;
-      entity.attackCooldown = attackCost(entity);
+      // The Porter is a handler: they hold the mark and take the blows, but the
+      // killing is the creature's. Reaching them is therefore not the end of
+      // the Porter's turn — giving ground is the one move they have — so their
+      // route survives contact and they fall through to the step below.
+      //
+      // Clearing it here is what pinned them: a monster that closed the last
+      // three tiles itself had them for as long as it liked, and no plan the
+      // AI made could move them out of reach again. A third of every tick of
+      // an unattended hunt was spent standing in contact, in stretches of ten
+      // seconds. A fighter still stops to swing.
+      if (entity.kind !== "player") {
+        entity.path = [];
+        if (entity.attackCooldown > 0) continue;
+        entity.state = "attacking";
+        entity.stateTicks = ATTACK_WINDUP;
+        entity.attackCooldown = attackCost(entity);
 
-      const swing = rollSwing(state, attackPowerOf(state, entity), defensePowerOf(state, target));
-      if (swing.outcome === "hit") {
-        for (const event of applyDamage(target, swing.damage, entity.id, state.tick)) events.push(event);
-        // Settle a lethal blow to the Porter here, at the moment it lands.
-        // applyDamage has already flagged the entity dead, so a trailing
-        // "hp <= 0 && state !== dead" check can never fire.
-        if (target.kind === "player" && target.state === "dead") {
-          target.stateTicks = DEATH_RECOVERY_TICKS;
-          killPlayer(state, target, events);
+        const swing = rollSwing(state, attackPowerOf(state, entity), defensePowerOf(state, target));
+        if (swing.outcome === "hit") {
+          for (const event of applyDamage(target, swing.damage, entity.id, state.tick)) events.push(event);
+          // Settle a lethal blow to the Porter here, at the moment it lands.
+          // applyDamage has already flagged the entity dead, so a trailing
+          // "hp <= 0 && state !== dead" check can never fire.
+          if (target.kind === "player" && target.state === "dead") {
+            target.stateTicks = DEATH_RECOVERY_TICKS;
+            killPlayer(state, target, events);
+          }
+          // Directing a creature to land a blow is what advances handling.
+          if (entity.kind === "companion" && trainSkill(state, "melee")) {
+            events.push({ type: "skillUp", tick: state.tick, text: "handling", amount: state.progress.skills.melee });
+          }
+        } else {
+          events.push({
+            type: swing.outcome === "block" ? "block" : "miss",
+            tick: state.tick,
+            sourceId: entity.id,
+            targetId: target.id,
+            at: { x: target.x, y: target.y },
+          });
         }
-        // Directing a creature to land a blow is what advances handling.
-        if (entity.kind === "companion" && trainSkill(state, "melee")) {
-          events.push({ type: "skillUp", tick: state.tick, text: "handling", amount: state.progress.skills.melee });
+        // Being attacked trains defence, whether or not the blow lands.
+        if (target.kind === "player") {
+          if (trainSkill(state, "shielding")) {
+            events.push({ type: "skillUp", tick: state.tick, text: "shielding", amount: state.progress.skills.shielding });
+          }
+          if (swing.outcome === "hit" && trainSkill(state, "vitality")) {
+            events.push({ type: "skillUp", tick: state.tick, text: "vitality", amount: state.progress.skills.vitality });
+          }
         }
-      } else {
-        events.push({
-          type: swing.outcome === "block" ? "block" : "miss",
-          tick: state.tick,
-          sourceId: entity.id,
-          targetId: target.id,
-          at: { x: target.x, y: target.y },
-        });
+        continue;
       }
-      // Being attacked trains defence, whether or not the blow lands.
-      if (target.kind === "player") {
-        if (trainSkill(state, "shielding")) {
-          events.push({ type: "skillUp", tick: state.tick, text: "shielding", amount: state.progress.skills.shielding });
-        }
-        if (swing.outcome === "hit" && trainSkill(state, "vitality")) {
-          events.push({ type: "skillUp", tick: state.tick, text: "vitality", amount: state.progress.skills.vitality });
-        }
-      }
-      continue;
     }
 
     // Step along the planned route.

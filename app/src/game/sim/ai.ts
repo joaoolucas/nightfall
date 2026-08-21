@@ -218,6 +218,81 @@ const HANDLER_STANDOFF = 3;
 const STANDOFF_SLACK = 2;
 
 /**
+ * The Porter steps out of reach of anything that has closed on them.
+ *
+ * The standoff only ever pulled them forward: once a monster walked the last
+ * three tiles itself, nothing in the plan said what to do about it. So the
+ * Porter — who cannot swing back — stood in contact taking free hits until
+ * their creature finished the kill. Measured over twenty minutes of unattended
+ * hunting, a third of every tick was spent motionless with a monster against
+ * them, in stretches of up to ten seconds. On screen that is not a handler
+ * holding their post, it is a character that has stopped working.
+ *
+ * Backing off one tile at a time is enough. The monster spends its steps
+ * following instead of swinging, the creature keeps hitting it from behind,
+ * and the movement reads as a handler giving ground rather than fleeing.
+ */
+const CONTACT = 1;
+
+/**
+ * How far the Porter may back away from their own creature.
+ *
+ * The retreat has to stay a retreat and not become a rout: the creature takes
+ * its fight from whatever its handler has marked, so a Porter who kept
+ * stepping back would eventually drag it off the monster it was killing.
+ */
+const BACKOFF_LEASH = 6;
+
+/** Live monsters standing close enough to swing at the Porter. */
+function inContact(state: GameState, player: Entity): Entity[] {
+  return monstersOf(state).filter((monster) => distance(player, monster) <= CONTACT);
+}
+
+/** Distance from a tile to the nearest live monster; Infinity when there is none. */
+function threatRange(state: GameState, at: GridPoint): number {
+  let nearest = Infinity;
+  for (const monster of monstersOf(state)) nearest = Math.min(nearest, distance(at, monster));
+  return nearest;
+}
+
+/**
+ * Give ground, if there is ground to give.
+ *
+ * One step, to whichever neighbouring tile puts the most air between the
+ * Porter and the nearest monster, and never so far that they lose their own
+ * creature. Surrounded with nowhere free to go, they stand — that is the fight
+ * they are in, not a stall — and the caller carries on as before.
+ */
+function backOff(state: GameState, map: WorldMap, occupancy: Occupancy, player: Entity): boolean {
+  const threats = inContact(state, player);
+  if (!threats.length) return false;
+
+  const creature = state.entities.find((entity) => entity.kind === "companion" && isAlive(entity));
+  let best: GridPoint | null = null;
+  let bestRange = threatRange(state, player);
+
+  for (let dx = -1; dx <= 1; dx += 1) {
+    for (let dy = -1; dy <= 1; dy += 1) {
+      if (dx === 0 && dy === 0) continue;
+      const candidate = { x: player.x + dx, y: player.y + dy };
+      if (!isFree(map, occupancy, candidate, PLAYER_ID)) continue;
+      if (creature && distance(candidate, creature) > BACKOFF_LEASH) continue;
+      const range = threatRange(state, candidate);
+      if (range <= bestRange) continue;
+      best = candidate;
+      bestRange = range;
+    }
+  }
+  if (!best) return false;
+
+  player.goal = undefined;
+  player.path = [best];
+  // Still watching what is coming for them, not the tile they are heading to.
+  player.direction = directionTowards(player, threats[0]);
+  return true;
+}
+
+/**
  * Whether the Porter could take this stack if they tried.
  *
  * Currency always: it is the point of hunting and weighs against capacity only
@@ -294,6 +369,12 @@ export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupan
     player.goal = undefined;
     return;
   }
+
+  // Nothing outranks getting out of reach. The Porter cannot trade blows, so
+  // every tick spent in contact is damage taken for nothing — and a character
+  // standing still while three monsters chew on them is the single clearest
+  // way this game can look broken. Corpses and posts can wait a step.
+  if (backOff(state, map, occupancy, player)) return;
 
   // A body the Porter already set out for is seen through. Re-arguing the case
   // every tick is what made them drift: they would start for one corpse, notice

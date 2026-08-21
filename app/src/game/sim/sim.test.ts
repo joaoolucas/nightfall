@@ -688,3 +688,69 @@ test("between fights the Porter ranges for a body, and commits to the one they c
   const { state: arrived } = advance(quiet, MAP, 60);
   assert.equal(arrived.inventory.gold, quiet.inventory.gold + 30, "and they see the walk through");
 });
+
+/**
+ * The freeze you could see.
+ *
+ * The Porter cannot swing, so the plan kept them three tiles off whatever they
+ * were hunting — but nothing said what to do when a monster walked those three
+ * tiles itself. The tick reducer cleared their route the moment anything
+ * reached them, and auto-hunt, seeing the target well inside the standoff,
+ * asked for no new one. From then on they stood in contact taking free hits
+ * until their creature finished the kill: 200 of 200 ticks in reach, not one
+ * step taken, which is what a screenshot of the game looked like with three
+ * coalbacks around a motionless handler.
+ *
+ * Giving ground is the one move a handler has, and they must take it.
+ */
+test("a monster that closes on the Porter does not get to pin them there", () => {
+  for (const species of ["coalback", "ash-mite"]) {
+    let state = withMonsterBeside(soloState(), species);
+    let contact = 0;
+    let steps = 0;
+    let previous = { x: playerOf(state).x, y: playerOf(state).y };
+
+    for (let tick = 0; tick < 200; tick += 1) {
+      state = advance(state, MAP, 1).state;
+      const player = playerOf(state);
+      const monster = state.entities.find((entity) => entity.kind === "monster")!;
+      if (distance(player, monster) <= 1) contact += 1;
+      if (player.x !== previous.x || player.y !== previous.y) steps += 1;
+      previous = { x: player.x, y: player.y };
+    }
+
+    assert.ok(steps > 0, `the Porter stood still with a ${species} on them for 200 ticks`);
+    assert.ok(
+      contact < 120,
+      `a ${species} kept the Porter in reach for ${contact} of 200 ticks; they must keep breaking off`,
+    );
+  }
+});
+
+/**
+ * And the retreat stays a retreat.
+ *
+ * A handler who kept walking would drag their creature off whatever it was
+ * killing, since it takes its fight from their mark. So the ground they give
+ * is bounded by their own creature, and the kill still lands.
+ *
+ * The world is emptied of spawns first: with them in it the party simply walks
+ * off to the next fight, and the distance measured would be ordinary hunting
+ * rather than anything the backing off did.
+ */
+test("backing off does not turn into running away", () => {
+  const quiet: GameState = { ...freshState(), spawns: [] };
+  // A warden, because an ordinary monster dies inside a second and never puts
+  // the Porter under sustained pressure.
+  let state = withMonsterBeside(quiet, "cinderpath-warden");
+  let worst = 0;
+
+  for (let tick = 0; tick < 300; tick += 1) {
+    state = advance(state, MAP, 1).state;
+    const creature = state.entities.find((entity) => entity.kind === "companion");
+    if (creature) worst = Math.max(worst, distance(playerOf(state), creature));
+  }
+
+  assert.ok(worst <= 6, `the Porter backed ${worst} tiles off their own creature`);
+  assert.equal(state.kills, 1, "and the fight they gave ground in was still won");
+});
