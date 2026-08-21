@@ -52,6 +52,16 @@ const GLOW: Record<Species, string> = {
   sky: "#f4d776",
 };
 
+/**
+ * Past the last tile.
+ *
+ * The camera follows the Porter wherever they go, so standing near an edge
+ * puts real nothing on screen. Painting it in the biome's own base colour made
+ * it read as ground that had failed to draw; this reads as the end of the map,
+ * which is what it is.
+ */
+const VOID = "#0b0810";
+
 const BASE: Record<Species, string> = {
   ember: "#2a1a1e",
   creek: "#16302f",
@@ -257,8 +267,10 @@ function drawGround(
   const kindAt = (x: number, y: number) =>
     x < 0 || y < 0 || x >= map.width || y >= map.height ? "ground" : map.tiles[y * map.width + x].kind;
 
-  ctx.fillStyle = BASE[map.zoneId];
+  ctx.fillStyle = VOID;
   ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = BASE[map.zoneId];
+  ctx.fillRect(-camera.x, -camera.y, map.width * TILE, map.height * TILE);
 
   if (tileset) {
     for (let y = minY; y < maxY; y += 1) {
@@ -429,10 +441,21 @@ export function render({ ctx, scene, state, map, tileset, width, height, now }: 
 
   const player = state.entities.find((entity) => entity.id === PLAYER_ID);
   const focus = player ? visualOf(scene, player) : { x: map.start.x, y: map.start.y };
-  const worldW = map.width * TILE;
-  const worldH = map.height * TILE;
-  scene.camera.x = Math.round(Math.max(0, Math.min(Math.max(0, worldW - width), focus.x * TILE + TILE / 2 - width / 2)));
-  scene.camera.y = Math.round(Math.max(0, Math.min(Math.max(0, worldH - height), focus.y * TILE + TILE / 2 - height / 2)));
+  // The Porter is the centre of the screen, wherever they are.
+  //
+  // The camera used to be penned inside the map, which is the convention for a
+  // world you scroll by hand and wrong for one that walks itself: within seven
+  // tiles of an edge — and the hunting grounds run right up to them — the
+  // camera stopped while the Porter carried on, so the character the player is
+  // watching slid off to the side of their own screen. Past the edge there is
+  // simply the biome's base colour, which drawGround already lays down.
+  //
+  // Vertically it is the character that is centred, not the tile they stand
+  // on: sprites are drawn feet-down on the tile and stand half a tile taller
+  // than it, so centring the ground put the body high on the screen.
+  const bodyLift = (CHARACTER - TILE) / 2;
+  scene.camera.x = Math.round(focus.x * TILE + TILE / 2 - width / 2);
+  scene.camera.y = Math.round(focus.y * TILE + TILE / 2 - bodyLift - height / 2);
   const camera = scene.camera;
 
   drawGround(ctx, map, camera, width, height, tileset, now);
