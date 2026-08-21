@@ -2,12 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Species } from "@/utils/portage";
-import { distance, type GridPoint } from "@/game/core/grid";
-import { findPath } from "@/game/core/pathfind";
 import { TICK_MS, type CombatEvent, type GameState } from "@/game/core/types";
-import { Occupancy, createWorldMap, walkableFor, type WorldMap } from "@/game/world/map";
+import { createWorldMap, type WorldMap } from "@/game/world/map";
 import { advance } from "@/game/sim/tick";
-import { PLAYER_ID, createInitialState, playerOf, travelTo } from "@/game/sim/state";
+import { createInitialState, travelTo } from "@/game/sim/state";
 import { catchUp, hydrate, persist } from "@/game/sim/save";
 import { MAX_SETTLE_TICKS, SETTLE_LIMIT, planFrame } from "@/game/sim/clock";
 import {
@@ -25,19 +23,21 @@ import {
 /**
  * Bridges the headless simulation to React.
  *
- * The hook owns the clock and the manual-control flag; everything else is the
- * simulation's business. Manual steering suppresses auto-hunt for a few seconds
- * so taking control never fights the idle AI for the same character.
+ * The hook owns the clock; everything else is the simulation's business.
+ *
+ * Nothing here steers the caravan, and nothing may. The client used to hand
+ * the player a walk-here click, a click-to-mark and the arrow keys, each
+ * suspending auto-hunt for five seconds so the two would not fight over the
+ * same character — which made the game answer the mouse, and a game that
+ * answers the mouse is not idle. What the player acts on is the pack, the
+ * roster and the post: everything on the field decides for itself.
  */
-
-const MANUAL_HOLD_MS = 5_000;
 
 export interface GameSim {
   state: GameState;
   map: WorldMap;
   events: CombatEvent[];
   hydrated: boolean;
-  manual: boolean;
   saveFailed: boolean;
   /** Ticks the caravan hunted while away, once the catch-up has finished. */
   offlineTicks: number;
@@ -46,9 +46,6 @@ export interface GameSim {
   /** 0..1 while the catch-up runs; null when it is not running. */
   catchUpProgress: number | null;
   dismissOffline: () => void;
-  walkTo: (goal: GridPoint) => void;
-  step: (delta: GridPoint) => void;
-  setTarget: (entityId: string | null) => void;
   choosePotion: (defId: string | null) => void;
   takeItem: (pileId: string, instanceId: string) => void;
   takeAll: (pileId: string) => void;
@@ -70,10 +67,8 @@ export function useGameSim(): GameSim {
   const [catchUpProgress, setCatchUpProgress] = useState<number | null>(null);
   const [awaySeconds, setAwaySeconds] = useState(0);
   const [events, setEvents] = useState<CombatEvent[]>([]);
-  const [manual, setManual] = useState(false);
 
   const stateRef = useRef(state);
-  const manualUntilRef = useRef(0);
   const lastFrameRef = useRef(0);
   const carryRef = useRef(0);
   const settlingRef = useRef(false);
@@ -188,13 +183,11 @@ export function useGameSim(): GameSim {
         return;
       }
 
-      const isManual = Date.now() < manualUntilRef.current;
-      const result = advance(stateRef.current, mapRef.current, plan.ticks, { manualControl: isManual });
+      const result = advance(stateRef.current, mapRef.current, plan.ticks);
       result.state.lastUpdatedAt = Date.now();
       stateRef.current = result.state;
       setState(result.state);
       if (result.events.length) setEvents(result.events);
-      setManual(isManual);
     }, TICK_MS);
     return () => window.clearInterval(timer);
   }, [hydrated, settle]);
@@ -214,63 +207,6 @@ export function useGameSim(): GameSim {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [hydrated]);
-
-  const takeControl = useCallback(() => {
-    manualUntilRef.current = Date.now() + MANUAL_HOLD_MS;
-    setManual(true);
-  }, []);
-
-  const walkTo = useCallback((goal: GridPoint) => {
-    takeControl();
-    const current = stateRef.current;
-    const player = playerOf(current);
-    const path = findPath(player, goal, {
-      walkable: walkableFor(mapRef.current, new Occupancy(current.entities), PLAYER_ID),
-      maxNodes: 3000,
-    });
-    if (!path.length) return;
-    const next = {
-      ...current,
-      entities: current.entities.map((entity) => (entity.id === PLAYER_ID ? { ...entity, path, targetId: null } : entity)),
-    };
-    stateRef.current = next;
-    setState(next);
-  }, [takeControl]);
-
-  const step = useCallback((delta: GridPoint) => {
-    takeControl();
-    const current = stateRef.current;
-    const player = playerOf(current);
-    const goal = { x: player.x + delta.x, y: player.y + delta.y };
-    if (!walkableFor(mapRef.current, new Occupancy(current.entities), PLAYER_ID)(goal)) return;
-    const next = {
-      ...current,
-      entities: current.entities.map((entity) => (entity.id === PLAYER_ID ? { ...entity, path: [goal] } : entity)),
-    };
-    stateRef.current = next;
-    setState(next);
-  }, [takeControl]);
-
-  const setTarget = useCallback((entityId: string | null) => {
-    takeControl();
-    const current = stateRef.current;
-    const player = playerOf(current);
-    // Clicking a distant creature also walks to it, as the genre expects.
-    const target = current.entities.find((entity) => entity.id === entityId);
-    const path = target && distance(player, target) > 1
-      ? findPath(player, target, {
-          walkable: walkableFor(mapRef.current, new Occupancy(current.entities), PLAYER_ID),
-          maxNodes: 3000,
-          stopAdjacent: true,
-        })
-      : [];
-    const next = {
-      ...current,
-      entities: current.entities.map((entity) => (entity.id === PLAYER_ID ? { ...entity, targetId: entityId, path } : entity)),
-    };
-    stateRef.current = next;
-    setState(next);
-  }, [takeControl]);
 
   /**
    * Inventory actions are pure transitions, so the hook only has to apply one
@@ -318,13 +254,9 @@ export function useGameSim(): GameSim {
     awaySeconds,
     events,
     hydrated,
-    manual,
     saveFailed,
     offlineTicks,
     dismissOffline: () => setOfflineTicks(0),
-    walkTo,
-    step,
-    setTarget,
     changeZone,
     reset,
   };

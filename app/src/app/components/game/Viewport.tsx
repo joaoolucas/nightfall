@@ -1,15 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import type { GridPoint } from "@/game/core/grid";
-import {
-  advanceVisuals,
-  createScene,
-  entityAtTile,
-  ingestEvents,
-  render,
-  tileAtPoint,
-} from "@/game/render/renderer";
+import { advanceVisuals, createScene, ingestEvents, render } from "@/game/render/renderer";
 import { loadCharacter } from "@/game/render/sprites";
 import {
   AMBIENT_CHARACTERS,
@@ -24,15 +16,6 @@ import { MONSTERS } from "@/game/world/monsters";
 import { loadAtlas } from "@/game/render/atlas";
 import type { GameSim } from "./useGameSim";
 import styles from "./client.module.css";
-
-const KEY_DELTAS: Record<string, GridPoint> = {
-  KeyW: { x: 0, y: -1 }, ArrowUp: { x: 0, y: -1 },
-  KeyS: { x: 0, y: 1 }, ArrowDown: { x: 0, y: 1 },
-  KeyA: { x: -1, y: 0 }, ArrowLeft: { x: -1, y: 0 },
-  KeyD: { x: 1, y: 0 }, ArrowRight: { x: 1, y: 0 },
-  KeyQ: { x: -1, y: -1 }, KeyE: { x: 1, y: -1 },
-  KeyZ: { x: -1, y: 1 }, KeyC: { x: 1, y: 1 },
-};
 
 export default function Viewport({ sim }: { sim: GameSim }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -149,34 +132,22 @@ export default function Viewport({ sim }: { sim: GameSim }) {
     return () => cancelAnimationFrame(frameRef.current);
   }, []);
 
-  const pointTo = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    return tileAtPoint(sceneRef.current, event.clientX - rect.left, event.clientY - rect.top);
-  };
-
+  /**
+   * The viewport is a window, not a controller.
+   *
+   * Clicking a tile walked the Porter there and clicking a creature marked it,
+   * which meant the caravan answered the mouse — and a caravan that answers the
+   * mouse is not idle, it is a game you are playing badly with one hand. The
+   * hover highlight went with the handlers: an outline that follows the cursor
+   * promises a click that now does nothing.
+   */
   return (
     <div className={styles.viewport}>
       <canvas
         ref={canvasRef}
         className={styles.canvas}
-        tabIndex={0}
-        aria-label="Game world. Move with WASD or the arrow keys, click a tile to walk, click a creature to attack."
-        onMouseMove={(event) => { sceneRef.current.hoverTile = pointTo(event); }}
-        onMouseLeave={() => { sceneRef.current.hoverTile = null; }}
-        onClick={(event) => {
-          const tile = pointTo(event);
-          const entity = entityAtTile(simRef.current.state, tile);
-          if (entity && entity.kind === "monster") simRef.current.setTarget(entity.id);
-          else simRef.current.walkTo(tile);
-          event.currentTarget.focus();
-        }}
-        onKeyDown={(event) => {
-          if (event.code === "Escape") { simRef.current.setTarget(null); return; }
-          const delta = KEY_DELTAS[event.code];
-          if (!delta) return;
-          event.preventDefault();
-          simRef.current.step(delta);
-        }}
+        role="img"
+        aria-label="The caravan hunts on its own. Watch the world, the battle log and your pack."
       />
     </div>
   );
