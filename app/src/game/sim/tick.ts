@@ -52,7 +52,11 @@ const AUTO_POTION_AT = 0.35;
 const DEATH_RECOVERY_TICKS = 40;
 
 export interface AdvanceOptions {
-  /** Suppress auto-hunt while the player is steering manually. */
+  /**
+   * Suppress auto-hunt. Nothing in the client sets this — the caravan is not
+   * steerable — but the tests drive the Porter by hand through it, and the
+   * offline catch-up passes it explicitly to say what it is not doing.
+   */
   manualControl?: boolean;
   /** Cap on events returned; offline runs discard most of them. */
   collectEvents?: boolean;
@@ -422,7 +426,7 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
   if (player.hp / player.maxHp <= AUTO_POTION_AT) drinkPotion(state, player, events);
 
   // --- planning -----------------------------------------------------------
-  // Hunting is the game, not a setting; only manual steering suspends it.
+  // Hunting is the game, not a setting, and nothing in the client suspends it.
   if (!options.manualControl) planAutoHunt(state, map, occupancy, state.tick);
 
   let companionIndex = 0;
@@ -507,8 +511,35 @@ function tickOnce(state: GameState, map: WorldMap, options: AdvanceOptions, even
     }
     const next = entity.path[0];
     if (!isFree(map, occupancy, next, entity.id)) {
-      // Something moved into the way; drop the stale route and re-plan next tick.
-      entity.path = [];
+      // The Porter may change places with their own creature. Walled in with
+      // the pack in front — three monsters, a wall behind, and the creature on
+      // the one square that is neither — there is no other move on the board,
+      // and standing there being chewed on is what it looked like from the
+      // outside: a game that had stopped. "Get behind me" is what a handler
+      // would say anyway, and it puts the one who can fight in front.
+      const ally = entity.kind === "player"
+        ? state.entities.find(
+            (candidate) =>
+              candidate.kind === "companion" && isAlive(candidate) && samePoint(candidate, next),
+          )
+        : undefined;
+      if (!ally) {
+        // Something moved into the way; drop the stale route and re-plan next tick.
+        entity.path = [];
+        continue;
+      }
+      const from = { x: entity.x, y: entity.y };
+      entity.path = entity.path.slice(1);
+      entity.direction = directionTowards(entity, next);
+      occupancy.move(entity.id, from, next);
+      occupancy.move(ally.id, next, from);
+      entity.x = next.x;
+      entity.y = next.y;
+      ally.x = from.x;
+      ally.y = from.y;
+      ally.path = [];
+      entity.state = "walking";
+      entity.moveCooldown = stepCost(entity, overloaded);
       continue;
     }
     entity.path = entity.path.slice(1);

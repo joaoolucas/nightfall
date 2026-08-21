@@ -1,5 +1,5 @@
-import { distance, directionTowards, hasLineOfSight, type GridPoint } from "../core/grid";
-import { findPath } from "../core/pathfind";
+import { distance, directionTowards, hasLineOfSight, samePoint, type GridPoint } from "../core/grid";
+import { findPath, nearestWalkable } from "../core/pathfind";
 import type { Entity, GameState, GroundPile, ItemStack } from "../core/types";
 import { isFree, sightBlocked, walkableFor, type Occupancy, type WorldMap } from "../world/map";
 import { capacity, inventoryWeight, itemDef } from "../world/items";
@@ -196,8 +196,8 @@ export function planCompanion(state: GameState, map: WorldMap, occupancy: Occupa
 /**
  * Auto-hunt. The idle pillar runs the real combat model rather than a parallel
  * formula: it picks a target, walks to it, and lets the ordinary attack and
- * loot rules apply. Manual control always wins — the caller skips this while
- * the player is steering.
+ * loot rules apply. It is the only thing that moves the Porter: the client
+ * hands the player no way to steer them.
  */
 /**
  * How close the Porter gets to what they are hunting.
@@ -248,28 +248,55 @@ function inContact(state: GameState, player: Entity): Entity[] {
   return monstersOf(state).filter((monster) => distance(player, monster) <= CONTACT);
 }
 
-/** Distance from a tile to the nearest live monster; Infinity when there is none. */
-function threatRange(state: GameState, at: GridPoint): number {
+/**
+ * What standing on a tile would cost, as the fight actually charges for it.
+ *
+ * How many monsters could swing at the Porter from there comes first, and only
+ * then how far the nearest one is. Ordering it the other way — nearest range
+ * alone — is a real mistake with a real symptom: cornered by three coalbacks
+ * with their creature beside them, every square within reach was a tile away
+ * from *something*, so nothing scored better than standing still and the
+ * Porter took three blows a round rather than step somewhere only one of them
+ * could follow.
+ */
+interface Exposure {
+  touching: number;
+  nearest: number;
+}
+
+function exposureAt(state: GameState, at: GridPoint): Exposure {
+  let touching = 0;
   let nearest = Infinity;
-  for (const monster of monstersOf(state)) nearest = Math.min(nearest, distance(at, monster));
-  return nearest;
+  for (const monster of monstersOf(state)) {
+    const range = distance(at, monster);
+    if (range <= CONTACT) touching += 1;
+    if (range < nearest) nearest = range;
+  }
+  return { touching, nearest };
+}
+
+/** Is the first a better place to stand than the second? */
+function safer(a: Exposure, b: Exposure): boolean {
+  return a.touching !== b.touching ? a.touching < b.touching : a.nearest > b.nearest;
 }
 
 /**
  * Give ground, if there is ground to give.
  *
- * One step, to whichever neighbouring tile puts the most air between the
- * Porter and the nearest monster, and never so far that they lose their own
- * creature. Surrounded with nowhere free to go, they stand — that is the fight
- * they are in, not a stall — and the caller carries on as before.
+ * One step, to whichever neighbouring tile fewer monsters can reach — their
+ * own creature's square included, since the two change places — and never so
+ * far that they lose that creature. Failing that, a route out of the pocket.
+ * Failing even that they stand, which by then is the fight they are in rather
+ * than a stall.
  */
 function backOff(state: GameState, map: WorldMap, occupancy: Occupancy, player: Entity): boolean {
   const threats = inContact(state, player);
   if (!threats.length) return false;
 
   const creature = state.entities.find((entity) => entity.kind === "companion" && isAlive(entity));
+  const here = exposureAt(state, player);
   let best: GridPoint | null = null;
-  let bestRange = threatRange(state, player);
+  let bestExposure = here;
 
   for (let dx = -1; dx <= 1; dx += 1) {
     for (let dy = -1; dy <= 1; dy += 1) {
@@ -277,18 +304,59 @@ function backOff(state: GameState, map: WorldMap, occupancy: Occupancy, player: 
       const candidate = { x: player.x + dx, y: player.y + dy };
       if (!isFree(map, occupancy, candidate, PLAYER_ID)) continue;
       if (creature && distance(candidate, creature) > BACKOFF_LEASH) continue;
-      const range = threatRange(state, candidate);
-      if (range <= bestRange) continue;
+      const exposure = exposureAt(state, candidate);
+      if (!safer(exposure, bestExposure)) continue;
       best = candidate;
-      bestRange = range;
+      bestExposure = exposure;
     }
   }
-  if (!best) return false;
+
+  // Ground of their own first, and only then their creature's square: the two
+  // change places, which the reducer allows. It has to be the last resort and
+  // not a preference — a creature dragged backwards every time the Porter felt
+  // crowded is a creature that never finishes anything, and trying it first
+  // cost two thirds of the kills in a fifty-minute run. But when the pack has
+  // filled every other square, which is precisely the corner the Porter used
+  // to be beaten to death in, it is the only move on the board, and it puts
+  // the one who can actually fight in front.
+  if (!best && creature && distance(player, creature) <= CONTACT) {
+    const swapped = exposureAt(state, creature);
+    if (safer(swapped, here)) best = { x: creature.x, y: creature.y };
+  }
+  if (best) {
+    player.goal = undefined;
+    player.path = [best];
+    // Still watching what is coming for them, not the tile they are heading to.
+    player.direction = directionTowards(player, threats[0]);
+    return true;
+  }
+
+  // No neighbouring tile is any better, which is a pocket, not a stalemate: a
+  // doorway or a den corner with the pack filling every square around it. One
+  // greedy step cannot leave a pocket — every first step out of one is sideways
+  // or worse — so this asks for a route to open ground instead, and walks it.
+  // Without this the Porter simply stood in the nook and was chewed on, which
+  // is the freeze the retreat was written to end.
+  if (player.path.length > 0) return true;
+
+  const refuge = nearestWalkable(
+    player,
+    (point) =>
+      isFree(map, occupancy, point, PLAYER_ID)
+      && exposureAt(state, point).nearest >= HANDLER_STANDOFF
+      && (!creature || distance(point, creature) <= BACKOFF_LEASH),
+    8,
+  );
+  if (!refuge) return false;
+
+  const route = findPath(player, refuge, {
+    walkable: walkableFor(map, occupancy, PLAYER_ID),
+    maxNodes: 600,
+  });
+  if (route.length === 0) return false;
 
   player.goal = undefined;
-  player.path = [best];
-  // Still watching what is coming for them, not the tile they are heading to.
-  player.direction = directionTowards(player, threats[0]);
+  player.path = route;
   return true;
 }
 
@@ -361,6 +429,96 @@ function goalStillWorthIt(state: GameState, player: Entity): boolean {
     (candidate) => candidate.x === player.goal!.x && candidate.y === player.goal!.y,
   );
   return !!pile && pile.items.some((stack) => canLift(state, stack));
+}
+
+/**
+ * How many monsters are tried before the Porter settles for one.
+ *
+ * Nearest-first, and the first that can actually be walked to wins. It has to
+ * be more than one: the nearest monster is regularly the one boxed into a den
+ * by its own kind, and taking it on faith is what stopped the hunt. It has to
+ * be few, because each candidate costs a search.
+ *
+ * The wider sweep gets a longer list rather than the same one twice. Cinderpath
+ * puts a lava field through the middle of the map, and the four monsters
+ * nearest the Porter are regularly all on the far side of it: with the same
+ * four tried both times, the sweep that was supposed to range further just
+ * repeated the failure, and the Porter stood for thirty-six seconds with
+ * nineteen monsters alive on the map.
+ */
+const HUNT_ATTEMPTS = 4;
+const HUNT_ATTEMPTS_FAR = 12;
+
+/**
+ * The Porter's search budget, in nodes.
+ *
+ * A biome is 52 by 38, which is 1,976 tiles, so anything under that can fail
+ * on a route that is merely long — around the lava rather than across it — and
+ * report a reachable monster as unreachable. The budget has to be able to see
+ * the whole map, or the failure it produces is a lie.
+ */
+const HUNT_NODES = 3_000;
+
+/** A monster the Porter can reach, and the route that gets them there. */
+function huntable(
+  state: GameState,
+  map: WorldMap,
+  occupancy: Occupancy,
+  player: Entity,
+  radius: number,
+  attempts: number,
+): { entity: Entity; route: GridPoint[] } | null {
+  const candidates = monstersOf(state)
+    .filter((monster) => distance(player, monster) <= radius)
+    .sort((a, b) => distance(player, a) - distance(player, b))
+    .slice(0, attempts);
+
+  for (const candidate of candidates) {
+    // Already at their post: no route is needed, and asking for one would come
+    // back empty and read as unreachable.
+    if (distance(player, candidate) <= HANDLER_STANDOFF + STANDOFF_SLACK) {
+      return { entity: candidate, route: [] };
+    }
+    const route = findPath(player, candidate, {
+      walkable: walkableFor(map, occupancy, PLAYER_ID),
+      maxNodes: HUNT_NODES,
+      stopAdjacent: true,
+    });
+    if (route.length > 0) return { entity: candidate, route };
+  }
+  return null;
+}
+
+/**
+ * A step, when there is nothing to hunt and nothing to collect.
+ *
+ * Rare by design: it only runs when every monster in range is walled off or
+ * boxed in. One tile at a time towards open ground, which is enough to break
+ * whatever standoff hid the rest of the map, and slow enough that it never
+ * looks like the Porter has somewhere better to be.
+ */
+function wander(state: GameState, map: WorldMap, occupancy: Occupancy, player: Entity, tick: number): void {
+  if (player.path.length > 0 || tick % 8 !== 0) return;
+
+  const monster = nearestMonster(state, player);
+  const free: GridPoint[] = [];
+  for (let dx = -1; dx <= 1; dx += 1) {
+    for (let dy = -1; dy <= 1; dy += 1) {
+      if (dx === 0 && dy === 0) continue;
+      const candidate = { x: player.x + dx, y: player.y + dy };
+      if (isFree(map, occupancy, candidate, PLAYER_ID)) free.push(candidate);
+    }
+  }
+  if (!free.length) return;
+
+  // Towards whatever is out there, if any of these tiles is towards it — and
+  // otherwise simply somewhere. Three fixed candidates were tried first and
+  // are not enough: pressed against a wall between them and the monster, all
+  // three are the wall, and the Porter stands against it indefinitely.
+  const best = monster
+    ? free.reduce((a, b) => (distance(b, monster) < distance(a, monster) ? b : a))
+    : free[tick % free.length];
+  player.path = [best];
 }
 
 export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupancy, tick: number): void {
@@ -436,23 +594,30 @@ export function planAutoHunt(state: GameState, map: WorldMap, occupancy: Occupan
     if (player.path.length === 0 || repathDue(player, tick)) {
       player.path = findPath(player, target, {
         walkable: walkableFor(map, occupancy, PLAYER_ID),
-        maxNodes: 1600,
+        maxNodes: HUNT_NODES,
         stopAdjacent: true,
       });
+      // A mark with no way to it is not a mark. Holding one is how the hunt
+      // stopped: the Porter cannot kill, so a monster they cannot reach stays
+      // alive, and a live target sent this function home every tick without
+      // ever asking for another. Measured over fifty minutes of unattended
+      // play, that left them standing for five and a half minutes at a stretch
+      // — the game had simply stopped, which is the one thing an idle game
+      // must never do.
+      if (player.path.length === 0) player.targetId = null;
     }
-    return;
+    if (player.targetId) return;
   }
 
-  const next =
-    nearestMonster(state, player, HUNT_IN_SIGHT) ?? nearestMonster(state, player, HUNT_FURTHER);
+  const next = huntable(state, map, occupancy, player, HUNT_IN_SIGHT, HUNT_ATTEMPTS)
+    ?? huntable(state, map, occupancy, player, HUNT_FURTHER, HUNT_ATTEMPTS_FAR);
   if (!next) {
     player.targetId = null;
+    // Nothing they can walk to anywhere in sight: keep the caravan moving
+    // rather than let it set as a statue while the world carries on.
+    wander(state, map, occupancy, player, tick);
     return;
   }
-  player.targetId = next.id;
-  player.path = findPath(player, next, {
-    walkable: walkableFor(map, occupancy, PLAYER_ID),
-    maxNodes: 1600,
-    stopAdjacent: true,
-  });
+  player.targetId = next.entity.id;
+  player.path = next.route;
 }

@@ -11,7 +11,7 @@ import { capacity, inventoryWeight, itemDef } from "../world/items";
 import { rollLoot } from "./loot";
 import { rollSwing } from "./combat";
 import { summonCompanion } from "./actions";
-import { MAX_ACTIVE_COMPANIONS, createInitialState, makeMonster, playerOf, travelTo, PLAYER_ID } from "./state";
+import { MAX_ACTIVE_COMPANIONS, createInitialState, makeCompanion, makeMonster, playerOf, travelTo, PLAYER_ID } from "./state";
 import { advance } from "./tick";
 
 const MAP = createWorldMap("ember");
@@ -753,4 +753,115 @@ test("backing off does not turn into running away", () => {
 
   assert.ok(worst <= 6, `the Porter backed ${worst} tiles off their own creature`);
   assert.equal(state.kills, 1, "and the fight they gave ground in was still won");
+});
+
+/**
+ * The freeze that had no floor.
+ *
+ * The Porter cannot kill, so a monster they cannot walk to stays alive
+ * indefinitely — and auto-hunt, finding a live mark, went home every tick
+ * without ever asking for another. One monster boxed into a den by its own
+ * kind was enough: measured over fifty minutes of unattended play, the Porter
+ * stood motionless for five and a half minutes at a stretch, holding a target
+ * fourteen tiles away with no route to it. An idle game that stops is not a
+ * game at all.
+ */
+test("a mark with no route to it is dropped rather than waited on", () => {
+  let state = freshState();
+  const player = playerOf(state);
+
+  // A monster walled off behind the map's edge tiles, marked and unreachable.
+  const stranded = { x: 0, y: 0 };
+  assert.ok(!isWalkable(MAP, stranded), "the fixture needs a tile nothing can path to");
+  const marooned = makeMonster(monsterTemplate("coalback"), stranded, 99, UNLEASHED);
+  state = {
+    ...state,
+    entities: [
+      ...state.entities.map((entity) =>
+        entity.id === PLAYER_ID ? { ...entity, targetId: marooned.id, path: [] } : entity,
+      ),
+      marooned,
+    ],
+  };
+
+  const { state: after } = advance(state, MAP, 1);
+  const now = playerOf(after);
+  assert.notEqual(now.targetId, marooned.id, "they must not keep a mark they cannot walk to");
+
+  // And they must actually get on with it rather than stand where they were.
+  let moved = 0;
+  let previous = { x: player.x, y: player.y };
+  let running = after;
+  for (let tick = 0; tick < 300; tick += 1) {
+    running = advance(running, MAP, 1).state;
+    const current = playerOf(running);
+    if (current.x !== previous.x || current.y !== previous.y) moved += 1;
+    previous = { x: current.x, y: current.y };
+  }
+  assert.ok(moved > 0, "the hunt must carry on without the unreachable monster");
+});
+
+/**
+ * Walled in, with the only free square under their own creature.
+ *
+ * This is the state a real save was found in: the Porter against the western
+ * wall of Cinderpath with three coalbacks east and south of them, their
+ * creature north-east, and no legal step in any direction. They stood there
+ * being chewed on for as long as the browser was open — the game, from the
+ * outside, had simply stopped.
+ *
+ * A handler gets out of that by changing places with the creature: it is the
+ * one that can fight, and the swap takes the Porter from three attackers to
+ * one. It is a last resort and not a habit — dragging the creature backwards
+ * whenever the Porter feels crowded cost two thirds of the kills in a
+ * fifty-minute run — so it only happens when there is no ground of their own
+ * to step to.
+ */
+test("boxed into a corner, the Porter changes places with their creature", () => {
+  const base = freshState();
+  const companion = base.companions.find((candidate) => candidate.id === base.activeCompanionIds[0])!;
+  const pocket = { x: 1, y: 3 };
+  assert.ok(isWalkable(MAP, pocket), "the fixture stands the Porter on real ground");
+  assert.ok(!isWalkable(MAP, { x: 0, y: 3 }), "with a wall to the west");
+  assert.ok(!isWalkable(MAP, { x: 1, y: 2 }), "and another to the north");
+
+  let state: GameState = {
+    ...base,
+    spawns: [],
+    entities: [
+      ...base.entities
+        .filter((entity) => entity.kind === "player")
+        .map((entity) => ({ ...entity, ...pocket, path: [], targetId: null })),
+      makeCompanion(companion, { x: 2, y: 2 }, 0),
+      makeMonster(monsterTemplate("coalback"), { x: 2, y: 4 }, 4644, UNLEASHED),
+      makeMonster(monsterTemplate("coalback"), { x: 1, y: 4 }, 4646, UNLEASHED),
+      makeMonster(monsterTemplate("coalback"), { x: 2, y: 3 }, 4651, UNLEASHED),
+    ],
+  };
+
+  const { state: afterOne } = advance(state, MAP, 1);
+  const stepped = playerOf(afterOne);
+  assert.deepEqual(
+    { x: stepped.x, y: stepped.y },
+    { x: 2, y: 2 },
+    "the Porter takes the creature's square",
+  );
+  const creature = afterOne.entities.find((entity) => entity.kind === "companion")!;
+  assert.deepEqual(
+    { x: creature.x, y: creature.y },
+    pocket,
+    "and the creature takes theirs, which puts it between them and the pack",
+  );
+
+  // And they keep going rather than settling into the next corner.
+  state = afterOne;
+  let moved = 0;
+  let previous = { x: stepped.x, y: stepped.y };
+  for (let tick = 0; tick < 200; tick += 1) {
+    state = advance(state, MAP, 1).state;
+    const player = playerOf(state);
+    if (player.x !== previous.x || player.y !== previous.y) moved += 1;
+    previous = { x: player.x, y: player.y };
+  }
+  assert.ok(moved > 3, `the Porter must walk out of the pocket, only stepped ${moved} times`);
 });
