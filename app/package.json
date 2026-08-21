@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test:game": "tsx --test src/utils/world-engine.test.ts src/game/sim/sim.test.ts src/game/sim/actions.test.ts",
+    "test:game": "tsx --test src/utils/world-engine.test.ts src/game/sim/sim.test.ts src/game/sim/actions.test.ts src/game/sim/clock.test.ts",
     "build:atlas": "node ../scripts/build-atlas.mjs"
   },
   "dependencies": {

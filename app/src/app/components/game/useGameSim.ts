@@ -9,6 +9,7 @@ import { Occupancy, createWorldMap, walkableFor, type WorldMap } from "@/game/wo
 import { advance } from "@/game/sim/tick";
 import { PLAYER_ID, createInitialState, playerOf, travelTo } from "@/game/sim/state";
 import { catchUp, hydrate, persist } from "@/game/sim/save";
+import { MAX_SETTLE_TICKS, SETTLE_LIMIT, planFrame } from "@/game/sim/clock";
 import {
   buyItem,
   choosePotion as choosePotionAction,
@@ -30,8 +31,6 @@ import {
  */
 
 const MANUAL_HOLD_MS = 5_000;
-/** Never simulate more than this in one visible frame, to avoid a stall. */
-const MAX_CATCHUP_TICKS = 40;
 
 export interface GameSim {
   state: GameState;
@@ -77,6 +76,7 @@ export function useGameSim(): GameSim {
   const manualUntilRef = useRef(0);
   const lastFrameRef = useRef(0);
   const carryRef = useRef(0);
+  const settlingRef = useRef(false);
 
   const map = useMemo(() => createWorldMap(state.zoneId), [state.zoneId]);
   const mapRef = useRef(map);
@@ -120,21 +120,76 @@ export function useGameSim(): GameSim {
     return () => { cancelled = true; };
   }, []);
 
+  /**
+   * Pay off world the player was not watching, without showing it to them.
+   *
+   * The hunt is never cheated of the time — the ticks are run, through the same
+   * reducer as live play — but they are run in one pass with the events thrown
+   * away, so the caravan is simply *found* where an absence would have left it.
+   * Sprites that end up more than a tile from where they started snap there;
+   * that is the renderer's respawn rule, and it is exactly right here.
+   *
+   * Anything past a few minutes goes through the chunked catch-up instead, with
+   * the progress bar the offline path already shows, because settling eight
+   * hours in one call locks the tab for as long as it takes.
+   */
+  const settle = useCallback((owed: number) => {
+    const ticks = Math.min(owed, MAX_SETTLE_TICKS);
+    const resume = () => {
+      settlingRef.current = false;
+      lastFrameRef.current = performance.now();
+      carryRef.current = 0;
+    };
+
+    settlingRef.current = true;
+    if (ticks <= SETTLE_LIMIT) {
+      const result = advance(stateRef.current, mapRef.current, ticks, { collectEvents: false });
+      result.state.lastUpdatedAt = Date.now();
+      stateRef.current = result.state;
+      setState(result.state);
+      resume();
+      return;
+    }
+
+    setCatchUpProgress(0);
+    void catchUp(stateRef.current, ticks, (done, total) => setCatchUpProgress(done / total)).then((caught) => {
+      stateRef.current = caught;
+      setState(caught);
+      setCatchUpProgress(null);
+      resume();
+    });
+  }, []);
+
   // The clock. One interval drives the simulation at a fixed timestep; the
   // renderer interpolates between ticks on its own animation frame.
   useEffect(() => {
     if (!hydrated) return;
     const timer = window.setInterval(() => {
+      // A settle in flight owns the clock; the interval keeps firing under it.
+      if (settlingRef.current) {
+        lastFrameRef.current = performance.now();
+        carryRef.current = 0;
+        return;
+      }
+
       const now = performance.now();
       const elapsed = now - lastFrameRef.current;
       lastFrameRef.current = now;
       carryRef.current += elapsed;
-      const ticks = Math.min(MAX_CATCHUP_TICKS, Math.floor(carryRef.current / TICK_MS));
-      if (ticks <= 0) return;
-      carryRef.current -= ticks * TICK_MS;
+
+      // The whole debt leaves the clock here, however it is paid. Carrying the
+      // unpaid part into later frames is what the fast-forward was made of: the
+      // backlog outlived the moment it was owed and played out at speed.
+      const plan = planFrame(carryRef.current);
+      carryRef.current = plan.carryMs;
+      if (plan.kind === "idle") return;
+      if (plan.kind !== "play") {
+        settle(plan.ticks);
+        return;
+      }
 
       const isManual = Date.now() < manualUntilRef.current;
-      const result = advance(stateRef.current, mapRef.current, ticks, { manualControl: isManual });
+      const result = advance(stateRef.current, mapRef.current, plan.ticks, { manualControl: isManual });
       result.state.lastUpdatedAt = Date.now();
       stateRef.current = result.state;
       setState(result.state);
@@ -142,7 +197,7 @@ export function useGameSim(): GameSim {
       setManual(isManual);
     }, TICK_MS);
     return () => window.clearInterval(timer);
-  }, [hydrated]);
+  }, [hydrated, settle]);
 
   // Persist periodically and whenever the tab is hidden.
   useEffect(() => {
