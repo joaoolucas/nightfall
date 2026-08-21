@@ -1,6 +1,7 @@
 "use client";
 
 import { MARKET_STOCK, buyPrice, itemDef, sellPrice } from "@/game/world/items";
+import WalletAccountV6Tag from "../client/WalletHandle/WalletAccountV6Tag";
 import GameWindow from "./GameWindow";
 import ItemIcon from "./ItemIcon";
 import type { GameSim } from "./useGameSim";
@@ -18,6 +19,12 @@ import styles from "./client.module.css";
  * Prices are the catalogue's, not a separate table. The post pays half of what
  * a thing is worth and charges all of it, which is what makes the difference
  * between a market and a bank.
+ *
+ * The STRK20 privacy drawer hangs off the bottom of the same window. It was
+ * written before anything rendered it and was mounted into `portage/
+ * Marketplace.tsx`, a component no screen reaches, so nothing in the running
+ * client could ever show it. The counter is its home: this is already the tab
+ * that deals in currency, and gold and STRK are the two the game has.
  */
 export default function MarketWindow({ sim, onClose }: { sim: GameSim; onClose: () => void }) {
   const { gold, stacks } = sim.state.inventory;
@@ -89,6 +96,10 @@ export default function MarketWindow({ sim, onClose }: { sim: GameSim; onClose: 
           })}
           {sellable.length === 0 ? <p className={styles.empty}>Nothing to trade. Go and hunt.</p> : null}
         </section>
+      </div>
+
+      <div className={styles.marketChain}>
+        <WalletAccountV6Tag />
       </div>
     </GameWindow>
   );

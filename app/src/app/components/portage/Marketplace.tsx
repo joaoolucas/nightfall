@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import WalletAccountV6Tag from "../client/WalletHandle/WalletAccountV6Tag";
 import { num } from "starknet";
 import styles from "./portage.module.css";
 import { MOCK_CREATURES, type Creature } from "@/utils/creatures";
@@ -96,7 +95,6 @@ export default function Marketplace() {
   return (
     <section className={styles.section}>
       <header className={styles.sectionHead}>
-        <WalletAccountV6Tag />
         <p className={styles.kicker}>Marketplace</p>
         <h2 className={styles.title}>Trade creatures</h2>
         <p className={styles.sub}>

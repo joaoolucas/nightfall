@@ -110,7 +110,9 @@
 
 .topbar {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  /* The wallet sits between the window bar and the save light: it is chrome,
+     not a game window, and it is the one control that reaches off this machine. */
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: 16px;
   padding: 0 14px;
@@ -150,6 +152,33 @@
   background-image: linear-gradient(rgba(255, 255, 255, .22), transparent) !important;
   box-shadow: inset 1px 1px 0 var(--brass-hi), inset -1px -1px 0 #7d5417, 0 0 0 1px #000 !important;
 }
+
+/* The wallet UI is styled by uni.module.css, which was written for a light
+   marketing page and reads a palette (--ink, --card, --pink...) that this app
+   never defined -- every one of those colours resolved to nothing, which is why
+   the drawer rendered as pale text on a pale slab. Rather than fork the
+   stylesheet, the tokens are bound here to the client palette, so the wallet
+   inherits the game chrome wherever it is mounted. */
+.walletSlot,
+.marketChain {
+  --bg: var(--char);
+  --ink: var(--chalk);
+  --muted: var(--dim);
+  --card: var(--hide);
+  --inset: var(--well);
+  --inset-2: var(--hide-lit);
+  --line: var(--rim-lit);
+  --pink: var(--brass);
+  --pink-text: var(--brass);
+  --pink-soft: rgba(217, 154, 60, .14);
+  --pink-soft-2: rgba(217, 154, 60, .28);
+  --green: var(--skill);
+  --green-soft: rgba(98, 176, 122, .14);
+  --danger: var(--hp);
+  --danger-soft: rgba(194, 58, 46, .16);
+}
+
+.walletSlot { display: flex; align-items: center; }
 
 .saveState { display: flex; align-items: center; gap: 7px; color: var(--dim); font-size: 9px; letter-spacing: .12em; }
 .dotLive, .dotError { width: 8px; height: 8px; }
@@ -333,6 +362,11 @@
 
 /* Two counters, side by side: what the post sells, and what you brought in. */
 .marketColumns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; }
+
+/* The chain half of the counter. It is ruled off rather than merged into the
+   two columns above: gold is simulated and settles instantly, STRK is real and
+   settles on Starknet, and a shared row would quietly claim otherwise. */
+.marketChain { margin-top: 20px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, .09); }
 .marketHead {
   margin: 0 0 3px;
   font-family: var(--font-display), monospace;

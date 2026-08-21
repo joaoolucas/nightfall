@@ -6,6 +6,7 @@ import { zoneFor } from "@/game/world/zones";
 import { PLAYER_ID, companionAttack, expForLevel, playerDefense, playerOf } from "@/game/sim/state";
 import { capacity, inventoryWeight } from "@/game/world/items";
 import { canReach } from "@/game/sim/actions";
+import SelectWallet from "../client/WalletHandle/SelectWallet";
 import BattleLog from "./BattleLog";
 import CreatureIcon from "./CreatureIcon";
 import ItemIcon from "./ItemIcon";
@@ -111,6 +112,10 @@ export default function GameClient() {
             </button>
           ))}
         </nav>
+
+        <div className={styles.walletSlot}>
+          <SelectWallet variant="nav" />
+        </div>
 
         <div className={styles.saveState}>
           <span className={sim.saveFailed ? styles.dotError : styles.dotLive} />
